@@ -75,7 +75,19 @@ class HTTPClientError(Exception):
     pass
 
 class NotFound(HTTPClientError):
-    pass
+    def __init__(self, url=None, method='GET'):
+        if url: self.url = url 
+        if method: self.method = method
+
+    def __repr__(self):
+        if self.url:
+            message = 'routing failed when searching for %s' % self.url
+            if self.method:
+                message += ' using method %s' % self.method
+            return message
+
+    def __str__(self):
+        return self.__repr__()
 
 class Forbidden(HTTPClientError):
     pass
@@ -106,7 +118,148 @@ class Config(object):
 class Application(object):
     pass
 
+class RouteCompilationError(Exception):
+    pass
+
 class Route(object):
+
+    __slots__ = [
+        'HEAD',
+        'GET',
+        'POST',
+        'PUT',
+        'DELETE',
+        ]
+
+    _compile_patterns = (
+        (r'\[', r'('),
+        (r'\]', r')?'),
+        (r'(?<!\\)_', r'[\s_]'),
+        (r'\\_', r'_'),
+        (r'\s+', r'\s+'),
+        (r'(%)', r'\w'),
+        (r'(\*)', r'\w+'),
+        (r'([$!])', r'\\\1'),
+        (r'(?<!\\):(\w+)', r'(?P<\1>[^/]+)'),
+        )
+
+    _route_tests = (
+        (r'(\/\w+)?(\/?\[\/?:[\w]+\]){2,}','Consecutive conditional parameters are not allowed'),
+        (r'\/\[\/', r'Syntax error: "/[/" not allowed'),
+        (r'(?<![\[\/-\\]):', r'Constant/keyword mix not allowed without a valid separator: "/", or "-"'),
+        (r'(\|.+)$', r'Partial route contains noise after break'),
+        )
+
+    _pattern_tests = (
+        #('',''),
+        )
+
+    def __init__(self, urls=None):
+        for method in self.__slots__:
+            self[method] = []
+
+        if urls:
+            self._define_routes(urls)
+
+
+    def __call__(self, *args, **kwargs):
+        return self.find(*args, **kwargs)
+
+
+    def __getitem__(self, name):
+        return getattr(self, name)
+
+    def __setitem__(self, name, value):
+        setattr(self, name, value)
+
+    def _define_routes(self, urls, prefix=''):
+        for item in urls:
+            if not isinstance(item, tuple):
+                break
+            
+            item = dict(zip(['regex', 'func', 'methods'], item))
+
+            self._define_methods(item)
+            self._define_route(item, prefix=prefix)
+
+
+    def _define_methods(self, item):
+        if not 'methods' in item:
+            item['methods'] = ['GET']
+            return
+
+        item['methods'] = [method.upper() for method in re.split('\W+', item['methods']) if method.upper() in self.__slots__]
+
+
+    def _define_route(self, item, prefix=''):
+        if type(item['func']) is tuple:
+            self._define_routes(item['func'], prefix=item['pattern'])
+
+        else: # hasattr(item['match'], '__call__'):
+            for method in item['methods']:
+                pattern, regex = self._compile(item['route'], prefix=prefix)
+                self[method].append((item['route'], regex, pattern, item['func']))
+            
+
+    def _compile(self, pattern, prefix=''):
+        if str(pattern[0]) is '^':
+            regex = r'^' + prefix + pattern[1:]
+
+        else:
+            regex = prefix + pattern
+
+            for test, reason in self._route_tests:
+                if re.search(test, regex):
+                    reason += "\n  while testing %s" % regex
+                    raise RouteCompilationError(reason)
+
+            for search, replace in self._compile_patterns:
+                regex = re.sub(search, replace, regex)
+                
+            if pattern[-1] is '|':
+                regex = r'^' + regex[:-1]
+            else:
+                regex = r'^' + regex + r'$'
+
+        for test, reason in self._pattern_tests:
+            if re.search(test, regex):
+                reason += "\n  while testing %s" % regex
+                raise RouteCompilationError(reason)
+        
+        try:
+            return re.compile(regex), regex
+            
+        except Exception as e:
+            raise RouteCompilationError(e.message+' while testing: %s' % regex)
+
+
+    def _get_all(self):
+        return dict( (item, getattr(self, item)) for item in self.__slots__ )
+
+
+    def find(self, method, url):
+
+        if len(url) > 1 and url[-1] == '/':
+            url = url[0:-1]
+
+        for route, regex, test, func in self[method]:
+            match = test.match(url)
+            if match:
+                return func, match.groupdict(), route
+
+        raise NotFound(url=url, method=method)
+
+
+    def add(self, route, func, methods='GET', prefix=''):
+        item = {'route':route, 'func':func, 'methods':methods}
+        self._define_methods(item)
+        self._define_route(item, prefix)
+
+    # Properties
+    urls = property(_get_all, __init__)
+
+
+class RequestHeaders(threading.local):
     pass
 
 class Request(threading.local):
