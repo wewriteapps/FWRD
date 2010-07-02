@@ -6,6 +6,8 @@ import os
 import re
 import sys
 import threading
+from wsgiref.simple_server import make_server
+from wsgiref.headers import Headers as WSGIHeaderObject
 
 try:
     from cStringIO import StringIO
@@ -19,6 +21,11 @@ except ImportError:
         from json import dumps as json_dumps
     except ImportError:
         json_dumps = None
+
+try:
+    from collections import MutableMapping as DictMixin
+except ImportError:
+    from UserDict import DictMixin
 
 # http://www.faqs.org/rfcs/rfc2616.html
 HTTP_STATUS_CODES = {
@@ -259,8 +266,70 @@ class Route(object):
     urls = property(_get_all, __init__)
 
 
-class RequestHeaders(threading.local):
-    pass
+class HeaderContainer(threading.local):
+    __slots__ = [
+        'headers'
+        ]
+
+    def __init__(self, *args, **kwargs):
+        self.headers = WSGIHeaderObject([])
+        for key, value in dict(*args, **kwargs).iteritems():
+            self.add_header(key, value)
+
+    def __call__(self):
+        return str(self.headers)
+
+    def __len__(self):
+        return len(set(self.headers.keys()))
+
+    def __setitem__(self, name, value):
+        self.add(name, value)
+
+    def __getitem__(self, name):
+        return self.headers[name]
+
+    def __contains__(self, name):
+        return name in self.headers
+
+    def __delitem__(self, name):
+        del self.headers[name]
+
+    def __repr__(self):
+        return str(self.headers)
+
+    def get(self, name):
+        return self.headers[name]
+
+    def get_all(self, name):
+        return self.headers.get_all(name)
+
+    def keys(self):
+        return self.headers.keys()
+
+    def values(self):
+        return self.headers.values()
+
+    def items(self):
+        return self.headers.items()
+
+    def has_key(self, name):
+        return self.headers.has_key(name)
+
+    def list(self):
+        return self.headers.items()
+
+    def add(self, name, value, **params):
+        self.add_header(name, value, **params)
+
+    def add_header(self, name, value, **params):
+        self.headers.add_header(name.replace('_', '-').title(), str(value), **params)
+
+    def clear(self):
+        self.headers = WSGIHeaderObject([])
+
+    def drop(self, name):
+        del self.headers[name]
+    
 
 class Request(threading.local):
     pass
