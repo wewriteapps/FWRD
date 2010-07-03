@@ -18,7 +18,7 @@ class HeaderSpec(unittest.TestCase):
     def it_should_accept_params_at_init(self):
         obj = HeaderContainer(content_type='text/xml')
 
-        self.assertEquals(
+        self.assertEqual(
             str(obj),
             'Content-Type: text/xml\r\n\r\n'
             )
@@ -29,7 +29,7 @@ class HeaderSpec(unittest.TestCase):
             expires='Thu, 01 Dec 1994 16:00:00 GMT'
             )
 
-        self.assertEquals(
+        self.assertEqual(
             str(obj),
             'Expires: Thu, 01 Dec 1994 16:00:00 GMT\r\nContent-Type: text/plain\r\nPragma: no-cache\r\n\r\n'
             )
@@ -37,7 +37,7 @@ class HeaderSpec(unittest.TestCase):
     def it_should_accept_headers(self):
         self.headers.add_header('content-type', 'text/xml')
 
-        self.assertEquals(
+        self.assertEqual(
             str(self.headers),
             'Content-Type: text/xml\r\n\r\n'
             )
@@ -49,21 +49,21 @@ class HeaderSpec(unittest.TestCase):
             expires='Thu, 01 Dec 1994 16:00:00 GMT'
             )
 
-        self.assertEquals(
+        self.assertEqual(
             str(self.headers),
             'Expires: Thu, 01 Dec 1994 16:00:00 GMT\r\nContent-Type: text/plain\r\nPragma: no-cache\r\n\r\n'
             )
         
         del self.headers['expires']
 
-        self.assertEquals(
+        self.assertEqual(
             str(self.headers),
             'Content-Type: text/plain\r\nPragma: no-cache\r\n\r\n'
             )
 
         self.headers.drop('pragma')
  
-        self.assertEquals(
+        self.assertEqual(
             str(self.headers),
             'Content-Type: text/plain\r\n\r\n'
             )       
@@ -71,14 +71,14 @@ class HeaderSpec(unittest.TestCase):
     def it_should_clear_all_headers(self):
         self.headers.add_header('content-type', 'text/xml')
 
-        self.assertEquals(
+        self.assertEqual(
             str(self.headers),
             'Content-Type: text/xml\r\n\r\n'
             )
 
         self.headers.clear()
 
-        self.assertEquals(
+        self.assertEqual(
             str(self.headers),
             '\r\n'
             )
@@ -88,22 +88,22 @@ class HeaderSpec(unittest.TestCase):
         self.headers.add_header('warning', 'Second Warning')
         self.headers.add_header('warning', 'Third Warning')
 
-        self.assertEquals(
+        self.assertEqual(
             self.headers.get('warning'),
             'First Warning'
             )
 
-        self.assertEquals(
+        self.assertEqual(
             self.headers['warning'],
             'First Warning'
             )
 
-        self.assertEquals(
+        self.assertEqual(
             self.headers.get_all('warning'),
             ['First Warning', 'Second Warning', 'Third Warning']
             )
 
-        self.assertEquals(
+        self.assertEqual(
             str(self.headers),
             'Warning: First Warning\r\nWarning: Second Warning\r\nWarning: Third Warning\r\n\r\n'
             )
@@ -114,7 +114,7 @@ class HeaderSpec(unittest.TestCase):
         self.headers.add_header('warning', 'Second Warning')
         self.headers.add_header('warning', 'Third Warning')
 
-        self.assertEquals(
+        self.assertEqual(
             len(self.headers),
             2
             )

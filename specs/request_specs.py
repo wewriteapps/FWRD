@@ -10,4 +10,7 @@ if FWRD_PATH not in sys.path:
 
 from FWRD import Request
 
+class RequestSpec(unittest.TestCase):
 
+    def setUp(self):
+        self.request = Request()
