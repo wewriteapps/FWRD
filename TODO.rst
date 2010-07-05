@@ -17,6 +17,7 @@ Still To Do
 - InternalRedirect exception to restart the request with new data but respond to original query:
   - InteralRedirect(url, method='GET', params={}, replace_params=False)
 - Parameter object for working with both string and native parameters
+- base64 encoding of binary data in JSON output, using the data-uri format.
 
 - Optional items:
   - Handle ``func=None`` in routing as pass-through/file-read

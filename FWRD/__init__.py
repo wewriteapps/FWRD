@@ -2,11 +2,11 @@ __author__ = 'Phillip B Oldham'
 __version__ = '0.2.0-dev'
 __licence__ = 'MIT'
 
+import cgi
 import os
 import re
 import sys
 import threading
-from wsgiref.simple_server import make_server
 from wsgiref.headers import Headers as WSGIHeaderObject
 
 try:
@@ -19,13 +19,13 @@ try:
 except ImportError:
     from cgi import parse_qs
 
-try: 
-    from simplejson import dumps as json_dumps
-except ImportError:
+try:
     try:
-        from json import dumps as json_dumps
-    except ImportError:
-        json_dumps = None
+        import simplejson as json
+    except:
+        import json
+except ImportError:
+    json = None
 
 try:
     from collections import MutableMapping as DictMixin
@@ -125,15 +125,131 @@ class SeeOther(HTTPRedirection):
 
 
 class Config(object):
-    pass
+    __slots__ = [
+        'host',
+        'port'
+        ]
 
-class Application(object):
-    pass
+    def __init__(self, **kwargs):
+        self.host = ''
+        self.port = 8000
+
+        for key, value in kwargs.iteritems():
+            if key.lower() in self.__slots__:
+                setattr(self, key.lower(), value)
+
+
+class Application(threading.local):
+    __slots__ = [
+        'router',
+        'request',
+        'response',
+        'middleware'
+        ]
+
+    def __init__(self, router, *args, **kwargs):
+        self.router = router
+        self.middleware = []
+
+    def __call__(self, environ, start_response):
+        self.request = Request(environ)
+        self.response = ResponseFactory.new(self.request.path[2], start_response)
+
+        return self.process_request()
+
+    def process_request(self):
+        func, params, route = self.router.find(request.path[1])
+
+        try:
+            try:
+                headers = {}
+                code = 200
+                body = None
+                
+                if func:
+                    body = method(**self.request.params)
+
+            except TypeError as e:
+                if 'unexpected keyword argument' in str(e):
+                    raise Forbidden('%s received unexpected parameter "%s"' % (func.__name__, str(e).split(' ')[-1]))
+
+                if 'takes no arguments' in str(e):
+                    raise Forbidden('method '+' '.join(str(e).split(' ')[1:]))
+
+                raise e
+
+            except Exception as e:
+                raise e
+
+        except (KeyboardInterrupt, SystemExit) as e:
+            print >>config.output, "Terminating."
+
+        except HTTPRedirection as e:
+            code = e.code
+            headers = e.headers
+            body = None
+
+        except Conflict as e:
+            code = e.code
+            headers = e.headers
+            body = e
+
+        except HTTPClientError as e:
+            code = e.code
+            headers = e.headers
+            body = e
+
+        except HTTPServerError as e:
+            code = e.code
+            headers = e.headers
+            body = e
+
+        except Exception as e:
+            raise e
+
+        finally:
+            return self.response(body, code=code, additional_headers=headers)
+
+    def register_middleware(self, middleware, opts={}):
+        self.middleware.append((middleware, opts))
+
+    def run(self, server_func=None, host=None, port=None, **kwargs):
+
+        if server_func is None:
+            server_func = self._serve_once
+
+        if not host:
+            host = config.host
+
+        if not port:
+            port = config.port
+
+        server_func(
+            reduce(
+                lambda stack, middleware: middleware[0](stack, **middleware[1]),
+                self.middleware,
+                self
+                ),
+            host,
+            port,
+            **kwargs
+            )
+
+    def _serve_once(self, app, host, port):
+        from wsgiref.simple_server import make_server
+        server = make_server(host, port, app)
+        server.handle_request()
+
+    def _serve_forever(self, app, host, port):
+        from wsgiref.simple_server import make_server
+        server = make_server(host, port, app)
+        server.serve_forever()
+
 
 class RouteCompilationError(Exception):
     pass
 
-class Route(object):
+class Route(threading.local):
 
     __slots__ = [
         'HEAD',
@@ -347,33 +463,263 @@ class Request(threading.local):
         'environ',
         'method',
         'path',
+        'param_order',
         ]
 
-    _float = re.compile(r'\d+\.\d+')
-    _multi = re.compile(r'^(\w+)(\[.+\])$')
-
-    _param_order = 'SESSION,PATH,GET,POST'
+    _get_ext = re.compile(r'^(.+)(\.[a-z]+)$')
+    _is_float = re.compile(r'\d+\.\d+')
+    _is_named = re.compile(r'^(\w+)(\[.+\])$')
 
     def __init__(self, environ=None, **kwargs):
-        pass
+        self.environ = environ
+        self.method = environ['REQUEST_METHOD'].upper()
+
+        self.path = (environ['PATH_INFO'], '', environ['PATH_INFO'])
+
+        try:
+            self.path = tuple(list(self._get_ext.match(environ['PATH_INFO'])).append(environ['PATH_INFO']))
+        except:
+            pass
+
+        if param_order in kwargs:
+            self.param_order = tuple(param_order.split(','))
+        else:
+            self.param_order = ('SESSION','PATH','GET','POST')
+
+        if len(self.environ['QUERY_STRING']):
+            self.parse_qs()
+
+        if self.method in ('POST', 'PUT'):
+            self.parse_body()
+
+        def parse_qs(self):
+            self.GET = self.parse_parameters(parse_qs(self.environ['QUERY_STRING']))
+
+        def parse_body(self):
+            if self.environ.get('CONTENT_TYPE', '').lower()[:10] == 'multipart/':
+                fp = self.environ['wsgi.input']
+
+            else:
+                length = int(self.environ.get('CONTENT_LENGTH', 0) or 0)
+                fp = StringIO(self.environ['wsgi.input'].read(length))
+
+            self.POST = self.parse_parameters(cgi.FieldStroage(fp=fp,
+                                                               environ=self.environ,
+                                                               keep_blank_values=True))
+
+        def parse_parameters(self, params):
+            parsed = {}
+
+            self.parse_sequenced_parameters(params, parsed)
+            self.parse_named_parameters(params, parsed)
+            self.parse_basic_parameters(params, parsed)
+
+            return parsed
+                      
+
+        def parse_sequenced_parameters(self, params, parsed={}):
+            parsed = {}
+
+            sequenced = [name[:-2] for name in params if name[-2:] == '[]']
+
+            for item in sequenced:
+                items = params.pop(item+'[]')
+
+                '''Catch cases where a param is assigned multiple
+                times in a querystring, such as:
+                foo=bar&foo[]=baz&foo[]=false
+                '''
+                if item in params:
+                    items.extend(params.pop(item))
+
+                values = [self.update_param_type(value) for value in items]
+                parsed[item] = dict(zip(range(0, len(values)), list(values)))
+
+            return parsed
+
+        def parse_named_parameters(self, params, parsed={}):
+
+            named = [name for name in params if self._is_named.search(name)]
+
+            for item in named:
+                matches = self._is_named.match(item)
+                name = matches[0]
+                value = self.update_param_type(params[item])
+
+                if name not in parsed:
+                    parsed[name] = {}
+
+                trie = [self.update_param_type(item) for item in matches.groups()[1][1:-1].split('][')]
+
+                if type(parsed[name]) is not dict:
+                    params[name] = {'_': params[name]}
+
+                params[key].update(self.build_dict(trie, value))
+
+            return parsed
+
+        def parse_basic_parameters(self, params, parsed={}):
+
+            for name, value in params.iteritems():
+                parsed[name] = self.update_param_type(value)
+
+            return parsed
+
+        def build_dict(self, sequence, value):
+            if len(sequence) == 1:
+                return {
+                    sequence[0]: value
+                    }
+
+            return {
+                sequence.pop(0): self.build_dict(sequence, value)
+                }
+
+        def update_param_type(self, param):
+            if isinstance(param, cgi.MiniFieldStorage):
+                return param.value
+
+            if type(param) is list and len(param) == 1:
+                return self.update_param_type(param[0])
+
+            if type(param) is list:
+                return list(self.update_param_type(item) for item in param)
+
+            if self._is_float.match(param):
+                return float(param)
+
+            if param != '' and param[0] is not '0' and param.isdigit():
+                return int(param)
+
+            if param == '':
+                return None
+
+            if param.lower() == 'true':
+                return True
+
+            if param.lower() == 'false':
+                return False
+
+            return param
+
+        def build_get_string(self):
+            return self.build_qs(self.GET)
+
+        def build_post_string(self):
+            return self.build_qs(self.POST)
+
+        def build_qs(self, params, key=None):
+            parts = []
+
+            if params and hasattr(params, 'items'):
+                for name, value in param.items():
+
+                    if hasattr(value, 'values'):
+                        '''Encode a dict'''
+                        parts.extend(self.build_qs(params=value.values(),
+                                                   key=self.build_qs_key(key, cgi.escape(name))))
+
+                    elif hasattr(value, '__iter__'):
+                        '''Encode an iterable (list, tuple, etc)'''
+                        parts.extend(self.build_qs(params=dict(zip(range(0, len(value)), value)),
+                                                   key=self.build_qs_key(key, cgi.escape(name))))
+
+                    else:
+                        parts.extend('%s=%s' % (self.build_qs_key(key, cgi.escape(name)), cgi.escape(str(value))))
+
+            return '&'.join(parts)
+                        
+        def build_qs_key(self, key, addition):
+            if not key:
+                return addition
+
+            return '%s[%s]' % (key, addition)
+
+        @property
+        def params(self):
+            params = {}
+
+            for item in self.param_order:
+                params.update(getattr(self, item))
+
+            return params
+        
+
+class PluginMount(type):
+    def __init__(cls, name, bases, attrs):
+        if not hasattr(cls, 'plugins'):
+            cls.plugins = []
+
+        else:
+            cls.plugins.append(cls)
+
 
 class Response(threading.local):
+    __metaclass__ = PluginMount
+
+    def __init__(self, start_response, *args, **kwargs):
+        self.start_response = start_response
+        self.headers = HeaderContainer()
+
+    def __call__(self, response_body, code=200, additional_headers=None):
+        self.response_body = response_body
+        self.headers.update(additional_headers)
+
+        self.start_response(code, self.headers.list())
+        return self.format(self.response_body)
+
+    def format(self, *args, **kwargs):
+        raise NotImplementedError()
+
+class InvalidResponseTypeError(Exception):
     pass
+
+class ResponseTranslationError(Exception):
+    pass
+
+class ResponseFactory(object):
+    @staticmethod
+    def new(response_type=None, *args, **kwargs):
+        if response_type:
+            response_type = response_type.lower()
+        for response_class in Response.plugins:
+            if hasattr(response_class, 'extension') and response_type == response_class.extension:
+                return response_class(*args, **kwargs)
+
+            if hasattr(response_class, 'extensions') and response_type in response_class.extensions:
+                return response_class(*args, **kwargs)
+
+        return TranslatedResponse(*args, **kwargs)
+        #raise InvalidResponseTypeError()
+
 
 class TranslatedResponse(Response):
     '''Takes the response data and formats it first
     into XML then passes it through an XSL translator'''
 
-    extensions = ('', 'html')
+    extensions = (None, '', 'htm', 'html')
     contenttype = ''
 
 
-class TextResonse(Response):
+class TextResponse(Response):
     '''Takes the response data and formats it into
     a text representation'''
 
     extensions = ('txt', 'text')
     contenttype = 'text/plain'
+
+    def format(self, data=None):
+        if not data and not self.response_body:
+            return ''
+
+        if not data and self.response_body:
+            data = self.response_body
+
+        if isinstance(data, basestring):
+            return str(data)
+
+        raise ResponseTranslationError
+    
 
 class XMLResponse(Response):
     '''Takes the response data and converts it into
@@ -388,3 +734,56 @@ class JSONResponse(Response):
 
     extensions = ('json')
     contenttype = 'application/json'
+
+    def format(self, data=None):
+        if data is None and not self.response_body:
+            return ''
+
+        if data is None and self.response_body:
+            data = self.response_body
+
+        return json.dumps(
+            data,
+            sort_keys=True,
+            separators=(',',':'),
+            cls=ComplexJSONEncoder
+            )
+
+
+
+'Utility JSON methods'
+
+class ComplexJSONEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if hasattr(obj, '__iter__'):
+            return list(obj)
+
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
+
+        if isinstance(obj, object):
+            newobj = {}
+
+            # class attributes
+            newobj.update(dict(
+                (name, value)
+                for name, value
+                in dict(obj.__class__.__dict__).iteritems()
+                if name[0] != '_'
+                ))
+
+            # object attributes
+            newobj.update(dict(
+                (name, value)
+                for name, value
+                in obj.__dict__.iteritems()
+                if ord(name[0].lower()) in range(97,123)
+                ))
+
+            newobj['__name__'] = obj.__class__.__name__
+
+            return newobj
+
+        return json.JSONEncoder.default(self, obj)
+         

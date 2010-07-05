@@ -10,17 +10,24 @@ if FWRD_PATH not in sys.path:
 
 from FWRD import Request
 
+class ServerTest(unittest.TestCase):
+    pass
+
 class RequestEnvironSpec(unittest.TestCase):
 
     def setUp(self):
         pass
 
-class Request
+class Request(unittest.TestCase):
+
+    def setUp(self):
+        pass
 
 class GetRequestSpec(unittest.TestCase):
 
     def setUp(self):
-        self.request = Request()
+        #self.request = Request()
+        pass
 
     def it_should_parse_file_extensions_correctly(self):
         pass
