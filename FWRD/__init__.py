@@ -14,6 +14,11 @@ try:
 except:
     from StringIO import StringIO
 
+try:
+    from urlparse import parse_qs
+except ImportError:
+    from cgi import parse_qs
+
 try: 
     from simplejson import dumps as json_dumps
 except ImportError:
@@ -265,86 +270,6 @@ class Route(object):
     # Properties
     urls = property(_get_all, __init__)
 
-"""
-class MultiDict(DictMixin):
-    '''
-    __slots__ = [
-        'data'
-        ]
-    '''
-
-    def __init__(self, *args, **kwargs):
-        self.data = dict()
-        for key, value in dict(*args, **kwargs).iteritems():
-            self.add(key, value)
-
-    '''
-    def __call__(self):
-        return str(self.data)
-    '''
-
-    def __len__(self):
-        return len(set(self.data.keys()))
-
-    def __setitem__(self, name, value):
-        self.add(name, value)
-
-    def __getitem__(self, name):
-        return self.data[name]
-
-    def __contains__(self, name):
-        return name in self.data
-
-    def __delitem__(self, name):
-        del self.data[name]
-
-    '''
-    def __repr__(self):
-        return str(self.data)
-    '''
-
-    def get(self, name):
-        return self.data[name]
-
-    def get_all(self, name):
-        return self.data.get_all(name)
-
-    def keys(self):
-        return self.data.keys()
-
-    def values(self):
-        return self.data.values()
-
-    def items(self):
-        return self.data.items()
-
-    def has_key(self, name):
-        return name in self.data.keys()
-
-    def list(self):
-        return self.data.items()
-
-    def append(self, name, value, **params):
-        self.add_header(name, value, **params)
-
-    def clear(self):
-        self.data = dict()
-
-    def copy(self):
-        return self.data.copy()
-
-    def iteritems(self):
-        pass
-
-    def iterallitems(self):
-        pass
-
-    def pop(self, name, default=None):
-        pass
-
-    def pop_all(self, name, default=None):
-        pass
-"""
 
 class HeaderContainer(threading.local):
     __slots__ = [
@@ -412,7 +337,25 @@ class HeaderContainer(threading.local):
 
 
 class Request(threading.local):
-    pass
+    ''' Should a factory be used to create a request/response obj per "request"?'''
+    __slots__ = [
+        'GET',
+        'PATH',
+        'POST',
+        'PUT',
+
+        'environ',
+        'method',
+        'path',
+        ]
+
+    _float = re.compile(r'\d+\.\d+')
+    _multi = re.compile(r'^(\w+)(\[.+\])$')
+
+    _param_order = 'SESSION,PATH,GET,POST'
+
+    def __init__(self, environ=None, **kwargs):
+        pass
 
 class Response(threading.local):
     pass
