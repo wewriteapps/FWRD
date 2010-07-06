@@ -11,4 +11,8 @@ if FWRD_PATH not in sys.path:
 from FWRD import Application
 
 
+class ApplicationSpec(unittest.TestCase):
+
+    def setUp(self):
+        pass
 
