@@ -102,6 +102,7 @@ class TextResponseSpec(ResponseBaseSpec):
                           )
 
 class JsonResponseSpec(ResponseBaseSpec):
+    """JSON response spec"""
 
     def setUp(self):
         self.response = ResponseFactory.new('json', None, None)
@@ -148,6 +149,7 @@ class JsonResponseSpec(ResponseBaseSpec):
 
     
 class XmlResponseSpec(ResponseBaseSpec):
+    """XML response spec"""
 
     def setUp(self):
         self.request = PlainObject()
@@ -252,6 +254,7 @@ class XmlResponseSpec(ResponseBaseSpec):
 
 
 class TranslatedResponseSpec(ResponseBaseSpec):
+    """Translated (XSL) response spec"""
 
     def setUp(self):
         self.request = PlainObject()

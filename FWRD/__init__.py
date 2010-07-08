@@ -35,6 +35,24 @@ try:
 except ImportError:
     from UserDict import DictMixin
 
+__all__ = [
+    'application',
+    'config',
+    'router',
+    'request',
+    'response',
+
+    # Common "exceptions"
+    'Moved',         # 301
+    'Found',         # 302
+    'SeeOther',      # 303
+    'NotModified',   # 304
+    'Redirect',      # 307
+    'Forbidden',     # 403
+    'NotFound',      # 404
+    'InternalError', # 500
+    ]
+
 # http://www.faqs.org/rfcs/rfc2616.html
 HTTP_STATUS_CODES = {
     100: "Continue", 
@@ -79,22 +97,33 @@ HTTP_STATUS_CODES = {
     505: "HTTP Version not supported",
     }
 
-class HTTPServerError(Exception):
+class HTTPError(Exception):
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        raise self
+    
+    def __repr__(self):
+        return '<HTTPException "%s">' % self.__str__()
+    
+    def __str__(self):
+        return '%d: %s' (self.code, HTTP_STATUS_CODES[self.code])
+
+class HTTPServerError(HTTPError):
     code = 500
 
 class InternalError(HTTPServerError):
     code = 500
 
 
-class HTTPClientError(Exception):
+class HTTPClientError(HTTPError):
     code = 400
 
 class NotFound(HTTPClientError):
     code = 404
-    
     def __init__(self, url=None, method='GET'):
         if url: self.url = url 
         if method: self.method = method
+        raise self
 
     def __repr__(self):
         if self.url:
@@ -110,11 +139,18 @@ class Forbidden(HTTPClientError):
     code = 403
 
 
-class HTTPRedirection(Exception):
+class HTTPRedirection(HTTPError):
     code = 300
+    def __init__(self, location):
+        self.headers = HeaderContainer()
+        self.headers['location']
+        raise self
 
 class NotModified(HTTPRedirection):
     code = 304
+    def __init__(self):
+        """Not Modified doesn't issue a Location header"""
+        self.headers = HeaderContainer()
 
 class Redirect(HTTPRedirection):
     code = 307
@@ -134,12 +170,14 @@ class Config(object):
         'host',
         'port',
         'format',
+        'default_format',
         ]
 
     def __init__(self, **kwargs):
         self.host = ''
         self.port = 8000
         self.format = {}
+        self.default_format = None
 
         for key, value in kwargs.iteritems():
             if key.lower() in self.__slots__:
@@ -148,26 +186,33 @@ class Config(object):
 
 class Application(threading.local):
     __slots__ = [
-        'router',
-        'request',
-        'response',
-        'middleware'
+        '_config',
+        '_router',
+        '_request',
+        '_response',
+        '_middleware'
         ]
 
     def __init__(self, config, router, *args, **kwargs):
-        self.config = config
-        self.router = router
-        self.middleware = []
+        self._config = config
+        self._router = router
+        self._request = None
+        self._response = None
+        self._middleware = []
 
     def __call__(self, environ, start_response):
-        self.request = Request(environ)
-        self.response = ResponseFactory.new(self.request.path[2], start_response, self.request, **self.config.format)
+        self._request = Request(environ)
+        try:
+            self._response = ResponseFactory.new(self._request.path[1], start_response, self._request, self._config.format)
+        except InvalidResponseTypeError:
+            self._response = ResponseFactory.new(self._config.default_format, start_response, self._request, self._config.format)
 
         return self.process_request()
 
     def process_request(self):
-        func, params, route = self.router.find(request.path[1])
-        self.request.route = route
+        func, params, route = self._router.find(self._request.method, self._request.path[0])
+        self._request.route = route
+        self._request.PATH = params
 
         try:
             try:
@@ -176,7 +221,7 @@ class Application(threading.local):
                 body = None
                 
                 if func:
-                    body = method(**self.request.params)
+                    body = method(**self._request.params)
 
             except TypeError as e:
                 if 'unexpected keyword argument' in str(e):
@@ -217,10 +262,10 @@ class Application(threading.local):
             raise e
 
         finally:
-            return self.response(body, code=code, additional_headers=headers)
+            return self._response(body, code=code, additional_headers=headers)
 
     def register_middleware(self, middleware, opts={}):
-        self.middleware.append((middleware, opts))
+        self._middleware.append((middleware, opts))
 
     def run(self, server_func=None, host=None, port=None, **kwargs):
 
@@ -228,15 +273,15 @@ class Application(threading.local):
             server_func = self._serve_once
 
         if not host:
-            host = config.host
+            host = self._config.host
 
         if not port:
-            port = config.port
+            port = self._config.port
 
         server_func(
             reduce(
                 lambda stack, middleware: middleware[0](stack, **middleware[1]),
-                self.middleware,
+                self._middleware,
                 self
                 ),
             host,
@@ -254,11 +299,27 @@ class Application(threading.local):
         server = make_server(host, port, app)
         server.serve_forever()
 
+    @property
+    def config(self):
+        return self._config
+
+    @property
+    def router(self):
+        return self._router
+
+    @property
+    def request(self):
+        return self._request
+
+    @property
+    def response(self):
+        return self._response
+
 
 class RouteCompilationError(Exception):
     pass
 
-class Route(threading.local):
+class Router(threading.local):
 
     __slots__ = [
         'HEAD',
@@ -376,6 +437,8 @@ class Route(threading.local):
 
     def find(self, method, url):
 
+        method = method.upper().strip()
+
         if len(url) > 1 and url[-1] == '/':
             url = url[0:-1]
 
@@ -464,6 +527,10 @@ class HeaderContainer(threading.local):
     def drop(self, name):
         del self.headers[name]
 
+    def update(self, items):
+        for key, value in items.iteritems():
+            self.add_header(name, value)
+
 
 class Request(threading.local):
     ''' Should a factory be used to create a request/response obj per "request"?'''
@@ -472,6 +539,7 @@ class Request(threading.local):
         'PATH',
         'POST',
         'PUT',
+        'SESSION',
 
         'environ',
         'method',
@@ -493,6 +561,9 @@ class Request(threading.local):
         self.method = environ['REQUEST_METHOD'].upper()
         self.route = None
         self.path = (environ['PATH_INFO'], '', environ['PATH_INFO'])
+
+        if 'beaker.session' in self.environ:
+            self.SESSION = environ['beaker.session']
 
         try:
             self.path = tuple(
@@ -528,42 +599,41 @@ class Request(threading.local):
             length = int(self.environ.get('CONTENT_LENGTH', 0) or 0)
             fp = StringIO(self.environ['wsgi.input'].read(length))
             
-        self.POST = self.parse_parameters(cgi.FieldStroage(fp=fp,
-                                                               environ=self.environ,
-                                                               keep_blank_values=True))
-    
+        self.POST = self.parse_parameters(cgi.FieldStorage(fp=fp,
+                                                           environ=self.environ,
+                                                           keep_blank_values=True))
+
     def parse_parameters(self, params):
         parsed = {}
-        
+
+        if hasattr(params, 'list'):
+            params = self.simplify_params(params.list)
+
+        self.parse_simple_parameters(params, parsed)
         self.parse_sequenced_parameters(params, parsed)
         self.parse_named_parameters(params, parsed)
-        self.parse_basic_parameters(params, parsed)
 
-        print parsed
-        
         return parsed
+
+
+    def simplify_params(self, params):
+        simplified = {}
+
+        for item in params:
+            if item.name not in simplified:
+                simplified[item.name] = []
+            simplified[item.name].append(item.value)
+
+        return simplified
                       
 
     def parse_sequenced_parameters(self, params, parsed={}):
-        parsed = {}
-        
-        sequenced = [name[:-2] for name in params if name[-2:] == '[]']
-        
-        for item in sequenced:
-            items = params.pop(item+'[]')
-            
-            '''Catch cases where a param is assigned multiple
-            times in a querystring, such as:
-            foo=bar&foo[]=baz&foo[]=false
-            '''
-            if item in params:
-                items.extend(params.pop(item))
-                
-            values = [self.update_param_type(value) for value in items]
+
+        sequenced = dict([(name[:-2], self.update_param_type(value)) for name, value in params.iteritems() if name[-2:] == '[]'])
+
+        for item, values in sequenced.iteritems():
             parsed[item] = dict(zip(range(0, len(values)), list(values)))
 
-        print parsed
-                
         return parsed
             
     def parse_named_parameters(self, params, parsed={}):
@@ -571,8 +641,8 @@ class Request(threading.local):
         named = [name for name in params if self._is_named.search(name)]
 
         for item in named:
-            matches = self._is_named.match(item)
-            name = matches[0]
+            matches = self._is_named.search(item)
+            name = matches.groups()[0]
             value = self.update_param_type(params[item])
             
             if name not in parsed:
@@ -583,15 +653,22 @@ class Request(threading.local):
             if type(parsed[name]) is not dict:
                 params[name] = {'_': params[name]}
 
-            params[key].update(self.build_dict(trie, value))
+            parsed[name].update(self.build_dict(trie, value))
 
         return parsed
     
-    def parse_basic_parameters(self, params, parsed={}):
+    def parse_simple_parameters(self, params, parsed={}):
 
-        for name, value in params.iteritems():
-            parsed[name] = self.update_param_type(value)
+        simple = set([name for name in params if '[' not in name])
+        indexed = set([name for name in params if '[' not in name and name+'[]' in params])
 
+        for name in indexed:
+            params[name+'[]'].extend(params[name])
+            del params[name]
+
+        for name in simple - indexed:
+            parsed[name] = self.update_param_type(params[name])
+        
         return parsed
 
     def build_dict(self, sequence, value):
@@ -617,7 +694,10 @@ class Request(threading.local):
         if self._is_float.match(param):
             return float(param)
         
-        if param != '' and param[0] is not '0' and param.isdigit():
+        if param != '' and len(param) > 1 and param[0] is not '0' and param.isdigit():
+            return int(param)
+        
+        if param != '' and param.isdigit():
             return int(param)
         
         if param == '':
@@ -669,42 +749,10 @@ class Request(threading.local):
         params = {}
         
         for item in self.param_order:
-            params.update(getattr(self, item))
+            params.update(getattr(self, item, {}))
             
         return params
         
-
-class PluginMount(type):
-    def __init__(cls, name, bases, attrs):
-        if not hasattr(cls, 'plugins'):
-            cls.plugins = []
-
-        else:
-            cls.plugins.append(cls)
-
-
-class Response(threading.local):
-    __metaclass__ = PluginMount
-
-    def __init__(self, start_response, request, **kwargs):
-        self.start_response = start_response
-        self.request = request
-        self.headers = HeaderContainer(content_type=self.contenttype)
-
-        for name, value in kwargs.iteritems():
-            setattr(self, name, value)
-
-    def __call__(self, response_body, code=200, additional_headers=None, **kwargs):
-        self.response_body = response_body
-        self.headers.update(additional_headers)
-
-        output = self.format(self.response_body, **kwargs)
-        self.start_response(code, self.headers.list())
-        return output
-
-    def format(self, *args, **kwargs):
-        raise NotImplementedError()
-
 
 class InvalidResponseTypeError(Exception):
     pass
@@ -718,46 +766,109 @@ class ResponseParameterError(Exception):
     pass
 
 
+class PluginMount(type):
+    def __init__(cls, name, bases, attrs):
+        if not hasattr(cls, 'plugins'):
+            cls.plugins = []
+
+        else:
+            cls.plugins.insert(0, cls)
+
+
+class Response(threading.local):
+    __metaclass__ = PluginMount
+
+    start_response = None
+    request = None
+    config = None
+    headers = None
+    responsebody = None
+    responsetype = None
+    params = {}
+
+    def __init__(self, start_response, request, config={}, **kwargs):
+        self.start_response = start_response
+        self.request = request
+        self.config = config
+        self.headers = HeaderContainer(content_type=self.contenttype)
+
+        try:
+            self.params.update(self.config[self.responsetype])
+        except KeyError:
+            pass
+        
+        self.params.update(kwargs)
+
+    def __call__(self, responsebody, code=200, additional_headers=None, **kwargs):
+        self.code = code
+        self.responsebody = responsebody
+        self.headers.update(additional_headers)
+
+        output = self.format(self.responsebody, **kwargs)
+        self.start_response(self.code, self.headers.list())
+        return output.split("\n")
+
+    def _set_code(self, code):
+        self._code = code
+
+    def _get_code(self):
+        if not self._code:
+            self._code = 200
+
+        if not self._code in HTTP_STATUS_CODES:
+            self._code = 500
+
+        return "%d %s" % (self._code, HTTP_STATUS_CODES[self._code])
+
+    def format(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    code = property(_get_code, _set_code)
+
+
 class ResponseFactory(object):
     @staticmethod
     def new(response_type=None, *args, **kwargs):
         if response_type:
             response_type = response_type.lower()
+
         for response_class in Response.plugins:
-            if hasattr(response_class, 'extension') and response_type == response_class.extension:
+            if hasattr(response_class, 'extensions') and response_type in tuple(response_class.extensions):
                 return response_class(*args, **kwargs)
 
-            if hasattr(response_class, 'extensions') and response_type in response_class.extensions:
-                return response_class(*args, **kwargs)
-
-        return TranslatedResponse(*args, **kwargs)
-        #raise InvalidResponseTypeError()
+        raise InvalidResponseTypeError()
 
 
 class TranslatedResponse(Response):
     '''Takes the response data and formats it first
     into XML then passes it through an XSL translator'''
 
+    responsetype = 'xsl'
     extensions = (None, '', 'htm', 'html')
     contenttype = ''
 
+    def __init__(self, start_response, request, config={}, **kwargs):
+        self.params['stylesheet_path'] = None
+        self.params['default_stylesheet'] = None
+        super(self.__class__, self).__init__(start_response, request, config=config, **kwargs)
+
     def format(self, data=None, **kwargs):
 
-        if not self.stylesheet_path:
+        if 'stylesheet_path' not in self.params or not self.params['stylesheet_path']:
             raise ResponseParameterError("the stylesheet path must be set")
 
-        if not os.path.isdir(os.path.abspath(self.stylesheet_path)):
+        if not os.path.isdir(os.path.abspath(self.params['stylesheet_path'])):
             raise ResponseParameterError("the stylesheet path is invalid")
 
-        self.stylesheet_path = os.path.abspath(self.stylesheet_path)
+        self.params['stylesheet_path'] = os.path.abspath(self.params['stylesheet_path'])
 
-        if not self.default_stylesheet:
+        if 'default_stylesheet' not in self.params or not self.params['default_stylesheet']:
             raise ResponseParameterError("the default stylesheet filename must be set")
 
-        if not os.path.isfile(os.path.join(self.stylesheet_path, self.default_stylesheet)):
+        if not os.path.isfile(os.path.join(self.params['stylesheet_path'], self.params['default_stylesheet'])):
             raise ResponseParameterError('the default stylesheet could not be found')
 
-        xslfile = os.path.join(self.stylesheet_path, self.default_stylesheet)
+        xslfile = os.path.join(self.params['stylesheet_path'], self.params['default_stylesheet'])
 
         xml = XMLEncoder(
             data,
@@ -770,11 +881,10 @@ class TranslatedResponse(Response):
      
         xsl = XSLTranslator(None,
                             xslfile,
-                            path=self.stylesheet_path,
+                            path=self.params['stylesheet_path'],
                             extensions=[XPathCallbacks],
-                            resolvers=[LocalFileResolver(self.stylesheet_path)]
+                            resolvers=[LocalFileResolver(self.params['stylesheet_path'])]
                             )
-        print xsl.contenttype
 
         self.headers.replace('Content-Type', xsl.contenttype)
 
@@ -805,7 +915,7 @@ class XMLResponse(Response):
     '''Takes the response data and converts it into
     a "generic" XML representation'''
 
-    extensions = ('xml')
+    extensions = ('xml',)
     contenttype = 'application/xml'
 
     def format(self, data=None):
@@ -824,7 +934,7 @@ class JSONResponse(Response):
     '''Takes the response data and converts it into
     a "generic" JSON representation'''
 
-    extensions = ('json')
+    extensions = ('json',)
     contenttype = 'application/json'
 
     def format(self, data=None):
@@ -1304,9 +1414,11 @@ class XPathCallbacks(object):
             params = request[method.upper()]
 
         return XML(params, doc_el='params').to_xml()
-    
+
+    """
     def config(self, _):
         return list(XML(dict((key, value) for key, value in fwrd.config.iteritems()), doc_el='config').to_xml())
+    """
     
     def session(self, _):
         return XML(dict(request.session), doc_el='session').to_xml()
@@ -1505,3 +1617,18 @@ class XPathCallbacks(object):
         if want_unicode:
             es = u""
         return es.join(list)
+
+
+
+'''Setup'''
+
+application = Application(
+    Config(),
+    Router(()),
+    )
+config = application.config
+router = application.router
+request = application.request
+response = application.response
+
+

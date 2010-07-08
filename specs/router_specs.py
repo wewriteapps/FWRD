@@ -8,13 +8,13 @@ FWRD_PATH = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1]
 if FWRD_PATH not in sys.path:
     sys.path.insert(1, FWRD_PATH)
 
-from FWRD import Route, RouteCompilationError, NotFound
+from FWRD import Router, RouteCompilationError, NotFound
 
 
 class RouterSpec(unittest.TestCase):
 
     def setUp(self):
-        self.router = Route()
+        self.router = Router()
 
     def it_should_compile_simple_routes(self):
         should_equal = (
@@ -143,7 +143,7 @@ class RouterSpec(unittest.TestCase):
 
         self._test_routes(routes)
 
-    def ensure_NotFound_is_returned_appropriately(self):
+    def it_should_return_NotFound_for_unmatched_routes(self):
         self.assertRaises(NotFound,
                           self.router.find,
                           'GET',
