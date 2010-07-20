@@ -18,15 +18,6 @@ if FWRD_PATH not in sys.path:
 
 from FWRD import *
 
-class DummyInputWrapper(object):
-    def __init__(self, value):
-        self.value = value
-
-    def read(self, *args):
-        return self.value
-
-    readline = readlines = __iter__ = read
-
 class WSGITestBase(unittest.TestCase):
 
     def setUp(self):

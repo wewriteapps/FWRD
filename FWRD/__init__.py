@@ -170,6 +170,8 @@ class Config(object):
         'host',
         'port',
         'format',
+        'output',
+        'app_path',
         'default_format',
         ]
 
@@ -178,6 +180,7 @@ class Config(object):
         self.port = 8000
         self.format = {}
         self.default_format = None
+        self.output = sys.stdout
 
         for key, value in kwargs.iteritems():
             if key.lower() in self.__slots__:
@@ -375,7 +378,7 @@ class Router(threading.local):
             if not isinstance(item, tuple):
                 break
             
-            item = dict(zip(['regex', 'func', 'methods'], item))
+            item = dict(zip(['route', 'func', 'methods'], item))
 
             self._define_methods(item)
             self._define_route(item, prefix=prefix)
@@ -391,10 +394,10 @@ class Router(threading.local):
 
     def _define_route(self, item, prefix=''):
         if type(item['func']) is tuple:
-            self._define_routes(item['func'], prefix=item['pattern'])
+            self._define_routes(item['func'], prefix=item['route'])
 
         else: # hasattr(item['match'], '__call__'):
-            for method in item['methods']:
+             for method in item['methods']:
                 pattern, regex = self._compile(item['route'], prefix=prefix)
                 self[method].append((item['route'], regex, pattern, item['func']))
             
@@ -443,9 +446,9 @@ class Router(threading.local):
             url = url[0:-1]
 
         for route, regex, test, func in self[method]:
-            match = test.match(url)
+            match = test.search(url)
             if match:
-                return func, match.groupdict(), route
+                return (func, match.groupdict(), route)
 
         raise NotFound(url=url, method=method)
 
@@ -752,6 +755,13 @@ class Request(threading.local):
             params.update(getattr(self, item, {}))
             
         return params
+
+    @property
+    def session(self):
+        try:
+            return self.SESSION
+        except:
+            return {}
         
 
 class InvalidResponseTypeError(Exception):
@@ -878,11 +888,14 @@ class TranslatedResponse(Response):
             route=self.request.route,
             method=self.request.method.lower()
             ).to_string()
-     
+
         xsl = XSLTranslator(None,
                             xslfile,
                             path=self.params['stylesheet_path'],
                             extensions=[XPathCallbacks],
+                            params={
+                                'request': self.request,
+                                }
                             resolvers=[LocalFileResolver(self.params['stylesheet_path'])]
                             )
 
@@ -955,8 +968,19 @@ class JSONResponse(Response):
             raise ResponseTranslationError(e)
 
 
+'''Setup'''
 
-'Utility JSON methods'
+application = Application(
+    Config(),
+    Router(()),
+    )
+config = application.config
+router = application.router
+request = application.request
+response = application.response
+
+
+'''Utility JSON methods'''
 
 class ComplexJSONEncoder(json.JSONEncoder):
 
@@ -991,7 +1015,10 @@ class ComplexJSONEncoder(json.JSONEncoder):
             return newobj
 
         return json.JSONEncoder.default(self, obj)
-         
+
+
+'''Utility XML/XSL classes'''
+
 
 class XMLEncoder(object):
 
@@ -1392,15 +1419,16 @@ class XSLTranslator(object):
 class XPathCallbacks(object):
 
     ns = ('fwrd', 'http://fwrd.org/fwrd.extensions')
-
+    
     def __init__(self, *args, **kwargs):
-        pass
+        for key, val in kwargs.iteritems():
+            setattr(self, key, val)
 
     def param(self, _, name, method=''):
         if method.upper() not in ('PATH','GET','POST','SESSION'):
-            params = request.params
+            params = self.request.params
         else:
-            params = request[method.upper()]
+            params = self.request[method.upper()]
 
         if name in params:
             return params[name]
@@ -1409,22 +1437,22 @@ class XPathCallbacks(object):
 
     def params(self, _, method=''):
         if method.upper() not in ('PATH','GET','POST','SESSION'):
-            params = request.params
+            params = self.request.params
         else:
-            params = request[method.upper()]
+            params = self.request[method.upper()]
 
-        return XML(params, doc_el='params').to_xml()
+        return XMLEncoder(params, doc_el='params').to_xml()
 
     """
     def config(self, _):
-        return list(XML(dict((key, value) for key, value in fwrd.config.iteritems()), doc_el='config').to_xml())
+        return list(XMLEncoder(dict((key, value) for key, value in fwrd.config.iteritems()), doc_el='config').to_xml())
     """
     
     def session(self, _):
-        return XML(dict(request.session), doc_el='session').to_xml()
+        return XMLEncoder(dict(self.request.session), doc_el='session').to_xml()
 
     def environ(self, _):
-        return XML(request.environ, doc_el='environ').to_xml()
+        return XMLEncoder(self.request.environ, doc_el='environ').to_xml()
 
     def title(self, _, items):
         if isinstance(items, basestring):
@@ -1619,16 +1647,5 @@ class XPathCallbacks(object):
         return es.join(list)
 
 
-
-'''Setup'''
-
-application = Application(
-    Config(),
-    Router(()),
-    )
-config = application.config
-router = application.router
-request = application.request
-response = application.response
 
 

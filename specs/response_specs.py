@@ -318,3 +318,39 @@ class TranslatedResponseSpec(ResponseBaseSpec):
         self.fail('Not Implemented')
     """
 
+class TranslatedWithVarsResponseSpec(ResponseBaseSpec):
+    """Translated (XSL, with vars/params) response spec"""
+
+    def setUp(self):
+        self.request = PlainObject()
+        self.request.path = ('/', '/', '')
+        self.request.route = '/'
+        self.request.method = 'GET'
+        self.request.session = {}
+        self.response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs',
+            default_stylesheet='translation_with_vars_spec.xsl'
+            )
+
+    def it_should_format_simple_objects(self):
+        tests = (
+            (None, '''<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Basic HTML Response</title></head><body/></html>'''),
+            ('test', '''<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Basic HTML Response</title></head><body>test</body></html>'''),
+            )
+
+        self._format_each_should_equal(tests, 'text/html')
+        
+
+    def it_should_format_complex_objects(self):
+        tests = (
+            ({"tuple": (1,2,3)}, '''<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><title>Basic HTML Response</title></head><body>
+  <ol><li>1</li><li>2</li><li>3</li></ol>
+</body></html>'''),
+            )
+
+        self._format_each_should_equal(tests, 'text/html')
+        

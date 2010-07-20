@@ -43,6 +43,7 @@ class RouterSpec(unittest.TestCase):
 
     def it_should_compile_conditional_parameters(self):
         should_equal = (
+            ('/[index]', r'^/(index)?$'),
             ('/[:foo]', r'^/((?P<foo>[^/]+))?$'),
             ('/:foo/:bar[/:baz]', r'^/(?P<foo>[^/]+)/(?P<bar>[^/]+)(/(?P<baz>[^/]+))?$'),
             )
@@ -110,17 +111,36 @@ class RouterSpec(unittest.TestCase):
     def it_should_find_simple_routes(self):
 
         routes = (
-            ('/', '/', 'GET', None),
-            ('/index', '/index', 'POST', None),
+            # route, search, match, method, func
+            ('/', '/', '/', 'GET', None),
+            ('/index', '/index', '/index', 'POST', None),
+            )
+
+        for route, search, match, method, func in routes:
+            self.router.add(route, func, methods=method)
+
+            _func, _params, _route = self.router.find(method, search)
+
+            self.assertEqual(_route, match)
+            self.assertEqual(_func, func)
+        
+    def it_should_find_a_simple_route_with_optional_params(self):
+
+        def a():pass
+        def b():pass
+
+        routes = (
+            ('/[index]', '/', 'GET', a),
+            ('/', '/', 'GET', b),
             )
 
         for route, test, method, func in routes:
             self.router.add(route, func, methods=method)
 
-            _func, _params, _route = self.router.find(method, test)
+        _func, _params, _route = self.router.find('GET', '/')
 
-            self.assertEqual(route, _route)
-            self.assertEqual(func, _func)
+        self.assertEqual(_route, '/[index]')
+        self.assertEqual(_func, a)
         
     def it_should_find_simple_parameters(self):
         routes = (
