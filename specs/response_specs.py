@@ -1,3 +1,4 @@
+from collections import MutableMapping as DictMixin
 import datetime
 import os
 import re
@@ -13,6 +14,19 @@ from FWRD import ResponseFactory, ResponseTranslationError, ResponseParameterErr
 
 class PlainObject(object):
     pass
+
+class ComplexObject(DictMixin):
+    def __init__(self): self.dict = dict()
+    def __delitem__(self, key): del self.dict[key]
+    def __getitem__(self, key): return self.get(key, KeyError)
+    def __iter__(self): return iter(self.dict)
+    def __len__(self): return len(self.dict)
+    def __setitem__(self, key, value): self.append(key, value)
+
+    def get(self, key, default=None):
+        if key not in self.dict:
+            return default
+        return self.dict[key]
 
 class ResponseBaseSpec(unittest.TestCase):
 
@@ -135,9 +149,18 @@ class JsonResponseSpec(ResponseBaseSpec):
             def __init__(self):
                 self.spam = (u'eggs', 'milk', {'bread': 2})
                 self.today = datetime.date(2002, 3, 11)
+                self.nothing = None
                 
         tests = (
-            (Foo(), '{"__name__":"Foo","bar":true,"baz":false,"spam":["eggs","milk",{"bread":2}],"today":"2002-03-11"}'),
+            (Foo(), '{"__name__":"Foo","bar":true,"baz":false,"nothing":null,"spam":["eggs","milk",{"bread":2}],"today":"2002-03-11"}'),
+            )
+
+        self._format_each_should_equal(tests, 'application/json')
+
+    def it_should_format_an_empty_result(self):
+
+        tests = (
+            (None, '{}'),
             )
 
         self._format_each_should_equal(tests, 'application/json')
@@ -322,17 +345,55 @@ class TranslatedWithVarsResponseSpec(ResponseBaseSpec):
     """Translated (XSL, with vars/params) response spec"""
 
     def setUp(self):
-        self.request = PlainObject()
+        self.request = ComplexObject()
         self.request.path = ('/', '/', '')
         self.request.route = '/'
         self.request.method = 'GET'
         self.request.session = {}
+        self.request.params = {}
         self.response = ResponseFactory.new(
             None,
             None,
             self.request,
             stylesheet_path='specs',
             default_stylesheet='translation_with_vars_spec.xsl'
+            )
+
+    def it_should_format_simple_objects(self):
+        tests = (
+            (None, '''<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Basic HTML Response</title></head><body/></html>'''),
+            ('test', '''<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Basic HTML Response</title></head><body>test</body></html>'''),
+            )
+
+        self._format_each_should_equal(tests, 'text/html')
+        
+
+    def it_should_format_complex_objects(self):
+        tests = (
+            ({"tuple": (1,2,3)}, '''<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><title>Basic HTML Response</title></head><body>
+  <ol><li>1</li><li>2</li><li>3</li></ol>
+</body></html>'''),
+            )
+
+        self._format_each_should_equal(tests, 'text/html')
+        
+class TranslatedWithImportsResponseSpec(ResponseBaseSpec):
+    """Translated (XSL with imported stylesheets) response spec"""
+
+    def setUp(self):
+        self.request = ComplexObject()
+        self.request.path = ('/', '/', '')
+        self.request.route = '/'
+        self.request.method = 'GET'
+        self.request.session = {}
+        self.request.params = {}
+        self.response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs',
+            default_stylesheet='translation_with_imports_spec.xsl'
             )
 
     def it_should_format_simple_objects(self):

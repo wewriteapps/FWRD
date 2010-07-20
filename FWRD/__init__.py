@@ -3,6 +3,7 @@ __version__ = '0.2.0-dev'
 __licence__ = 'MIT'
 
 import cgi
+import copy
 from lxml import etree
 import os
 import re
@@ -98,10 +99,6 @@ HTTP_STATUS_CODES = {
     }
 
 class HTTPError(Exception):
-    def __init__(self, *args, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
-        raise self
-    
     def __repr__(self):
         return '<HTTPException "%s">' % self.__str__()
     
@@ -121,9 +118,10 @@ class HTTPClientError(HTTPError):
 class NotFound(HTTPClientError):
     code = 404
     def __init__(self, url=None, method='GET'):
-        if url: self.url = url 
-        if method: self.method = method
-        raise self
+        if url:
+            self.url = url 
+        if method:
+            self.method = method
 
     def __repr__(self):
         if self.url:
@@ -144,7 +142,6 @@ class HTTPRedirection(HTTPError):
     def __init__(self, location):
         self.headers = HeaderContainer()
         self.headers['location']
-        raise self
 
 class NotModified(HTTPRedirection):
     code = 304
@@ -199,8 +196,8 @@ class Application(threading.local):
     def __init__(self, config, router, *args, **kwargs):
         self._config = config
         self._router = router
-        self._request = None
-        self._response = None
+        self._request = Request()
+        self._response = ResponseFactory.new('', None, self._request, self._config.format)
         self._middleware = []
 
     def __call__(self, environ, start_response):
@@ -217,14 +214,15 @@ class Application(threading.local):
         self._request.route = route
         self._request.PATH = params
 
+
+        headers = {}
+        code = 200
+        body = None
+
         try:
             try:
-                headers = {}
-                code = 200
-                body = None
-                
                 if func:
-                    body = method(**self._request.params)
+                    body = func(**self._request.params)
 
             except TypeError as e:
                 if 'unexpected keyword argument' in str(e):
@@ -270,10 +268,13 @@ class Application(threading.local):
     def register_middleware(self, middleware, opts={}):
         self._middleware.append((middleware, opts))
 
-    def run(self, server_func=None, host=None, port=None, **kwargs):
+    def run(self, server_func=None, host=None, port=None, debug=False, **kwargs):
 
-        if server_func is None:
+        if server_func is None and debug:
             server_func = self._serve_once
+
+        elif server_func is None:
+            server_func = self._serve_forever
 
         if not host:
             host = self._config.host
@@ -396,7 +397,7 @@ class Router(threading.local):
         if type(item['func']) is tuple:
             self._define_routes(item['func'], prefix=item['route'])
 
-        else: # hasattr(item['match'], '__call__'):
+        else: #hasattr(item['func'], '__call__'):
              for method in item['methods']:
                 pattern, regex = self._compile(item['route'], prefix=prefix)
                 self[method].append((item['route'], regex, pattern, item['func']))
@@ -538,49 +539,67 @@ class HeaderContainer(threading.local):
 class Request(threading.local):
     ''' Should a factory be used to create a request/response obj per "request"?'''
     __slots__ = [
+
+        # HTTP param containers
         'GET',
         'PATH',
         'POST',
         'PUT',
         'SESSION',
 
+        # general parameters
         'environ',
         'method',
         'path',
         'route',
         'param_order',
+
+        # properties
+        'params',
+        'session',
+        
         ]
 
     _get_ext = re.compile(r'^(.+)\.([a-z]+)$')
     _is_float = re.compile(r'\d+\.\d+')
     _is_named = re.compile(r'^(\w+)(\[.+\])$')
 
+    _default_env = {
+        'REQUEST_METHOD': 'GET',
+        'PATH_INFO': '',
+        'QUERY_STRING': '',
+        }
+
     def __init__(self, environ=None, **kwargs):
 
         for slot in [slot for slot in self.__slots__ if slot.isupper()]:
             setattr(self, slot, {})
-        
-        self.environ = environ
-        self.method = environ['REQUEST_METHOD'].upper()
-        self.route = None
-        self.path = (environ['PATH_INFO'], '', environ['PATH_INFO'])
-
-        if 'beaker.session' in self.environ:
-            self.SESSION = environ['beaker.session']
-
-        try:
-            self.path = tuple(
-                list(self._get_ext.search(environ['PATH_INFO']).groups())
-                +
-                [environ['PATH_INFO']]
-                )
-        except:
-            pass
 
         if 'param_order' in kwargs:
             self.param_order = tuple(param_order.split(','))
         else:
             self.param_order = ('SESSION','PATH','GET','POST')
+
+        if environ:
+            self.environ = environ
+        else:
+            self.environ = self._default_env
+            
+        self.method = self.environ['REQUEST_METHOD'].upper()
+        self.route = None
+        self.path = (self.environ['PATH_INFO'], '', self.environ['PATH_INFO'])
+
+        if 'beaker.session' in self.environ:
+            self.SESSION = self.environ['beaker.session']
+
+        try:
+            self.path = tuple(
+                list(self._get_ext.search(self.environ['PATH_INFO']).groups())
+                +
+                [self.environ['PATH_INFO']]
+                )
+        except:
+            pass
 
         if len(self.environ['QUERY_STRING']):
             self.parse_qs()
@@ -747,8 +766,7 @@ class Request(threading.local):
         
         return '%s[%s]' % (key, addition)
     
-    @property
-    def params(self):
+    def get_params(self):
         params = {}
         
         for item in self.param_order:
@@ -756,13 +774,17 @@ class Request(threading.local):
             
         return params
 
-    @property
-    def session(self):
+    def get_session(self):
         try:
             return self.SESSION
         except:
             return {}
-        
+
+    params = property(get_params)
+    session = property(get_session)
+    querystring = property(build_get_string)
+    poststring = property(build_post_string)
+
 
 class InvalidResponseTypeError(Exception):
     pass
@@ -813,7 +835,6 @@ class Response(threading.local):
         self.code = code
         self.responsebody = responsebody
         self.headers.update(additional_headers)
-
         output = self.format(self.responsebody, **kwargs)
         self.start_response(self.code, self.headers.list())
         return output.split("\n")
@@ -888,14 +909,14 @@ class TranslatedResponse(Response):
             route=self.request.route,
             method=self.request.method.lower()
             ).to_string()
-
+     
         xsl = XSLTranslator(None,
                             xslfile,
                             path=self.params['stylesheet_path'],
                             extensions=[XPathCallbacks],
                             params={
                                 'request': self.request,
-                                }
+                                },
                             resolvers=[LocalFileResolver(self.params['stylesheet_path'])]
                             )
 
@@ -912,11 +933,11 @@ class TextResponse(Response):
     contenttype = 'text/plain'
 
     def format(self, data=None):
-        if not data and not self.response_body:
+        if not data and not self.responsebody:
             return ''
 
-        if not data and self.response_body:
-            data = self.response_body
+        if not data and self.responsebody:
+            data = self.responsebody
 
         if isinstance(data, basestring):
             return str(data)
@@ -951,11 +972,11 @@ class JSONResponse(Response):
     contenttype = 'application/json'
 
     def format(self, data=None):
-        if data is None and not self.response_body:
-            return ''
+        if data is None and not self.responsebody:
+            return '{}'
 
-        if data is None and self.response_body:
-            data = self.response_body
+        if data is None and self.responsebody:
+            data = self.responsebody
 
         try:
             return json.dumps(
@@ -1419,16 +1440,15 @@ class XSLTranslator(object):
 class XPathCallbacks(object):
 
     ns = ('fwrd', 'http://fwrd.org/fwrd.extensions')
-    
-    def __init__(self, *args, **kwargs):
-        for key, val in kwargs.iteritems():
-            setattr(self, key, val)
+
+    def __init__(self, **kwargs):
+        self._params = kwargs
 
     def param(self, _, name, method=''):
         if method.upper() not in ('PATH','GET','POST','SESSION'):
-            params = self.request.params
+            params = self._params['request'].params
         else:
-            params = self.request[method.upper()]
+            params = self._params['request'][method.upper()]
 
         if name in params:
             return params[name]
@@ -1437,9 +1457,9 @@ class XPathCallbacks(object):
 
     def params(self, _, method=''):
         if method.upper() not in ('PATH','GET','POST','SESSION'):
-            params = self.request.params
+            params = self._params['request'].params
         else:
-            params = self.request[method.upper()]
+            params = self._params['request'][method.upper()]
 
         return XMLEncoder(params, doc_el='params').to_xml()
 
@@ -1449,10 +1469,10 @@ class XPathCallbacks(object):
     """
     
     def session(self, _):
-        return XMLEncoder(dict(self.request.session), doc_el='session').to_xml()
+        return XMLEncoder(dict(self._params['request'].session), doc_el='session').to_xml()
 
     def environ(self, _):
-        return XMLEncoder(self.request.environ, doc_el='environ').to_xml()
+        return XMLEncoder(self._params['request'].environ, doc_el='environ').to_xml()
 
     def title(self, _, items):
         if isinstance(items, basestring):

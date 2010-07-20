@@ -47,6 +47,12 @@ class WSGITestBase(unittest.TestCase):
 
         response = self.wsgiapp(env, start_response)
 
+        for part in response:
+            try:
+                result['body'] += part
+            except TypeError:
+                raise TypeError('WSGI app yielded unexpected response type: %s' % type(part))
+
         try:
             response.close()
         except AttributeError:

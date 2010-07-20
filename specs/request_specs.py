@@ -12,6 +12,7 @@ if FWRD_PATH not in sys.path:
 
 from FWRD import Request, ResponseParameterError
 
+
 class GetRequestSpec(WSGITestBase):
     """GET request spec"""
 
@@ -85,7 +86,30 @@ class GetRequestSpec(WSGITestBase):
                     self.assert_(name in self.app.request.params)
                     self.assertEqual(value, self.app.request.PATH[name])
                     self.assertEqual(value, self.app.request.params[name])
-                    
+
+    def it_should_format_responses_correctly(self):
+
+        def index():
+            return "index"
+
+        def foo():
+            return {
+                'a': True,
+                'b': False
+                }
+
+
+        routes = (
+            # route, extension, func, body
+            ('/', '.xml', index, '<?xml version=\'1.0\' encoding=\'UTF-8\'?><response route="/" request="/" method="get">index</response>'),
+            ('/foo', '.xml', foo, '<?xml version=\'1.0\' encoding=\'UTF-8\'?><response route="/foo" request="/foo" method="get">  <a nodetype="boolean">true</a>  <b nodetype="boolean">false</b></response>'),
+            )
+
+        for route, ext, func, body in routes:
+            self.app.router.add(route, func)
+
+        for route, ext, func, body in routes:
+            self.assertBody(body, route+ext)
 
 
 class PostRequestSpec(WSGITestBase):
