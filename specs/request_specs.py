@@ -101,8 +101,13 @@ class GetRequestSpec(WSGITestBase):
 
         routes = (
             # route, extension, func, body
-            ('/', '.xml', index, '<?xml version=\'1.0\' encoding=\'UTF-8\'?><response route="/" request="/" method="get">index</response>'),
-            ('/foo', '.xml', foo, '<?xml version=\'1.0\' encoding=\'UTF-8\'?><response route="/foo" request="/foo" method="get">  <a nodetype="boolean">true</a>  <b nodetype="boolean">false</b></response>'),
+            ('/', '.xml', index, '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get">index</response>'),
+            ('/foo', '.xml', foo, '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/foo" request="/foo" method="get">
+  <a nodetype="boolean">true</a>
+  <b nodetype="boolean">false</b>
+</response>
+'''),
             )
 
         for route, ext, func, body in routes:
@@ -113,6 +118,7 @@ class GetRequestSpec(WSGITestBase):
 
 
 class PostRequestSpec(WSGITestBase):
+    '''POST request spec'''
 
     def setUp(self):
         super(self.__class__, self).setUp()

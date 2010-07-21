@@ -20,6 +20,8 @@ from FWRD import *
 
 class WSGITestBase(unittest.TestCase):
 
+    _status = re.compile(r'(\d+) (\w+)')
+
     def setUp(self):
         self.config = config
         self.app = application
@@ -31,11 +33,11 @@ class WSGITestBase(unittest.TestCase):
             'code': 0,
             'status': 'empty',
             'headers': {},
-            'body': '',
+            'body': [],
             }
 
         def start_response(status, header):
-            result['code'], result['status'] = status.split()
+            result['code'], result['status'] = self._status.match(status).groups()
             for name, value in header:
                 name = name.title()
                 if name in result['headers']:
@@ -48,10 +50,11 @@ class WSGITestBase(unittest.TestCase):
         response = self.wsgiapp(env, start_response)
 
         for part in response:
-            try:
-                result['body'] += part
-            except TypeError:
+            if not isinstance(part, basestring):
                 raise TypeError('WSGI app yielded unexpected response type: %s' % type(part))
+            result['body'].append(part)
+
+        result['body'] = "\n".join(result['body'])
 
         try:
             response.close()

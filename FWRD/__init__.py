@@ -4,11 +4,14 @@ __licence__ = 'MIT'
 
 import cgi
 import copy
-from lxml import etree
+import functools
+import inspect
 import os
 import re
 import sys
 import threading
+import traceback
+from lxml import etree
 from uuid import UUID
 from xml.sax.saxutils import escape
 from wsgiref.headers import Headers as WSGIHeaderObject
@@ -36,6 +39,7 @@ try:
 except ImportError:
     from UserDict import DictMixin
 
+
 __all__ = [
     'application',
     'config',
@@ -53,6 +57,7 @@ __all__ = [
     'NotFound',      # 404
     'InternalError', # 500
     ]
+
 
 # http://www.faqs.org/rfcs/rfc2616.html
 HTTP_STATUS_CODES = {
@@ -99,17 +104,29 @@ HTTP_STATUS_CODES = {
     }
 
 class HTTPError(Exception):
+    code = 500
+    headers = {}
+    _message = 'an unexpected error has occurred'
+
+    def _get_message(self):
+        return self._message
+
+    def _set_message(self, message):
+        self._message = message
+
     def __repr__(self):
         return '<HTTPException "%s">' % self.__str__()
     
     def __str__(self):
-        return '%d: %s' (self.code, HTTP_STATUS_CODES[self.code])
+        return '%d %s: %s' % (self.code, HTTP_STATUS_CODES[self.code], self._message)
+
+    message = property(_get_message, _set_message)
 
 class HTTPServerError(HTTPError):
-    code = 500
+    pass
 
 class InternalError(HTTPServerError):
-    code = 500
+    pass
 
 
 class HTTPClientError(HTTPError):
@@ -123,9 +140,11 @@ class NotFound(HTTPClientError):
         if method:
             self.method = method
 
+        self.message = str(self)
+
     def __repr__(self):
         if self.url:
-            message = 'routing failed when searching for %s' % self.url
+            message = 'routing failed when searching for "%s"' % self.url
             if self.method:
                 message += ' using method %s' % self.method
             return message
@@ -136,12 +155,17 @@ class NotFound(HTTPClientError):
 class Forbidden(HTTPClientError):
     code = 403
 
+    def __init__(self, message, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        self.message = message
+
 
 class HTTPRedirection(HTTPError):
     code = 300
     def __init__(self, location):
         self.headers = HeaderContainer()
-        self.headers['location']
+        self.headers['location'] = location
+        self.message = ''
 
 class NotModified(HTTPRedirection):
     code = 304
@@ -196,8 +220,6 @@ class Application(threading.local):
     def __init__(self, config, router, *args, **kwargs):
         self._config = config
         self._router = router
-        self._request = Request()
-        self._response = ResponseFactory.new('', None, self._request, self._config.format)
         self._middleware = []
 
     def __call__(self, environ, start_response):
@@ -209,33 +231,52 @@ class Application(threading.local):
 
         return self.process_request()
 
-    def process_request(self):
-        func, params, route = self._router.find(self._request.method, self._request.path[0])
-        self._request.route = route
-        self._request.PATH = params
+    def _run_func(self):
+        def __none__():
+            pass
 
+        func, self._request.PATH, self._request.route = self._router.find(self._request.method, self._request.path[0])
+        
+        if not func:
+            func = __none__
+            func.__name__ = 'None'
+            
+        argspec = inspect.getargspec(func)
+        allows_kwargs = argspec.keywords != None
+        expected_args = set(argspec.args)
+        arg_defaults = argspec.defaults or tuple()
+        req_params = set(self._request.params.keys())
+        
+        # skip the "self" arg for class methods
+        if inspect.ismethod(func):
+            expected_args = set(argspec.args[1:])
+        
+        non_default_args = set(list(expected_args)[:len(expected_args)-len(arg_defaults)])
+        
+        # check that the func will accept args
+        if not allows_kwargs and not expected_args and req_params:
+            raise Forbidden('method "%s" takes no arguments' % func.__name__)
+        
+        # check that all non-default args have matching params
+        if non_default_args & req_params != non_default_args:
+            raise Forbidden('method "%s" requires (%s), missing (%s)' %
+                            (func.__name__, ', '.join(non_default_args), ', '.join(non_default_args ^ req_params)))
+        
+        # check that we don't have any extra params when we can't accept them (kwargs)
+        if not allows_kwargs and expected_args ^ req_params:
+            raise Forbidden('method "%s" received unexpected params: %s' % (func.__name__, ', '.join(expected_args ^ req_params)))
+        
+        return func(**self._request.params)
+            
+    def process_request(self):
 
         headers = {}
         code = 200
         body = None
 
         try:
-            try:
-                if func:
-                    body = func(**self._request.params)
-
-            except TypeError as e:
-                if 'unexpected keyword argument' in str(e):
-                    raise Forbidden('%s received unexpected parameter "%s"' % (func.__name__, str(e).split(' ')[-1]))
-
-                if 'takes no arguments' in str(e):
-                    raise Forbidden('method '+' '.join(str(e).split(' ')[1:]))
-
-                raise e
-
-            except Exception as e:
-                raise e
-
+            body = self._run_func()
+            
         except (KeyboardInterrupt, SystemExit) as e:
             print >>config.output, "Terminating."
 
@@ -244,26 +285,24 @@ class Application(threading.local):
             headers = e.headers
             body = None
 
-        except Conflict as e:
-            code = e.code
-            headers = e.headers
-            body = e
-
         except HTTPClientError as e:
             code = e.code
             headers = e.headers
-            body = e
+            body = self._format_error(code, e)
 
         except HTTPServerError as e:
             code = e.code
             headers = e.headers
-            body = e
+            body = self._format_error(code, e)
 
         except Exception as e:
+            traceback.print_exc(file=config.output)
+            code = 500
+            body = self._format_error(code, e)
             raise e
-
-        finally:
-            return self._response(body, code=code, additional_headers=headers)
+            
+        #finally:
+        return self._response(body, code=code, additional_headers=headers)
 
     def register_middleware(self, middleware, opts={}):
         self._middleware.append((middleware, opts))
@@ -303,27 +342,43 @@ class Application(threading.local):
         server = make_server(host, port, app)
         server.serve_forever()
 
-    @property
-    def config(self):
-        return self._config
+    def _format_error(self, code, error):
+        return {
+            '__error__': code,
+            '__message__': error.message,
+            '__http_method__': self._request.method.upper(),
+            '__request_path__': self._request.path[2],
+            }
 
-    @property
-    def router(self):
+    def _get_config(self):
+        return self._config
+        
+    def _get_router(self):
         return self._router
 
-    @property
-    def request(self):
-        return self._request
+    def _get_request(self):
+        try:
+            return self._request
+        except AttributeError:
+            pass
 
-    @property
-    def response(self):
-        return self._response
+    def _get_response(self):
+        try:
+            return self._response
+        except AttributeError:
+            pass
+
+
+    config    = property(_get_config)
+    router    = property(_get_router)
+    request   = property(_get_request)
+    response  = property(_get_response)
 
 
 class RouteCompilationError(Exception):
     pass
 
-class Router(threading.local):
+class Router(object):
 
     __slots__ = [
         'HEAD',
@@ -509,6 +564,10 @@ class HeaderContainer(threading.local):
     def items(self):
         return self.headers.items()
 
+    def iteritems(self):
+        for item in self.items():
+            yield item
+
     def has_key(self, name):
         return self.headers.has_key(name)
 
@@ -532,7 +591,7 @@ class HeaderContainer(threading.local):
         del self.headers[name]
 
     def update(self, items):
-        for key, value in items.iteritems():
+        for name, value in items.iteritems():
             self.add_header(name, value)
 
 
@@ -586,7 +645,7 @@ class Request(threading.local):
             self.environ = self._default_env
             
         self.method = self.environ['REQUEST_METHOD'].upper()
-        self.route = None
+        self.route = '__not_found__'
         self.path = (self.environ['PATH_INFO'], '', self.environ['PATH_INFO'])
 
         if 'beaker.session' in self.environ:
@@ -654,7 +713,7 @@ class Request(threading.local):
         sequenced = dict([(name[:-2], self.update_param_type(value)) for name, value in params.iteritems() if name[-2:] == '[]'])
 
         for item, values in sequenced.iteritems():
-            parsed[item] = dict(zip(range(0, len(values)), list(values)))
+            parsed[item] = dict(zip(xrange(0, len(values)), list(values)))
 
         return parsed
             
@@ -743,7 +802,7 @@ class Request(threading.local):
         parts = []
         
         if params and hasattr(params, 'items'):
-            for name, value in param.items():
+            for name, value in params.items():
                 
                 if hasattr(value, 'values'):
                     '''Encode a dict'''
@@ -752,7 +811,7 @@ class Request(threading.local):
 
                 elif hasattr(value, '__iter__'):
                     '''Encode an iterable (list, tuple, etc)'''
-                    parts.extend(self.build_qs(params=dict(zip(range(0, len(value)), value)),
+                    parts.extend(self.build_qs(params=dict(zip(xrange(0, len(value)), value)),
                                                key=self.build_qs_key(key, cgi.escape(name))))
                     
                 else:
@@ -989,16 +1048,39 @@ class JSONResponse(Response):
             raise ResponseTranslationError(e)
 
 
+class PropertyProxy(object):
+    __slots__ = [
+        '_property'
+        ]
+    def __init__(self, prop):
+        object.__setattr__(self, '_property', prop)
+
+    def __getattribute__(self, name):
+        return getattr(object.__getattribute__(self, '_property')(), name)
+
+    def __setattr__(self, name, value):
+        setattr(object.__getattribute__(self, '_property')(), name, value)
+
+    def __delattr__(self, name):
+        delattr(object.__getattribute__(self, '_property')(), name)
+
+    def __str__(self):
+        return str(object.__getattribute__(self, '_property')())
+
+    def __repr__(self):
+        return repr(object.__getattribute__(self, '_property')())
+
 '''Setup'''
 
 application = Application(
     Config(),
     Router(()),
     )
-config = application.config
-router = application.router
-request = application.request
-response = application.response
+
+config = PropertyProxy(application._get_config)
+router = PropertyProxy(application._get_router)
+request = PropertyProxy(application._get_request)
+response = PropertyProxy(application._get_response)
 
 
 '''Utility JSON methods'''
@@ -1028,7 +1110,7 @@ class ComplexJSONEncoder(json.JSONEncoder):
                 (name, value)
                 for name, value
                 in obj.__dict__.iteritems()
-                if ord(name[0].lower()) in range(97,123)
+                if ord(name[0].lower()) in xrange(97,123)
                 ))
 
             newobj['__name__'] = obj.__class__.__name__
@@ -1051,12 +1133,9 @@ class XMLEncoder(object):
            '__error__' in data and \
            '__message__' in data:
             doc_el='error'
-            
-        self.data = data
-        self.document = etree.Element(doc_el,
-                                      **params
-                                      )
 
+        self.data = data
+        self.document = etree.Element(doc_el, **params)
         self.encoding = encoding
 
     
@@ -1254,7 +1333,7 @@ class LocalFileResolver(etree.Resolver):
         
     def resolve(self, url, id, context):
         if url.startswith('local:'):
-            return self.resolve_filename(self.path + url.replace('local:', ''))
+            return self.resolve_filename(self.path, url.replace('local:', ''))
 
 
 class XSLTranslator(object):
@@ -1631,12 +1710,12 @@ class XPathCallbacks(object):
 
     def range(self, _, start, stop, step=None):
         if step:
-            return u','.join([unicode(i) for i in range(int(start), int(stop), int(step))])
+            return u','.join([unicode(i) for i in xrange(int(start), int(stop), int(step))])
         
-        return u','.join([unicode(i) for i in range(int(start), int(stop))])
+        return u','.join([unicode(i) for i in xrange(int(start), int(stop))])
 
     def range_as_nodes(self, _, start, stop, step=None):
-        return etree.XML([u'<item>%d</item>' % i for i in range(int(start), int(stop))])
+        return etree.XML([u'<item>%d</item>' % i for i in xrange(int(start), int(stop))])
 
 
     def __unescape(self, s):
