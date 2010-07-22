@@ -142,11 +142,37 @@ class JsonResponseSpec(ResponseBaseSpec):
 
         self._format_each_should_equal(tests, 'application/json')
 
-    def it_should_format_complex_objects(self):
+    def it_should_format_standard_objects(self):
         class Foo(object):
             bar = True
             baz = False
+            _hidden = "yes"
             def __init__(self):
+                self.bar = False
+                self.spam = (u'eggs', 'milk', {'bread': 2})
+                self.today = datetime.date(2002, 3, 11)
+                self.nothing = None
+                
+        tests = (
+            (Foo(), '{"__name__":"Foo","bar":false,"nothing":null,"spam":["eggs","milk",{"bread":2}],"today":"2002-03-11"}'),
+            )
+
+        self._format_each_should_equal(tests, 'application/json')
+
+    def it_should_format_lite_objects(self):
+        class Foo(object):
+            __slots__ = [
+                'bar',
+                'baz',
+                'spam',
+                'today',
+                'nothing',
+                '_hidden',
+                ]
+            def __init__(self):
+                self.bar = True
+                self.baz = False
+                self._hidden = "yes"
                 self.spam = (u'eggs', 'milk', {'bread': 2})
                 self.today = datetime.date(2002, 3, 11)
                 self.nothing = None

@@ -101,11 +101,19 @@ class GetRequestSpec(WSGITestBase):
 
         routes = (
             # route, extension, func, body
-            ('/', '.xml', index, '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get">index</response>'),
+            ('/', '.xml', index, '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/" request="/" method="get">
+  <content>index</content>
+  <errors/>
+</response>
+'''),
             ('/foo', '.xml', foo, '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/foo" request="/foo" method="get">
-  <a nodetype="boolean">true</a>
-  <b nodetype="boolean">false</b>
+  <content>
+    <a nodetype="boolean">true</a>
+    <b nodetype="boolean">false</b>
+  </content>
+  <errors/>
 </response>
 '''),
             )

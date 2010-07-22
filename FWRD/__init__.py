@@ -3,6 +3,7 @@ __version__ = '0.2.0-dev'
 __licence__ = 'MIT'
 
 import cgi
+import collections
 import copy
 import functools
 import inspect
@@ -208,7 +209,7 @@ class Config(object):
                 setattr(self, key.lower(), value)
 
 
-class Application(threading.local):
+class Application(object):
     __slots__ = [
         '_config',
         '_router',
@@ -275,7 +276,13 @@ class Application(threading.local):
         body = None
 
         try:
-            body = self._run_func()
+            content = self._run_func()
+
+            if content:
+                body = {
+                    'content': self._run_func(),
+                    'errors': self._response.errors,
+                    }
             
         except (KeyboardInterrupt, SystemExit) as e:
             print >>config.output, "Terminating."
@@ -518,7 +525,7 @@ class Router(object):
     urls = property(_get_all, __init__)
 
 
-class HeaderContainer(threading.local):
+class HeaderContainer(object):
     __slots__ = [
         'headers'
         ]
@@ -595,7 +602,7 @@ class HeaderContainer(threading.local):
             self.add_header(name, value)
 
 
-class Request(threading.local):
+class Request(object):
     ''' Should a factory be used to create a request/response obj per "request"?'''
     __slots__ = [
 
@@ -866,7 +873,7 @@ class PluginMount(type):
             cls.plugins.insert(0, cls)
 
 
-class Response(threading.local):
+class Response(object):
     __metaclass__ = PluginMount
 
     start_response = None
@@ -876,6 +883,7 @@ class Response(threading.local):
     responsebody = None
     responsetype = None
     params = {}
+    errors = {}
 
     def __init__(self, start_response, request, config={}, **kwargs):
         self.start_response = start_response
@@ -909,6 +917,9 @@ class Response(threading.local):
             self._code = 500
 
         return "%d %s" % (self._code, HTTP_STATUS_CODES[self._code])
+
+    def set_error(self, name, value):
+        self.errors[name] = value
 
     def format(self, *args, **kwargs):
         raise NotImplementedError()
@@ -1037,13 +1048,15 @@ class JSONResponse(Response):
         if data is None and self.responsebody:
             data = self.responsebody
 
+        return json.dumps(
+            data,
+            sort_keys=True,
+            separators=(',',':'),
+            cls=ComplexJSONEncoder
+            )
+
         try:
-            return json.dumps(
-                data,
-                sort_keys=True,
-                separators=(',',':'),
-                cls=ComplexJSONEncoder
-                )
+            pass
         except Exception as e:
             raise ResponseTranslationError(e)
 
@@ -1094,32 +1107,57 @@ class ComplexJSONEncoder(json.JSONEncoder):
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
 
-        if isinstance(obj, object):
-            newobj = {}
+        if isinstance(obj, object) and hasattr(obj, '__dict__'):
+            return self._encode_std_object(obj)
 
-            # class attributes
-            newobj.update(dict(
-                (name, value)
-                for name, value
-                in dict(obj.__class__.__dict__).iteritems()
-                if name[0] != '_'
-                ))
+        elif isinstance(obj, object) and hasattr(obj, '__slots__'):
+            return self._encode_lite_object(obj)
 
-            # object attributes
-            newobj.update(dict(
-                (name, value)
-                for name, value
-                in obj.__dict__.iteritems()
-                if ord(name[0].lower()) in xrange(97,123)
-                ))
-
-            newobj['__name__'] = obj.__class__.__name__
-
-            return newobj
+        else:
+            return
 
         return json.JSONEncoder.default(self, obj)
 
+    def _encode_std_object(self, obj):
+        newobj = {}
+        
+        '''
+        # class attributes
+        # causing problems with thrift class attrs (thrift_spec, instancemethods, etc)
+        newobj.update(dict(
+            (name, value)
+            for name, value
+            in dict(obj.__class__.__dict__).iteritems()
+            if name[0] != '_'
+            ))
+        '''
+        
+        # object attributes
+        newobj.update(dict(
+            (name, value)
+            for name, value
+            in obj.__dict__.iteritems()
+            if ord(name[0].lower()) in xrange(97,123)
+            ))
+        
+        newobj['__name__'] = obj.__class__.__name__
+        
+        return newobj
+    
+    def _encode_lite_object(self, obj):
+        newobj = {}
 
+        for slot in obj.__slots__:
+            if ord(slot[0].lower()) in xrange(97,123):
+                try:
+                    newobj[slot] = getattr(obj, slot)
+                except AttributeError:
+                    newobj[slot] = None
+                    
+        newobj['__name__'] = obj.__class__.__name__
+        
+        return newobj
+    
 '''Utility XML/XSL classes'''
 
 
