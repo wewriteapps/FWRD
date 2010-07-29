@@ -275,9 +275,9 @@ class Application(object):
         code = 200
         body = None
 
-        try:
-            content = self._run_func()
+        content = self._run_func()
 
+        try:
             if content:
                 body = {
                     'content': self._run_func(),
@@ -644,7 +644,7 @@ class Request(object):
         if 'param_order' in kwargs:
             self.param_order = tuple(param_order.split(','))
         else:
-            self.param_order = ('SESSION','PATH','GET','POST')
+            self.param_order = ('PATH','GET','POST')
 
         if environ:
             self.environ = environ
