@@ -72,6 +72,10 @@ class GetRequestSpec(WSGITestBase):
                     'dept': 'it',
                     'name': 'support'
                     },
+                '/company/hr/grievance%20councelling': {
+                    'dept': 'hr',
+                    'name': 'grievance councelling'
+                    }
                 }
             }
 
