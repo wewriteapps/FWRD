@@ -279,13 +279,10 @@ class Application(threading.local):
         body = None
 
         try:
-            content = self._run_func()
-
-            if content:
-                body = {
-                    'content': self._run_func(),
-                    'errors': self._response.errors,
-                    }
+            body = {
+                'content': self._run_func(),
+                'errors': self._response.errors,
+                }
             
         except (KeyboardInterrupt, SystemExit) as e:
             print >>config.output, "Terminating."
@@ -832,17 +829,17 @@ class Request(threading.local):
         if type(param) is list:
             return list(self.update_param_type(item) for item in param)
         
+        if param.strip() == '':
+            return None
+        
         if self._is_float.match(param):
             return float(param)
         
-        if param != '' and len(param) > 1 and param[0] is not '0' and param.isdigit():
+        if len(param) > 1 and param[0] is not '0' and param.isdigit():
             return int(param)
-        
-        if param != '' and param.isdigit():
+
+        if len(param) == 1 and param.isdigit():
             return int(param)
-        
-        if param == '':
-            return None
         
         if param.lower() == 'true':
             return True

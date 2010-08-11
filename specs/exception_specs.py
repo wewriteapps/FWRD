@@ -116,5 +116,9 @@ class MethodArgsErrorSpec(WSGITestBase):
         self.app.router.add('/additional_params', bar)
         self.assertStatus(200, '/additional_params.xml', qs='foo=1&bar=2')
         self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
-<response route="/additional_params" request="/additional_params" method="get"/>''', '/additional_params.xml', qs='foo=1&bar=2')
+<response route="/additional_params" request="/additional_params" method="get">
+  <content/>
+  <errors/>
+</response>
+''', '/additional_params.xml', qs='foo=1&bar=2')
 

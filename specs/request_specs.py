@@ -34,12 +34,13 @@ class GetRequestSpec(WSGITestBase):
 
     def it_should_parse_GET_params_correctly(self):
         self.app.router.add('/', None)
-        self.make_request('/', qs='a=1&b[]=2&b[]=3&baz=true&b=4&b[foo]=bar')
+        self.make_request('/', qs='a=1&b[]=2&b[]=3&baz=true&b=4&b[foo]=bar&tel=01234567890')
 
         params = {
             'a': 1,
             'b': {0: 2, 1: 3, 2: 4, 'foo': 'bar'},
-            'baz': True
+            'baz': True,
+            'tel': '01234567890'
             }
 
         for key, value in params.iteritems():
@@ -141,12 +142,13 @@ class PostRequestSpec(WSGITestBase):
 
     def it_should_parse_post_params_correctly(self):
         self.app.router.add('/', None, methods='GET,POST')
-        self.make_request('/', method='POST', qs='a=1&b[]=2&b[]=3&baz=true&b=4&b[foo]=bar')
+        self.make_request('/', method='POST', qs='a=1&b[]=2&b[]=3&baz=true&b=4&b[foo]=bar&tel=01234567890')
 
         params = {
             'a': 1,
             'b': {0: 2, 1: 3, 2: 4, 'foo': 'bar'},
-            'baz': True
+            'baz': True,
+            'tel': '01234567890'
             }
 
         for key, value in params.iteritems():
