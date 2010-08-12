@@ -7,11 +7,14 @@ import collections
 import copy
 import functools
 import inspect
+import iso8601
 import os
 import re
 import sys
 import threading
 import traceback
+import xml.parsers.expat
+from datetime import datetime
 from lxml import etree
 from urllib import unquote as urlunquote
 from uuid import UUID
@@ -938,20 +941,28 @@ class Response(threading.local):
     headers = None
     responsebody = None
     responsetype = None
-    params = {}
-    errors = {}
+    params = None
+    errors = None
 
     def __init__(self, start_response, request, config={}, **kwargs):
         self.start_response = start_response
         self.request = request
         self.config = config
-        self.headers = HeaderContainer(content_type=self.contenttype)
 
+        self.headers = HeaderContainer(content_type=self.contenttype)
+        self.params = {}
+        self.errors = {}
+
+        if kwargs:
+            self._update_params(**kwargs)
+
+    def _update_params(self, **kwargs):
+        
         try:
             self.params.update(self.config[self.responsetype])
         except KeyError:
             pass
-        
+
         self.params.update(kwargs)
 
     def __call__(self, responsebody, code=200, additional_headers=None, **kwargs):
@@ -983,7 +994,7 @@ class Response(threading.local):
     code = property(_get_code, _set_code)
 
 
-class ResponseFactory(object):
+class ResponseFactory(threading.local):
     @staticmethod
     def new(response_type=None, *args, **kwargs):
         if response_type:
@@ -1005,9 +1016,10 @@ class TranslatedResponse(Response):
     contenttype = ''
 
     def __init__(self, start_response, request, config={}, **kwargs):
+        super(self.__class__, self).__init__(start_response, request, config=config)
         self.params['stylesheet_path'] = None
         self.params['default_stylesheet'] = None
-        super(self.__class__, self).__init__(start_response, request, config=config, **kwargs)
+        self._update_params(**kwargs)
 
     def format(self, data=None, **kwargs):
 
@@ -1749,29 +1761,26 @@ class XPathCallbacks(object):
                 
 
     def dateformat(self, _, elements, format):
+        print elements
         try:
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
-                newitem.text = self.__unescape(unicode(iso8601.parse_date(item.text).strftime(format)))
+                newitem.text = self.__unescape(unicode(iso8601.parse_date(newitem.text).strftime(format)))
                 returned.append(newitem)
             return returned
 
         except:
+            raise
             return elements
 
-    def timeformat(self, _, elements, outformat, informat=None):
+    def timeformat(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
         try:
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
-
-                if informat is not None:
-                    value = strptime(newitem.text, informat)
-                else:
-                    value = strptime(newitem.text)
-
-                newitem.text = self.__unescape(unicode(strftime(outformat, value)))
+                value = datetime.strptime(newitem.text, informat)
+                newitem.text = self.__unescape(unicode(value.strftime(outformat)))
                 returned.append(newitem)
             return returned
 
