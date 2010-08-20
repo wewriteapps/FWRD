@@ -160,7 +160,7 @@ class NotFound(HTTPClientError):
 class Forbidden(HTTPClientError):
     code = 403
 
-    def __init__(self, message, *args, **kwargs):
+    def __init__(self, message="Forbidden", *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
         self.message = message
 
