@@ -452,7 +452,7 @@ class Router(object):
             item['methods'] = ['GET']
             return
 
-        item['methods'] = [method.upper() for method in re.split('\W+', item['methods']) if method.upper() in self.__slots__]
+        item['methods'] = (method.upper() for method in re.split('\W+', item['methods']) if method.upper() in self.__slots__)
 
 
     def _define_route(self, item, prefix=''):
@@ -638,7 +638,7 @@ class Request(object):
 
     def __init__(self, environ=None, **kwargs):
 
-        for slot in [slot for slot in self.__slots__ if slot.isupper()]:
+        for slot in (slot for slot in self.__slots__ if slot.isupper()):
             setattr(self, slot, {})
 
         if 'param_order' in kwargs:
@@ -717,7 +717,7 @@ class Request(object):
 
     def parse_sequenced_parameters(self, params, parsed={}):
 
-        sequenced = dict([(name[:-2], self.update_param_type(value)) for name, value in params.iteritems() if name[-2:] == '[]'])
+        sequenced = dict(((name[:-2], self.update_param_type(value)) for name, value in params.iteritems() if name[-2:] == '[]'))
 
         for item, values in sequenced.iteritems():
             parsed[item] = dict(zip(xrange(0, len(values)), list(values)))
@@ -726,7 +726,7 @@ class Request(object):
             
     def parse_named_parameters(self, params, parsed={}):
 
-        named = [name for name in params if self._is_named.search(name)]
+        named = (name for name in params if self._is_named.search(name))
 
         for item in named:
             matches = self._is_named.search(item)
@@ -1275,10 +1275,10 @@ class XMLEncoder(object):
             children = []
             
             if hasattr(data, '__dict__'):
-                children = [(n, v) for n, v in data.__dict__.iteritems() if n[0] is not '_' and not hasattr(n, '__call__')]
+                children = ((n, v) for n, v in data.__dict__.iteritems() if n[0] is not '_' and not hasattr(n, '__call__'))
                 
             if hasattr(data, '__slots__'):
-                children = [(n, getattr(data, n)) for n in data.__slots__ if n[0] is not '_' and not hasattr(n, '__call__')]
+                children = ((n, getattr(data, n)) for n in data.__slots__ if n[0] is not '_' and not hasattr(n, '__call__'))
 
             sub = etree.SubElement(node, unicode(data.__class__.__name__), nodetype="container")
 
@@ -1335,7 +1335,7 @@ class XMLEncoder(object):
 
     
     def __dict_to_attrs(self, d):
-        return [str(name) + '="' + str(value) + '"' for name, value in d.iteritems()]
+        return (str(name) + '="' + str(value) + '"' for name, value in d.iteritems())
 
 
     def escape(self, data):
@@ -1424,7 +1424,7 @@ class XSLTranslator(object):
             ns = etree.FunctionNamespace(module.ns[1])
             ns.prefix = module.ns[0]
 
-            for key in [n for n in dir(module) if n[0] != '_' and hasattr(getattr(module, n), '__call__')]:
+            for key in (n for n in dir(module) if n[0] != '_' and hasattr(getattr(module, n), '__call__')):
                 ns[re.sub('_', '-', key)] = getattr(module, key)
 
      
@@ -1748,12 +1748,12 @@ class XPathCallbacks(object):
 
     def range(self, _, start, stop, step=None):
         if step:
-            return u','.join([unicode(i) for i in xrange(int(start), int(stop), int(step))])
+            return u','.join((unicode(i) for i in xrange(int(start), int(stop), int(step))))
         
-        return u','.join([unicode(i) for i in xrange(int(start), int(stop))])
+        return u','.join((unicode(i) for i in xrange(int(start), int(stop))))
 
     def range_as_nodes(self, _, start, stop, step=None):
-        return etree.XML([u'<item>%d</item>' % i for i in xrange(int(start), int(stop))])
+        return etree.XML((u'<item>%d</item>' % i for i in xrange(int(start), int(stop))))
 
 
     def __unescape(self, s):
