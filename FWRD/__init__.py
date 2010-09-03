@@ -237,7 +237,7 @@ class Application(threading.local):
         return self.process_request()
 
     def _run_func(self):
-        def __none__():
+        def __none__(*args, **kwargs):
             pass
 
         func, path_params, self._request.route = self._router.find(self._request.method, self._request.path[0])
