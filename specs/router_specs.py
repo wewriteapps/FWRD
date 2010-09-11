@@ -37,6 +37,7 @@ class RouterSpec(unittest.TestCase):
         should_equal = (
             ('/:foo', r'^/(?P<foo>[^/]+)$'),
             ('/:foo/:bar/:baz', r'^/(?P<foo>[^/]+)/(?P<bar>[^/]+)/(?P<baz>[^/]+)$'),
+            ('/:foo/:bar/:baz_boz', r'^/(?P<foo>[^/]+)/(?P<bar>[^/]+)/(?P<baz_boz>[^/]+)$'),
             )
 
         self._patterns_should_equal(should_equal)
@@ -46,6 +47,7 @@ class RouterSpec(unittest.TestCase):
             ('/[index]', r'^/(index)?$'),
             ('/[:foo]', r'^/((?P<foo>[^/]+))?$'),
             ('/:foo/:bar[/:baz]', r'^/(?P<foo>[^/]+)/(?P<bar>[^/]+)(/(?P<baz>[^/]+))?$'),
+            ('/:foo/:bar_ber[/:_baz]', r'^/(?P<foo>[^/]+)/(?P<bar_ber>[^/]+)(/(?P<_baz>[^/]+))?$'),
             )
 
         should_raise = (

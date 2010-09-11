@@ -7,15 +7,19 @@ import collections
 import copy
 import functools
 import inspect
+import iso8601
 import os
 import re
 import sys
 import threading
 import traceback
+import xml.parsers.expat
+from datetime import datetime
 from lxml import etree
+from urllib import unquote as urlunquote
 from uuid import UUID
-from xml.sax.saxutils import escape
 from wsgiref.headers import Headers as WSGIHeaderObject
+from xml.sax.saxutils import escape
 
 try:
     from cStringIO import StringIO
@@ -156,7 +160,7 @@ class NotFound(HTTPClientError):
 class Forbidden(HTTPClientError):
     code = 403
 
-    def __init__(self, message, *args, **kwargs):
+    def __init__(self, message="Forbidden", *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
         self.message = message
 
@@ -187,7 +191,7 @@ class SeeOther(HTTPRedirection):
     code = 303
 
 
-class Config(object):
+class Config(threading.local):
     __slots__ = [
         'host',
         'port',
@@ -209,7 +213,7 @@ class Config(object):
                 setattr(self, key.lower(), value)
 
 
-class Application(object):
+class Application(threading.local):
     __slots__ = [
         '_config',
         '_router',
@@ -233,10 +237,12 @@ class Application(object):
         return self.process_request()
 
     def _run_func(self):
-        def __none__():
+        def __none__(*args, **kwargs):
             pass
 
-        func, self._request.PATH, self._request.route = self._router.find(self._request.method, self._request.path[0])
+        func, path_params, self._request.route = self._router.find(self._request.method, self._request.path[0])
+
+        self._request.set_path_params(path_params)
         
         if not func:
             func = __none__
@@ -276,13 +282,10 @@ class Application(object):
         body = None
 
         try:
-            content = self._run_func()
-
-            if content:
-                body = {
-                    'content': self._run_func(),
-                    'errors': self._response.errors,
-                    }
+            body = {
+                'content': self._run_func(),
+                'errors': self._response.errors,
+                }
             
         except (KeyboardInterrupt, SystemExit) as e:
             print >>config.output, "Terminating."
@@ -393,18 +396,20 @@ class Router(object):
         'POST',
         'PUT',
         'DELETE',
+        '_debug',
         ]
 
     _compile_patterns = (
         (r'\[', r'('),
         (r'\]', r')?'),
+        (r'(?<!\\):(\w+)', r'(?P<\1>[^/]+)'),
         (r'(?<!\\)_', r'[\s_]'),
         (r'\\_', r'_'),
         (r'\s+', r'\s+'),
         (r'(%)', r'\w'),
         (r'(\*)', r'\w+'),
         (r'([$!])', r'\\\1'),
-        (r'(?<!\\):(\w+)', r'(?P<\1>[^/]+)'),
+        (r'(\(\?P\<\w*)\[\\s_\](\w*\>)', r'\1_\2'), # fix parameters which contain underscores
         )
 
     _route_tests = (
@@ -420,10 +425,13 @@ class Router(object):
 
     def __init__(self, urls=None):
         for method in self.__slots__:
-            self[method] = []
+            if method[0] != '_':
+                self[method] = []
+
+        self.debug = False
 
         if urls:
-            self._define_routes(urls)
+            self._set_urls(urls)
 
 
     def __call__(self, *args, **kwargs):
@@ -497,11 +505,33 @@ class Router(object):
             raise RouteCompilationError(e.message+' while testing: %s' % regex)
 
 
-    def _get_all(self):
+    def _get_urls(self):
         return dict( (item, getattr(self, item)) for item in self.__slots__ )
 
 
+    def _set_urls(self, urls=None):
+        if urls:
+            self._define_routes(urls)
+
+
+    def _get_debug_mode(self):
+        try:
+            return self._debug
+        except AttributeError:
+            return False
+
+
+    def _set_debug_mode(self, debugmode):
+        if debugmode is not True:
+            self._debug = False
+        else:
+            self._debug = True
+
+
     def find(self, method, url):
+
+        if self.debug:
+            return self.find_with_output(method, url)
 
         method = method.upper().strip()
 
@@ -516,16 +546,36 @@ class Router(object):
         raise NotFound(url=url, method=method)
 
 
+    def find_with_output(self, method, url):
+
+        method = method.upper().strip()
+
+        if len(url) > 1 and url[-1] == '/':
+            url = url[0:-1]
+
+        print "Finding url: %s" % url
+
+        for route, regex, test, func in self[method]:
+            print "  Testing %s" % regex
+            match = test.search(url)
+            if match:
+                print "  Match found: %s > %s" % (route, regex)
+                return (func, match.groupdict(), route)
+
+        raise NotFound(url=url, method=method)
+
+
     def add(self, route, func, methods='GET', prefix=''):
         item = {'route':route, 'func':func, 'methods':methods}
         self._define_methods(item)
         self._define_route(item, prefix)
 
     # Properties
-    urls = property(_get_all, __init__)
+    urls = property(_get_urls, _set_urls)
+    debug = property(_get_debug_mode, _set_debug_mode)
 
 
-class HeaderContainer(object):
+class HeaderContainer(threading.local):
     __slots__ = [
         'headers'
         ]
@@ -602,7 +652,7 @@ class HeaderContainer(object):
             self.add_header(name, value)
 
 
-class Request(object):
+class Request(threading.local):
     ''' Should a factory be used to create a request/response obj per "request"?'''
     __slots__ = [
 
@@ -644,7 +694,7 @@ class Request(object):
         if 'param_order' in kwargs:
             self.param_order = tuple(param_order.split(','))
         else:
-            self.param_order = ('SESSION','PATH','GET','POST')
+            self.param_order = ('PATH','GET','POST')
 
         if environ:
             self.environ = environ
@@ -675,6 +725,9 @@ class Request(object):
 
     def __getitem__(self, name):
         return getattr(self, name, None)
+
+    def set_path_params(self, params):
+        self.PATH = dict((k, self.unquote(v)) for k, v in params.iteritems())
 
     def parse_qs(self):
         self.GET = self.parse_parameters(parse_qs(self.environ['QUERY_STRING']))
@@ -779,17 +832,17 @@ class Request(object):
         if type(param) is list:
             return list(self.update_param_type(item) for item in param)
         
+        if param.strip() == '':
+            return None
+        
         if self._is_float.match(param):
             return float(param)
         
-        if param != '' and len(param) > 1 and param[0] is not '0' and param.isdigit():
+        if len(param) > 1 and param[0] is not '0' and param.isdigit():
             return int(param)
-        
-        if param != '' and param.isdigit():
+
+        if len(param) == 1 and param.isdigit():
             return int(param)
-        
-        if param == '':
-            return None
         
         if param.lower() == 'true':
             return True
@@ -831,6 +884,11 @@ class Request(object):
             return addition
         
         return '%s[%s]' % (key, addition)
+
+    def unquote(self, value):
+        if isinstance(value, basestring):
+            return urlunquote(value)
+        return value
     
     def get_params(self):
         params = {}
@@ -850,6 +908,7 @@ class Request(object):
     session = property(get_session)
     querystring = property(build_get_string)
     poststring = property(build_post_string)
+
 
 
 class InvalidResponseTypeError(Exception):
@@ -873,7 +932,7 @@ class PluginMount(type):
             cls.plugins.insert(0, cls)
 
 
-class Response(object):
+class Response(threading.local):
     __metaclass__ = PluginMount
 
     start_response = None
@@ -882,20 +941,28 @@ class Response(object):
     headers = None
     responsebody = None
     responsetype = None
-    params = {}
-    errors = {}
+    params = None
+    errors = None
 
     def __init__(self, start_response, request, config={}, **kwargs):
         self.start_response = start_response
         self.request = request
         self.config = config
-        self.headers = HeaderContainer(content_type=self.contenttype)
 
+        self.headers = HeaderContainer(content_type=self.contenttype)
+        self.params = {}
+        self.errors = {}
+
+        if kwargs:
+            self._update_params(**kwargs)
+
+    def _update_params(self, **kwargs):
+        
         try:
             self.params.update(self.config[self.responsetype])
         except KeyError:
             pass
-        
+
         self.params.update(kwargs)
 
     def __call__(self, responsebody, code=200, additional_headers=None, **kwargs):
@@ -927,7 +994,7 @@ class Response(object):
     code = property(_get_code, _set_code)
 
 
-class ResponseFactory(object):
+class ResponseFactory(threading.local):
     @staticmethod
     def new(response_type=None, *args, **kwargs):
         if response_type:
@@ -949,9 +1016,10 @@ class TranslatedResponse(Response):
     contenttype = ''
 
     def __init__(self, start_response, request, config={}, **kwargs):
+        super(self.__class__, self).__init__(start_response, request, config=config)
         self.params['stylesheet_path'] = None
         self.params['default_stylesheet'] = None
-        super(self.__class__, self).__init__(start_response, request, config=config, **kwargs)
+        self._update_params(**kwargs)
 
     def format(self, data=None, **kwargs):
 
@@ -1084,6 +1152,8 @@ class PropertyProxy(object):
         return repr(object.__getattribute__(self, '_property')())
 
 '''Setup'''
+
+local = threading.local()
 
 application = Application(
     Config(),
@@ -1691,29 +1761,26 @@ class XPathCallbacks(object):
                 
 
     def dateformat(self, _, elements, format):
+        print elements
         try:
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
-                newitem.text = self.__unescape(unicode(iso8601.parse_date(item.text).strftime(format)))
+                newitem.text = self.__unescape(unicode(iso8601.parse_date(newitem.text).strftime(format)))
                 returned.append(newitem)
             return returned
 
         except:
+            raise
             return elements
 
-    def timeformat(self, _, elements, outformat, informat=None):
+    def timeformat(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
         try:
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
-
-                if informat is not None:
-                    value = strptime(newitem.text, informat)
-                else:
-                    value = strptime(newitem.text)
-
-                newitem.text = self.__unescape(unicode(strftime(outformat, value)))
+                value = datetime.strptime(newitem.text, informat)
+                newitem.text = self.__unescape(unicode(value.strftime(outformat)))
                 returned.append(newitem)
             return returned
 
