@@ -80,8 +80,6 @@ Please see the TODO_ document.
 DEPENDENCIES
 ------------
 
-- lxml
-- simplejson
 - specloud_ (for running specs/tests)
 
 .. _TODO: //github.com/digitala/FWRD/blob/master/TODO.rst
