@@ -30,6 +30,8 @@ FEATURES
 
 - Redirect support
 
+- Automatic Response formatting (XML, JSON, YAML, more to follow)
+
 NOT IMPLEMENTED
 ---------------
 
@@ -52,10 +54,11 @@ INSTALLATION
 Currently FWRD is alpha software. Until there are official releases please
 install from the master:
 
-`pip install http://github.com/digitala/FWRD/zipball/master`
+    pip install http://github.com/digitala/FWRD/zipball/master
 
 USAGE
 -----
+::
 
     from FWRD import *
     
@@ -65,7 +68,7 @@ USAGE
     router.urls = (
         ('/[index]', None),
 	('/hello[/:world]', hello_world),
-    )
+	)
 
     application.run()
 
