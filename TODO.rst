@@ -3,23 +3,19 @@ Still To Do
 
 - Documentation
 
-- Testing
+- Testing:
 
-  - Specs for middleware
+  - Specs XPath callbacks
 
 - Features
 
-  - Subrequest method for internal request, with formatting
-
-  - Inspection of methods to ascertain whether they need arguments *before* being called
-
-  - Local fall-back for sessions when beaker isn't available
+  - Enable `XPath Callbacks`_ to FWRD components with response formatting
 
   - Auto-reloading of code on file modification
 
   - `XSRF`_ validation, similar to that from `tornado`_
 
-  - seaside-based form handling: 
+  - lift-/seaside-based form handling: 
 
     - each browser tab can have/has it's own session
 
@@ -39,15 +35,11 @@ Still To Do
 
   - Add ``sendfile`` func which is compatible with Nginx X-Accel headers
 
-  - XML: allow creating of processing instructions using the following format: ``{"?xml-stylesheet": {'type':'', 'href':''}} ``
+  - XML
 
-  - `XPath Callbacks`_ to the framework from XSL; 
+    - allow creating of processing instructions using the following format: ``{"?xml-stylesheet": {'type':'', 'href':''}} ``
 
-    - fwrd:subrequest('url', 'params', 'method=GET')
-
-    - fwrd:session('n')
-
-  - XPath functions:
+  - XPath function implementations:
 
     - abs
 
@@ -106,9 +98,11 @@ Still To Do
 TBC
 ---
 
-How should authentication be handled? `AuthKit`_? Custom?
+Local fall-back for sessions when beaker isn't available?
 
-Memoization of "compiled" XSL?
+How should authentication be handled? `AuthKit`_? Custom? None (handled by developer)?
+
+Caching/Memoization of "compiled" XSL?
 
 Keep a log of the last request's (or last few requests'?) information (request, params, session, etc) to be raised when an error/exception is thrown.
 
