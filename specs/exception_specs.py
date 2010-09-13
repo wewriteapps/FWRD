@@ -73,11 +73,12 @@ class MethodArgsErrorSpec(WSGITestBase):
             }
 
     def it_should_fail_when_passed_unexpected_args(self):
-        self.app.router.add('/index', None)
+        def foo(): pass
+        self.app.router.add('/index', foo)
         self.assertStatus(403, '/index.xml', qs='foo=1')
         self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/index" request="/index" method="get">
-  <node name="__message__">method "None" takes no arguments</node>
+  <node name="__message__">method "foo" takes no arguments</node>
   <node name="__error__">403</node>
   <node name="__request_path__">/index.xml</node>
   <node name="__http_method__">GET</node>

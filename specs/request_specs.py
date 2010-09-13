@@ -103,7 +103,6 @@ class GetRequestSpec(WSGITestBase):
                 'b': False
                 }
 
-
         routes = (
             # route, extension, func, body
             ('/', '.xml', index, '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
@@ -128,6 +127,40 @@ class GetRequestSpec(WSGITestBase):
 
         for route, ext, func, body in routes:
             self.assertBody(body, route+ext)
+
+    def it_should_format_whitespace_correctly(self):
+
+        def bar():
+            return """This is a long string
+
+With lots of whitespace
+
+    To show correct formatting
+
+"""
+
+        routes = (
+            # route, extension, func, body
+            ('/bar', '.xml', bar, '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/bar" request="/bar" method="get">
+  <content>This is a long string
+
+With lots of whitespace
+
+    To show correct formatting
+
+</content>
+  <errors/>
+</response>
+'''),
+            )
+
+        for route, ext, func, body in routes:
+            self.app.router.add(route, func)
+
+        for route, ext, func, body in routes:
+            self.assertBody(body, route+ext)
+        
 
 
 class PostRequestSpec(WSGITestBase):
