@@ -215,6 +215,58 @@ class XmlResponseSpec(ResponseBaseSpec):
 
         self._format_each_should_equal(tests, 'application/xml')
 
+    def it_should_format_newlines(self):
+        tests = (
+            ('''This
+
+is
+
+a
+
+long
+
+paragraph
+
+''', '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get">This
+
+is
+
+a
+
+long
+
+paragraph
+
+</response>'''),
+            (('''This
+
+is
+
+a''', '''
+
+long
+
+paragraph
+
+'''), '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get" nodetype="fixed-list">
+  <i>This
+
+is
+
+a</i>
+  <i>
+
+long
+
+paragraph
+
+</i>
+</response>
+'''),
+            )
+
+        self._format_each_should_equal(tests, 'application/xml')
+
     def it_should_format_complex_objects(self):
 
         nesteddict = {

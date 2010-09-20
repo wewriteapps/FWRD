@@ -971,7 +971,7 @@ class Response(threading.local):
         self.headers.update(additional_headers)
         output = self.format(self.responsebody, **kwargs)
         self.start_response(self.code, self.headers.list())
-        return output.split("\n")
+        return [output]
 
     def _set_code(self, code):
         self._code = code
