@@ -9,6 +9,8 @@ Still To Do
 
 - Features
 
+  - Decorator to "clean" data from return value: ``@clean_response(dotted-str or callback)``
+
   - Enable `XPath Callbacks`_ to FWRD components with response formatting
 
   - Auto-reloading of code on file modification
@@ -19,7 +21,7 @@ Still To Do
 
     - each browser tab can have/has it's own session
 
-    - forms can be secured with unique key in "action" url
+    - forms can be secured with unique key in "action" url: ``<form action="{fwrd:register_form('/path/to/action')}">...</form>``
 
   - auto-creation of caching decorator when beaker-cache is available
 
