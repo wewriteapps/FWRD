@@ -1772,7 +1772,7 @@ class XPathCallbacks(object):
 
         except:
             raise
-            return elements
+        return elements
 
     def timeformat(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
         try:
@@ -1786,7 +1786,7 @@ class XPathCallbacks(object):
 
         except:
             raise
-            return elements
+        return elements
 
     def isempty(self, _, items):
 
@@ -1821,6 +1821,19 @@ class XPathCallbacks(object):
 
     def range_as_nodes(self, _, start, stop, step=None):
         return etree.XML((u'<item>%d</item>' % i for i in xrange(int(start), int(stop))))
+
+    def str_replace(self, _, elements, search_, replace_):
+        try:
+            returned = []
+            for item in elements:
+                newitem = copy.deepcopy(item)
+                newitem.text = newitem.text.replace(search_, replace_)
+                returned.append(newitem)
+            return returned
+
+        except:
+            raise
+        return elements
 
 
     def __unescape(self, s):
