@@ -93,7 +93,7 @@ Still To Do
 
   - Decorators:
 
-    - @response.format('type', **params); change default formatter for function
+    - ``@response.format('type', **params)`` to change default formatter for function
 
   - ``define`` and ``defined``, from `tornado`_.
 
