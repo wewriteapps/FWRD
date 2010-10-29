@@ -91,9 +91,9 @@ class RouterSpec(unittest.TestCase):
         self.assertNotEqual(self.router.urls['GET'], [])
         self.assertNotEqual(self.router.urls['POST'], [])
 
-        self.assertTrue('/:foo' in [route for route, regex, pattern, func in self.router.urls['GET']])
-        self.assertTrue('/' in [route for route, regex, pattern, func in self.router.urls['GET']])
-        self.assertTrue('/' in [route for route, regex, pattern, func in self.router.urls['POST']])
+        self.assertTrue('/:foo' in [item['route'] for item in self.router.urls['GET']])
+        self.assertTrue('/' in [item['route'] for item in self.router.urls['GET']])
+        self.assertTrue('/' in [item['route'] for item in self.router.urls['POST']])
 
     def it_should_add_complex_routes(self):
         def foo(): pass
@@ -106,9 +106,9 @@ class RouterSpec(unittest.TestCase):
         self.assertNotEqual(self.router.urls['GET'], [])
         self.assertNotEqual(self.router.urls['POST'], [])
 
-        self.assertTrue(r'^/index$' in [route for route, regex, pattern, func in self.router.urls['GET']])
-        self.assertTrue(r'^/(index)?' in [route for route, regex, pattern, func in self.router.urls['GET']])
-        self.assertTrue(r'^/(index)?' in [route for route, regex, pattern, func in self.router.urls['POST']])
+        self.assertTrue(r'^/index$' in [item['route'] for item in self.router.urls['GET']])
+        self.assertTrue(r'^/(index)?' in [item['route'] for item in self.router.urls['GET']])
+        self.assertTrue(r'^/(index)?' in [item['route'] for item in self.router.urls['POST']])
 
     def it_should_find_simple_routes(self):
 
@@ -121,7 +121,7 @@ class RouterSpec(unittest.TestCase):
         for route, search, match, method, func in routes:
             self.router.add(route, func, methods=method)
 
-            _func, _params, _route = self.router.find(method, search)
+            _func, _params, _route, _filters = self.router.find(method, search)
 
             self.assertEqual(_route, match)
             self.assertEqual(_func, func)
@@ -139,7 +139,7 @@ class RouterSpec(unittest.TestCase):
         for route, test, method, func in routes:
             self.router.add(route, func, methods=method)
 
-        _func, _params, _route = self.router.find('GET', '/')
+        _func, _params, _route, _filters = self.router.find('GET', '/')
 
         self.assertEqual(_route, '/[index]')
         self.assertEqual(_func, a)
@@ -178,7 +178,7 @@ class RouterSpec(unittest.TestCase):
 
             #print self.router.urls['GET']
 
-            _func, _params, _route = self.router.find(method, test)
+            _func, _params, _route, _filters = self.router.find(method, test)
 
             self.assertEqual(route, _route)
             self.assertEqual(func, _func)

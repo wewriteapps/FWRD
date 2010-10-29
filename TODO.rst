@@ -1,5 +1,11 @@
-Still To Do
-===========
+To Do
+=====
+
+- v0.2:
+
+  - Built-in Logging
+
+  - Per-Formatter options/config
 
 - Documentation
 

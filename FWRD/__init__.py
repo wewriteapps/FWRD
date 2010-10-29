@@ -14,6 +14,7 @@ import sys
 import threading
 import traceback
 import xml.parsers.expat
+import yaml
 from datetime import datetime
 from lxml import etree
 from urllib import unquote as urlunquote
@@ -64,6 +65,8 @@ __all__ = [
     ]
 
 
+'''Global variables'''
+
 # http://www.faqs.org/rfcs/rfc2616.html
 HTTP_STATUS_CODES = {
     100: "Continue", 
@@ -107,6 +110,9 @@ HTTP_STATUS_CODES = {
     504: "Gateway Time-out", 
     505: "HTTP Version not supported",
     }
+
+
+'''Utility Exceptions for error codes'''
 
 class HTTPError(Exception):
     code = 500
@@ -191,12 +197,20 @@ class SeeOther(HTTPRedirection):
     code = 303
 
 
+'''Main application objects'''
+
+class ConfigError(Exception):
+    pass
+
+class RouteConfigError(ConfigError):
+    pass
+
 class Config(threading.local):
     __slots__ = [
         'host',
         'port',
-        'format',
         'output',
+        'format',
         'app_path',
         'default_format',
         ]
@@ -204,10 +218,13 @@ class Config(threading.local):
     def __init__(self, **kwargs):
         self.host = ''
         self.port = 8000
-        self.format = {}
         self.default_format = None
         self.output = sys.stdout
+        self.format = {}
 
+        self.update(**kwargs)
+
+    def update(self, **kwargs):
         for key, value in kwargs.iteritems():
             if key.lower() in self.__slots__:
                 setattr(self, key.lower(), value)
@@ -240,7 +257,7 @@ class Application(threading.local):
         def __none__(*args, **kwargs):
             pass
 
-        func, path_params, self._request.route = self._router.find(self._request.method, self._request.path[0])
+        func, path_params, self._request.route, filters = self._router.find(self._request.method, self._request.path[0])
 
         self._request.set_path_params(path_params)
         
@@ -379,6 +396,45 @@ class Application(threading.local):
             pass
 
 
+    def import_config(self, config):
+        try:
+            try:
+                stream = config.read()
+            except (AttributeError, TypeError):
+                stream = file(config).read()
+        except (AttributeError, TypeError):
+            stream = config
+
+        try:
+            config = yaml.load(stream)
+            config = CaseInsensitiveDictMapper(config)
+        except yaml.YAMLError as e:
+            error = 'Import failed with malformed config'
+            if hasattr(e, 'problem_mark'):
+                mark = e.problem_mark
+                error += ' at: (%s:%s)' % (mark.line+1, mark.column+1)
+            raise ConfigError(error)
+
+        if not self._validate_imported_config(config):
+            raise ConfigError('Import failed: config invalid')
+
+        if 'config' in config:
+            self._update_config_from_import(config['config'])
+
+        if 'routes' in config:
+            self._update_routes_from_import(config['routes'])
+
+
+    def _validate_imported_config(self, config):
+        return any([x in config for x in ['config', 'routes', 'formats']])
+
+    def _update_config_from_import(self, config):
+        self._config.update(**config)
+
+    def _update_routes_from_import(self, config):
+        print config
+        self._router.urls = config
+
     config    = property(_get_config)
     router    = property(_get_router)
     request   = property(_get_request)
@@ -423,6 +479,16 @@ class Router(object):
         #('',''),
         )
 
+    _rule_pattern = ['route', 'callable', 'methods', 'filters', 'formats']
+
+    _default_rule = {
+        'route': '/[index]',
+        'callable': None,
+        'methods': ['GET'],
+        'filters': [],
+        'formats': []
+        }
+
     def __init__(self, urls=None):
         for method in self.__slots__:
             if method[0] != '_':
@@ -445,14 +511,25 @@ class Router(object):
         setattr(self, name, value)
 
     def _define_routes(self, urls, prefix=''):
-        for item in urls:
-            if not isinstance(item, tuple):
-                break
-            
-            item = dict(zip(['route', 'func', 'methods'], item))
+        '''Basic structure: (route, callable [, http_method_list [, filter_list [, allowed_formats]]])
+        Prefix structure: (prefix, (tuple_of_basic_structure_tuples, ...))
+        '''
 
-            self._define_methods(item)
-            self._define_route(item, prefix=prefix)
+        
+        
+        for item in urls:
+            if not  isinstance(item, (tuple, dict, CaseInsensitiveDict)):
+                continue
+
+            rule = self._default_rule.copy()
+
+            if type(item) is tuple:
+                rule.update(dict(zip(self._rule_pattern, item)))
+            else:
+                rule.update(item)
+
+            self._define_methods(rule)
+            self._define_route(rule, prefix=prefix)
 
 
     def _define_methods(self, item):
@@ -460,17 +537,24 @@ class Router(object):
             item['methods'] = ['GET']
             return
 
-        item['methods'] = (method.upper() for method in re.split('\W+', item['methods']) if method.upper() in self.__slots__)
+        if isinstance(item['methods'], basestring):
+            item['methods'] = [method.upper() for method in re.split('\W+', item['methods']) if method.upper() in self.__slots__]
+
+        else:
+            item['methods'] = [method.upper() for method in item['methods'] if method.upper() in self.__slots__]
 
 
     def _define_route(self, item, prefix=''):
-        if type(item['func']) is tuple:
-            self._define_routes(item['func'], prefix=item['route'])
+        if type(item['callable']) in (tuple, list):
+            self._define_routes(item['callable'], prefix=item['route'])
 
-        else: #hasattr(item['func'], '__call__'):
-             for method in item['methods']:
-                pattern, regex = self._compile(item['route'], prefix=prefix)
-                self[method].append((item['route'], regex, pattern, item['func']))
+        else: #hasattr(item['callable'], '__call__'):
+            pattern, regex = self._compile(item['route'], prefix=prefix)
+            item['pattern'] = pattern
+            item['regex'] = regex
+
+            for method in item['methods']:
+                self[method].append(item)
             
 
     def _compile(self, pattern, prefix=''):
@@ -510,9 +594,14 @@ class Router(object):
 
 
     def _set_urls(self, urls=None):
-        if urls:
+        if urls and type(urls) in (tuple, list):
             self._define_routes(urls)
 
+        elif urls and isinstance(urls, CaseInsensitiveDict):
+            self._define_routes(urls)
+
+        else:
+            raise RouteConfigError('unable to define routes')
 
     def _get_debug_mode(self):
         try:
@@ -538,10 +627,11 @@ class Router(object):
         if len(url) > 1 and url[-1] == '/':
             url = url[0:-1]
 
-        for route, regex, test, func in self[method]:
-            match = test.search(url)
+        #for route, regex, test, func in self[method]:
+        for item in self[method]:
+            match = item['pattern'].search(url)
             if match:
-                return (func, match.groupdict(), route)
+                return (item['callable'], match.groupdict(), item['route'], item.get('filters', []))
 
         raise NotFound(url=url, method=method)
 
@@ -566,7 +656,7 @@ class Router(object):
 
 
     def add(self, route, func, methods='GET', prefix=''):
-        item = {'route':route, 'func':func, 'methods':methods}
+        item = {'route':route, 'callable':func, 'methods':methods}
         self._define_methods(item)
         self._define_route(item, prefix)
 
@@ -1005,6 +1095,9 @@ class ResponseFactory(threading.local):
                 return response_class(*args, **kwargs)
 
         raise InvalidResponseTypeError()
+
+
+''' Default response formatters '''
 
 
 class TranslatedResponse(Response):
@@ -1864,5 +1957,40 @@ class XPathCallbacks(object):
         return es.join(list)
 
 
+'''General Utility Objects'''
 
+class CaseInsensitiveDict(collections.Mapping):
+    def __init__(self, d):
+        self._d = d
+        self._s = dict((k.lower(), k) for k in d)
+
+    def __contains__(self, k):
+        return k.lower() in self._s
+
+    def __len__(self):
+        return len(self._s)
+
+    def __iter__(self):
+        return iter(self._s)
+
+    def __getitem__(self, k):
+        return self._d[self._s[k.lower()]]
+
+    def original_key(self, k):
+        return self._s.get(k.lower())
+
+def CaseInsensitiveDictMapper(d):
+    if type(d) is dict:
+        _d = {}
+        for k, v in d.iteritems():
+            _d[k] = CaseInsensitiveDictMapper(v)
+        return CaseInsensitiveDict(_d)
+    elif type(d) is list:
+        return [CaseInsensitiveDictMapper(x) for x in d]
+    elif type(d) is tuple:
+        return tuple([CaseInsensitiveDictMapper(x) for x in d])
+    elif type(d) is set:
+        return set([CaseInsensitiveDictMapper(x) for x in d])
+    else:
+        return d
 

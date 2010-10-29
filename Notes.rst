@@ -16,7 +16,7 @@ Formats:
     enabled: Yes
 
 Routes:
-  - url: /[index]
+  - route: /[index]
     callable: None
     methods: [GET, POST] # GET by default
     filters: [capture_brand, clear_session]
