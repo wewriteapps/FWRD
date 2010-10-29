@@ -7,6 +7,8 @@ To Do
 
   - Per-Formatter options/config
 
+  - Server-side browser "sniffing", based on `Modernizr`_, for use with the XSL formatter
+
 - Documentation
 
 - Testing:
@@ -121,3 +123,4 @@ Keep a log of the last request's (or last few requests'?) information (request, 
 .. _bottle: http://github.com/defnull/bottle
 .. _XPath Callbacks: http://codespeak.net/lxml/extensions.html#xpath-extension-functions
 .. _XSRF: http://en.wikipedia.org/wiki/Cross-site_request_forgery
+.. _Modernizr: http://modernizr.com
