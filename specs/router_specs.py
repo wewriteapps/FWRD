@@ -88,12 +88,12 @@ class RouterSpec(unittest.TestCase):
         self.router.add('/:foo[/:bar]', foo)
         self.router.add('/', foo, methods='POST')
 
-        self.assertNotEqual(self.router.urls['GET'], [])
-        self.assertNotEqual(self.router.urls['POST'], [])
+        self.assertNotEqual(self.router.urls['GET'], {})
+        self.assertNotEqual(self.router.urls['POST'], {})
 
-        self.assertTrue('/:foo' in [item['route'] for item in self.router.urls['GET']])
-        self.assertTrue('/' in [item['route'] for item in self.router.urls['GET']])
-        self.assertTrue('/' in [item['route'] for item in self.router.urls['POST']])
+        self.assertTrue('/:foo' in [item['route'] for regex, item in self.router.urls['GET'].iteritems()])
+        self.assertTrue('/' in [item['route'] for regex, item in self.router.urls['GET'].iteritems()])
+        self.assertTrue('/' in [item['route'] for regex, item in self.router.urls['POST'].iteritems()])
 
     def it_should_add_complex_routes(self):
         def foo(): pass
@@ -103,12 +103,12 @@ class RouterSpec(unittest.TestCase):
         self.router.add(r'^/(index)?', foo, methods='GET, POST')
         self.router.add(r'^/(?P<foo>[^/]+)/(?P<bar>[^/]+)(/(?P<baz>[^/]+))?$', foo)
 
-        self.assertNotEqual(self.router.urls['GET'], [])
-        self.assertNotEqual(self.router.urls['POST'], [])
+        self.assertNotEqual(self.router.urls['GET'], {})
+        self.assertNotEqual(self.router.urls['POST'], {})
 
-        self.assertTrue(r'^/index$' in [item['route'] for item in self.router.urls['GET']])
-        self.assertTrue(r'^/(index)?' in [item['route'] for item in self.router.urls['GET']])
-        self.assertTrue(r'^/(index)?' in [item['route'] for item in self.router.urls['POST']])
+        self.assertTrue(r'^/index$' in [item['route'] for regex, item in self.router.urls['GET'].iteritems()])
+        self.assertTrue(r'^/(index)?' in [item['route'] for regex, item in self.router.urls['GET'].iteritems()])
+        self.assertTrue(r'^/(index)?' in [item['route'] for regex, item in self.router.urls['POST'].iteritems()])
 
     def it_should_find_simple_routes(self):
 

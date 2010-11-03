@@ -75,6 +75,7 @@ class MethodArgsErrorSpec(WSGITestBase):
     def it_should_fail_when_passed_unexpected_args(self):
         def foo(): pass
         self.app.router.add('/index', foo)
+        self.app.config.debug = True
         self.assertStatus(403, '/index.xml', qs='foo=1')
         self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/index" request="/index" method="get">

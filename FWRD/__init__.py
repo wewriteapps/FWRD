@@ -17,6 +17,7 @@ import xml.parsers.expat
 import yaml
 from datetime import datetime
 from lxml import etree
+from resolver import resolve
 from urllib import unquote as urlunquote
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
@@ -207,6 +208,7 @@ class RouteConfigError(ConfigError):
 
 class Config(threading.local):
     __slots__ = [
+        'debug',
         'host',
         'port',
         'output',
@@ -216,6 +218,7 @@ class Config(threading.local):
         ]
 
     def __init__(self, **kwargs):
+        self.debug = False
         self.host = ''
         self.port = 8000
         self.default_format = None
@@ -236,13 +239,15 @@ class Application(threading.local):
         '_router',
         '_request',
         '_response',
-        '_middleware'
+        '_middleware',
+        '_globals'
         ]
 
     def __init__(self, config, router, *args, **kwargs):
         self._config = config
         self._router = router
         self._middleware = []
+        self._globals = globals()
 
     def __call__(self, environ, start_response):
         self._request = Request(environ)
@@ -260,11 +265,37 @@ class Application(threading.local):
         func, path_params, self._request.route, filters = self._router.find(self._request.method, self._request.path[0])
 
         self._request.set_path_params(path_params)
+
+        if self._config.debug:
+            print self._request.path
+            try:
+                print func, func.__name__
+            except:
+                print func
         
-        if not func:
+        if isinstance(func, basestring) and func.lower() == 'none':
             func = __none__
             func.__name__ = 'None'
-            
+
+        elif isinstance(func, basestring):
+            try:
+                func = self._import(func)
+            except:
+                if self._config.debug:
+                    print 'callable %s cannot be found [isinstance]' % func
+                raise Forbidden('callable %s cannot be found' % func)
+
+        elif not hasattr(func, '__call__'):
+            if self._config.debug:
+                print 'callable %s cannot be found [hasattr]' % func
+            raise Forbidden('callable %s cannot be found' % func)
+
+        elif not func:
+            if self._config.debug:
+                print func, func.__name__
+            func = __none__
+            func.__name__ = 'None'
+
         argspec = inspect.getargspec(func)
         allows_kwargs = argspec.keywords != None
         expected_args = set(argspec.args)
@@ -291,6 +322,13 @@ class Application(threading.local):
             raise Forbidden('method "%s" received unexpected params: %s' % (func.__name__, ', '.join(expected_args ^ req_params)))
         
         return func(**self._request.params)
+
+    def _import(self, path):
+        # thanks to http://lukearno.com/projects/resolver/ for the following
+        func = resolve(path)
+        if not func:
+            raise Exception('callable "%s" not found' % path)
+        return func
             
     def process_request(self):
 
@@ -337,6 +375,9 @@ class Application(threading.local):
     def run(self, server_func=None, host=None, port=None, debug=False, **kwargs):
 
         if server_func is None and debug:
+            server_func = self._serve_once
+
+        elif server_func is None and self._config.debug:
             server_func = self._serve_once
 
         elif server_func is None:
@@ -432,7 +473,6 @@ class Application(threading.local):
         self._config.update(**config)
 
     def _update_routes_from_import(self, config):
-        print config
         self._router.urls = config
 
     config    = property(_get_config)
@@ -452,7 +492,6 @@ class Router(object):
         'POST',
         'PUT',
         'DELETE',
-        '_debug',
         ]
 
     _compile_patterns = (
@@ -492,9 +531,7 @@ class Router(object):
     def __init__(self, urls=None):
         for method in self.__slots__:
             if method[0] != '_':
-                self[method] = []
-
-        self.debug = False
+                self[method] = {}
 
         if urls:
             self._set_urls(urls)
@@ -507,55 +544,10 @@ class Router(object):
     def __getitem__(self, name):
         return getattr(self, name)
 
+
     def __setitem__(self, name, value):
         setattr(self, name, value)
 
-    def _define_routes(self, urls, prefix=''):
-        '''Basic structure: (route, callable [, http_method_list [, filter_list [, allowed_formats]]])
-        Prefix structure: (prefix, (tuple_of_basic_structure_tuples, ...))
-        '''
-
-        
-        
-        for item in urls:
-            if not  isinstance(item, (tuple, dict, CaseInsensitiveDict)):
-                continue
-
-            rule = self._default_rule.copy()
-
-            if type(item) is tuple:
-                rule.update(dict(zip(self._rule_pattern, item)))
-            else:
-                rule.update(item)
-
-            self._define_methods(rule)
-            self._define_route(rule, prefix=prefix)
-
-
-    def _define_methods(self, item):
-        if not 'methods' in item:
-            item['methods'] = ['GET']
-            return
-
-        if isinstance(item['methods'], basestring):
-            item['methods'] = [method.upper() for method in re.split('\W+', item['methods']) if method.upper() in self.__slots__]
-
-        else:
-            item['methods'] = [method.upper() for method in item['methods'] if method.upper() in self.__slots__]
-
-
-    def _define_route(self, item, prefix=''):
-        if type(item['callable']) in (tuple, list):
-            self._define_routes(item['callable'], prefix=item['route'])
-
-        else: #hasattr(item['callable'], '__call__'):
-            pattern, regex = self._compile(item['route'], prefix=prefix)
-            item['pattern'] = pattern
-            item['regex'] = regex
-
-            for method in item['methods']:
-                self[method].append(item)
-            
 
     def _compile(self, pattern, prefix=''):
         if str(pattern[0]) is '^':
@@ -605,21 +597,78 @@ class Router(object):
 
     def _get_debug_mode(self):
         try:
-            return self._debug
+            return config.debug
         except AttributeError:
             return False
 
 
     def _set_debug_mode(self, debugmode):
         if debugmode is not True:
-            self._debug = False
+            config.debug = False
         else:
-            self._debug = True
+            config.debug = True
+
+
+    def _define_routes(self, urls, prefix=''):
+        '''Basic structure: (route, callable [, http_method_list [, filter_list [, allowed_formats]]])
+        Prefix structure: (prefix, (tuple_of_basic_structure_tuples, ...))
+        '''
+
+        for item in urls:
+            if not  isinstance(item, (tuple, dict, CaseInsensitiveDict)):
+                continue
+
+            rule = self._default_rule.copy()
+
+            if type(item) is tuple:
+                item_ = dict(zip(self._rule_pattern, item))
+                print ">>>>> Adding from tuple"
+                print item_
+                rule.update(item_)
+            else:
+                rule.update(item)
+
+            self.add(prefix=prefix, **rule)
+
+
+    def _parse_methods(self, methods):
+        if isinstance(methods, basestring):
+            return [method.upper() for method in re.split('\W+', methods) if method.upper() in self.__slots__]
+
+        elif isinstance(methods, (tuple, list)):
+            return [method.upper() for method in methods if method.upper() in self.__slots__]
+
+        else:
+            return ['GET']
+
+
+    def add(self, route, callable, methods='GET', prefix='', filters=[], formats=[]):
+
+        item = self._default_rule.copy()
+
+        item.update({'route':route, 'callable':callable, 'methods': self._parse_methods(methods)})
+
+        if type(item['callable']) in (tuple, list):
+            self._define_routes(item['callable'], prefix=item['route'])
+
+        else: #hasattr(item['callable'], '__call__'):
+            if config.debug:
+                print 'Adding', item
+
+            pattern, regex = self._compile(item['route'], prefix=prefix)
+            item['pattern'] = pattern
+            item['regex'] = regex
+
+            for method in item['methods']:
+                self[method][item['regex']] = item
+
+            print self['GET']
+            print self['POST']
 
 
     def find(self, method, url):
 
-        if self.debug:
+        if config.debug:
             return self.find_with_output(method, url)
 
         method = method.upper().strip()
@@ -628,7 +677,7 @@ class Router(object):
             url = url[0:-1]
 
         #for route, regex, test, func in self[method]:
-        for item in self[method]:
+        for regex, item in self[method].iteritems():
             match = item['pattern'].search(url)
             if match:
                 return (item['callable'], match.groupdict(), item['route'], item.get('filters', []))
@@ -645,20 +694,30 @@ class Router(object):
 
         print "Finding url: %s" % url
 
-        for route, regex, test, func in self[method]:
-            print "  Testing %s" % regex
-            match = test.search(url)
+        #for route, regex, test, func in self[method]:
+        for regex, item in self[method].iteritems():
+            print "  Testing %s" % item['regex']
+            match = item['pattern'].search(url)
             if match:
-                print "  Match found: %s > %s" % (route, regex)
-                return (func, match.groupdict(), route)
+                try:
+                    print ">>> Match found: %s > %s, calling %s (%s)" % (
+                        item['route'],
+                        item['regex'],
+                        item['callable'],
+                        item['callable'].__name__
+                        )
+                    print item
+                except:
+                    print ">>> Match found: %s > %s, calling %s" % (
+                        item['route'],
+                        item['regex'],
+                        item['callable']
+                        )
+                    print item
+                return (item['callable'], match.groupdict(), item['route'], item.get('filters', []))
 
         raise NotFound(url=url, method=method)
 
-
-    def add(self, route, func, methods='GET', prefix=''):
-        item = {'route':route, 'callable':func, 'methods':methods}
-        self._define_methods(item)
-        self._define_route(item, prefix)
 
     # Properties
     urls = property(_get_urls, _set_urls)
@@ -1854,7 +1913,6 @@ class XPathCallbacks(object):
                 
 
     def dateformat(self, _, elements, format):
-        print elements
         try:
             returned = []
             for item in elements:

@@ -5,6 +5,6 @@ setup(name="FWRD",
       version="0.2",
       url="http://github.com/digitala/FWRD",
       packages=find_packages(exclude="specs"),
-      install_requires=['lxml', 'simplejson', 'iso8601', 'Beaker', 'PyYAML'],
+      install_requires=['lxml', 'simplejson', 'iso8601', 'Beaker', 'PyYAML', 'resolver'],
       )
       

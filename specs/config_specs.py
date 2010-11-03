@@ -63,13 +63,11 @@ Routes:
 
     def it_should_add_routes_successfully(self):
 
-        def foo(): pass
-        
         configs = ('''
 Routes:
   - route: /[index]
   - route: /foo
-    callable: foo
+    callable: specs.example_methods:foo
     methods: [GET, POST]''',)
 
         for config in configs:
