@@ -1,5 +1,5 @@
 __author__ = 'Phillip B Oldham'
-__version__ = '0.2.0-dev'
+__version__ = '0.1.1'
 __licence__ = 'MIT'
 
 import cgi
@@ -163,6 +163,7 @@ class Forbidden(HTTPClientError):
     def __init__(self, message="Forbidden", *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
         self.message = message
+        print >> config.output, message
 
 
 class HTTPRedirection(HTTPError):
@@ -195,6 +196,7 @@ class Config(threading.local):
     __slots__ = [
         'host',
         'port',
+        'debug',
         'format',
         'output',
         'app_path',
@@ -204,6 +206,7 @@ class Config(threading.local):
     def __init__(self, **kwargs):
         self.host = ''
         self.port = 8000
+        self.debug = False
         self.format = {}
         self.default_format = None
         self.output = sys.stdout
@@ -247,31 +250,36 @@ class Application(threading.local):
         if not func:
             func = __none__
             func.__name__ = 'None'
-            
+
         argspec = inspect.getargspec(func)
         allows_kwargs = argspec.keywords != None
-        expected_args = set(argspec.args)
+        expected_args = argspec.args
         arg_defaults = argspec.defaults or tuple()
         req_params = set(self._request.params.keys())
         
         # skip the "self" arg for class methods
         if inspect.ismethod(func):
-            expected_args = set(argspec.args[1:])
-        
-        non_default_args = set(list(expected_args)[:len(expected_args)-len(arg_defaults)])
-        
+            expected_args = argspec.args[1:]
+
+        non_default_args = list(expected_args)[:len(expected_args)-len(arg_defaults)]
+
         # check that the func will accept args
         if not allows_kwargs and not expected_args and req_params:
-            raise Forbidden('method "%s" takes no arguments' % func.__name__)
-        
+            msg = 'method "%s" takes no arguments' % func.__name__
+            raise Forbidden(msg)
+
         # check that all non-default args have matching params
-        if non_default_args & req_params != non_default_args:
-            raise Forbidden('method "%s" requires (%s), missing (%s)' %
-                            (func.__name__, ', '.join(non_default_args), ', '.join(non_default_args ^ req_params)))
+        intersection = set(non_default_args) & set(req_params)
+        difference = set(non_default_args) ^ set(req_params)
+        if intersection != set(non_default_args):
+            msg = 'method "%s" requires (%s), missing (%s)' % (func.__name__, ', '.join(non_default_args), ', '.join(difference))
+            raise Forbidden(msg)
         
         # check that we don't have any extra params when we can't accept them (kwargs)
-        if not allows_kwargs and expected_args ^ req_params:
-            raise Forbidden('method "%s" received unexpected params: %s' % (func.__name__, ', '.join(expected_args ^ req_params)))
+        unexpected_args = [arg for arg in req_params if arg not in expected_args]
+        if not allows_kwargs and unexpected_args:
+            msg = 'method "%s" received unexpected params: %s' % (func.__name__, ', '.join(unexpected_args))
+            raise Forbidden(msg)
         
         return func(**self._request.params)
             
