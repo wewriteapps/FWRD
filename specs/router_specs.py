@@ -15,6 +15,7 @@ class RouterSpec(unittest.TestCase):
 
     def setUp(self):
         self.router = Router()
+        self.router.clear()
 
     def it_should_compile_simple_routes(self):
         should_equal = (

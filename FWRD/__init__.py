@@ -9,7 +9,6 @@ import functools
 import inspect
 import iso8601
 import os
-import re
 import sys
 import threading
 import traceback
@@ -22,6 +21,11 @@ from urllib import unquote as urlunquote
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
 from xml.sax.saxutils import escape
+
+try:
+    import re2 as re
+except:
+    import re
 
 try:
     from cStringIO import StringIO
@@ -45,6 +49,11 @@ try:
     from collections import MutableMapping as DictMixin
 except ImportError:
     from UserDict import DictMixin
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 
 __all__ = [
@@ -169,6 +178,7 @@ class Forbidden(HTTPClientError):
 
     def __init__(self, message="Forbidden", *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
+        print message
         self.message = message
 
 
@@ -259,76 +269,26 @@ class Application(threading.local):
         return self.process_request()
 
     def _run_func(self):
-        def __none__(*args, **kwargs):
-            pass
 
-        func, path_params, self._request.route, filters = self._router.find(self._request.method, self._request.path[0])
-
+        route, path_params = self._router.find(self._request.method, self._request.path[0])
         self._request.set_path_params(path_params)
 
-        if self._config.debug:
-            print self._request.path
-            try:
-                print func, func.__name__
-            except:
-                print func
-        
-        if isinstance(func, basestring) and func.lower() == 'none':
-            func = __none__
-            func.__name__ = 'None'
-
-        elif isinstance(func, basestring):
-            try:
-                func = self._import(func)
-            except:
-                if self._config.debug:
-                    print 'callable %s cannot be found [isinstance]' % func
-                raise Forbidden('callable %s cannot be found' % func)
-
-        elif not hasattr(func, '__call__'):
-            if self._config.debug:
-                print 'callable %s cannot be found [hasattr]' % func
-            raise Forbidden('callable %s cannot be found' % func)
-
-        elif not func:
-            if self._config.debug:
-                print func, func.__name__
-            func = __none__
-            func.__name__ = 'None'
-
-        argspec = inspect.getargspec(func)
-        allows_kwargs = argspec.keywords != None
-        expected_args = set(argspec.args)
-        arg_defaults = argspec.defaults or tuple()
-        req_params = set(self._request.params.keys())
-        
-        # skip the "self" arg for class methods
-        if inspect.ismethod(func):
-            expected_args = set(argspec.args[1:])
-        
-        non_default_args = set(list(expected_args)[:len(expected_args)-len(arg_defaults)])
-        
         # check that the func will accept args
-        if not allows_kwargs and not expected_args and req_params:
-            raise Forbidden('method "%s" takes no arguments' % func.__name__)
+        if not route.accepts_kwargs and \
+            not route.expects_args and \
+            self._request.has_params:
+            raise Forbidden('method "%s" takes no arguments' %
+                            func.__name__)
         
         # check that all non-default args have matching params
-        if non_default_args & req_params != non_default_args:
+        intersection = set(non_default_args) & set(req_params)
+        difference = set(non_default_args) ^ set(req_params)
+        if difference != non_default_args:
             raise Forbidden('method "%s" requires (%s), missing (%s)' %
-                            (func.__name__, ', '.join(non_default_args), ', '.join(non_default_args ^ req_params)))
+                            (func.__name__, ', '.join(non_default_args), ', '.join(difference)))
         
-        # check that we don't have any extra params when we can't accept them (kwargs)
-        if not allows_kwargs and expected_args ^ req_params:
-            raise Forbidden('method "%s" received unexpected params: %s' % (func.__name__, ', '.join(expected_args ^ req_params)))
-        
-        return func(**self._request.params)
+        return route(**self._request.params)
 
-    def _import(self, path):
-        # thanks to http://lukearno.com/projects/resolver/ for the following
-        func = resolve(path)
-        if not func:
-            raise Exception('callable "%s" not found' % path)
-        return func
             
     def process_request(self):
 
@@ -481,30 +441,56 @@ class Application(threading.local):
     response  = property(_get_response)
 
 
+
+'''Routing'''
+
+
+def __none_method__(*args, **kwargs):
+    pass
+
+
+
 class RouteCompilationError(Exception):
     pass
 
-class Router(object):
 
+
+class Route(object):
     __slots__ = [
-        'HEAD',
-        'GET',
-        'POST',
-        'PUT',
-        'DELETE',
+        '_compiled_regex',
+        '_compiled_callable',
+        '_all_args',
+        '_expected_args',
+        '_preset_args',
+        '_accepts_kwargs',
+        '_http_methods',
+        'route',
+        'regex',
+        'callable',
+        'allowed_formats',
+        'request_filters'
         ]
 
+    _tuple_pattern = ['route', 'callable', 'http_methods', 'filters', 'formats']
+
     _compile_patterns = (
+        # optional route items
         (r'\[', r'('),
         (r'\]', r')?'),
+
+        # named path parameters
         (r'(?<!\\):(\w+)', r'(?P<\1>[^/]+)'),
+
+        #
         (r'(?<!\\)_', r'[\s_]'),
         (r'\\_', r'_'),
         (r'\s+', r'\s+'),
         (r'(%)', r'\w'),
         (r'(\*)', r'\w+'),
         (r'([$!])', r'\\\1'),
-        (r'(\(\?P\<\w*)\[\\s_\](\w*\>)', r'\1_\2'), # fix parameters which contain underscores
+
+        # fix parameters which contain underscores
+        (r'(\(\?P\<\w*)\[\\s_\](\w*\>)', r'\1_\2'), 
         )
 
     _route_tests = (
@@ -514,11 +500,149 @@ class Router(object):
         (r'(\|.+)$', r'Partial route contains noise after break'),
         )
 
+    def __init__(self, route, callable, http_methods='GET', filters=[], formats=[], prefix=None):
+        self.route = route
+        self.callable = callable
+        self._set_http_methods(http_methods)
+        self._compile_callable()
+        self._compiled_regex, self.regex = self._compile_regex(route, prefix=prefix)
+        self._validate()
+
+    def test(self, test):
+        try:
+            return self._compiled_regex.search(test).groupdict()
+        except:
+            return None
+
+    def __call__(self, **kwargs):
+        return self._compiled_callable(**kwargs)
+
+    def _set_http_methods(self, methods):
+        if isinstance(methods, basestring):
+            self._http_methods = [method.upper() for method in re.split('\W+', methods) if method.upper() in self.__slots__]
+
+        elif isinstance(methods, (tuple, list)):
+            self._http_methods = [method.upper() for method in methods if method.upper() in self.__slots__]
+
+        else:
+            self._http_methods = ['GET']
+
+    def _get_http_methods(self):
+        return self._http_methods
+
+    def _compile_callable(self):
+        if isinstance(self.callable, basestring) and self.callable.lower == 'none':
+            self._compiled_callable = __none_method__
+            self._compiled_callable.__name__ = 'None'
+
+        elif self.callable is None:
+            self._compiled_callable = __none_method__
+            self._compiled_callable.__name__ = 'None'
+
+        elif isinstance(self.callable, basestring):
+            try:
+                self._compiled_callable = self._import_callable(self.callable)
+            except ImportError:
+                raise RouteCompilationError('unable to import callable "%s"' % self.callable)
+
+        elif hasattr(self.callable, '__call__'):
+            self._compiled_callable = self.callable
+            self.callable = self.callable.__name__
+
+        else:
+            raise RouteCompilationError('callable "%s" cannot be processed' % self.callable)
+
+        self._process_argspec()
+
+    def _process_argspec(self):
+        argspec = inspect.getargspec(self._compiled_callable)
+
+        self._accepts_kwargs = argspec.keywords != None
+
+        # skip the "self" arg for class methods
+        if inspect.ismethod(self._compiled_callable):
+            self._all_args = argspec.args[1:]
+        else:
+            self._all_args = argspec.args
+
+        self._expected_args = self._all_args[:-len(argspec.defaults)]
+        self._preset_args = self._all_args[-len(argspec.defaults):]
+
+    def _import_callable(self, callable):
+        func = resolve(callable)
+        if not func:
+            raise ImportError()
+        return func
+
+    def _validate(self):
+        self._route_args_match_callable()
+
+    def _route_args_match_callable(self):
+        path_params = re.findall(r'(\(\?P\<\w+\>)', self.regex)
+        if path_params and len(path_params) != len(self._expected_args) and self.accepts_kwargs:
+            raise RouteCompilationError('Route params do not match callable args')
+
+    @classmethod
+    def _compile_regex(cls, pattern, prefix=''):
+        if str(pattern[0]) is '^':
+            regex = r'^' + prefix + pattern[1:]
+
+        else:
+            regex = prefix + pattern
+
+            for test, reason in cls._route_tests:
+                if re.search(test, regex):
+                    reason += "\n  while testing %s" % regex
+                    raise RouteCompilationError(reason)
+
+            for search, replace in cls._compile_patterns:
+                regex = re.sub(search, replace, regex)
+                
+            if pattern[-1] is '|':
+                regex = r'^' + regex[:-1]
+            else:
+                regex = r'^' + regex + r'$'
+
+        '''
+        for test, reason in cls._pattern_tests:
+            if re.search(test, regex):
+                reason += "\n  while testing %s" % regex
+                raise RouteCompilationError(reason)
+        '''
+        
+        try:
+            return re.compile(regex), regex
+            
+        except Exception as e:
+            raise RouteCompilationError(e.message+' while testing: %s' % regex)
+
+    def _callable_expects_args(self):
+        return self._expected_args != []
+
+    def _callable_accepts_kwargs(self):
+        return self.accepts_kwargs
+
+    http_methods = property(_get_http_methods, _set_http_methods)
+    expects_args = property(_callable_expects_args)
+    accepts_kwargs = property(_callable_accepts_kwargs)
+
+
+
+class Router(object):
+
+    __slots__ = [
+        '_routes',
+        'HEAD',
+        'GET',
+        'POST',
+        'PUT',
+        'DELETE',
+        ]
+
     _pattern_tests = (
         #('',''),
         )
 
-    _rule_pattern = ['route', 'callable', 'methods', 'filters', 'formats']
 
     _default_rule = {
         'route': '/[index]',
@@ -529,10 +653,8 @@ class Router(object):
         }
 
     def __init__(self, urls=None):
-        for method in self.__slots__:
-            if method[0] != '_':
-                self[method] = {}
-
+        self.clear()
+        
         if urls:
             self._set_urls(urls)
 
@@ -549,38 +671,6 @@ class Router(object):
         setattr(self, name, value)
 
 
-    def _compile(self, pattern, prefix=''):
-        if str(pattern[0]) is '^':
-            regex = r'^' + prefix + pattern[1:]
-
-        else:
-            regex = prefix + pattern
-
-            for test, reason in self._route_tests:
-                if re.search(test, regex):
-                    reason += "\n  while testing %s" % regex
-                    raise RouteCompilationError(reason)
-
-            for search, replace in self._compile_patterns:
-                regex = re.sub(search, replace, regex)
-                
-            if pattern[-1] is '|':
-                regex = r'^' + regex[:-1]
-            else:
-                regex = r'^' + regex + r'$'
-
-        for test, reason in self._pattern_tests:
-            if re.search(test, regex):
-                reason += "\n  while testing %s" % regex
-                raise RouteCompilationError(reason)
-        
-        try:
-            return re.compile(regex), regex
-            
-        except Exception as e:
-            raise RouteCompilationError(e.message+' while testing: %s' % regex)
-
-
     def _get_urls(self):
         return dict( (item, getattr(self, item)) for item in self.__slots__ )
 
@@ -594,19 +684,6 @@ class Router(object):
 
         else:
             raise RouteConfigError('unable to define routes')
-
-    def _get_debug_mode(self):
-        try:
-            return config.debug
-        except AttributeError:
-            return False
-
-
-    def _set_debug_mode(self, debugmode):
-        if debugmode is not True:
-            config.debug = False
-        else:
-            config.debug = True
 
 
     def _define_routes(self, urls, prefix=''):
@@ -631,97 +708,36 @@ class Router(object):
             self.add(prefix=prefix, **rule)
 
 
-    def _parse_methods(self, methods):
-        if isinstance(methods, basestring):
-            return [method.upper() for method in re.split('\W+', methods) if method.upper() in self.__slots__]
-
-        elif isinstance(methods, (tuple, list)):
-            return [method.upper() for method in methods if method.upper() in self.__slots__]
-
-        else:
-            return ['GET']
-
-
     def add(self, route, callable, methods='GET', prefix='', filters=[], formats=[]):
 
-        item = self._default_rule.copy()
-
-        item.update({'route':route, 'callable':callable, 'methods': self._parse_methods(methods)})
-
-        if type(item['callable']) in (tuple, list):
-            self._define_routes(item['callable'], prefix=item['route'])
-
-        else: #hasattr(item['callable'], '__call__'):
-            if config.debug:
-                print 'Adding', item
-
-            pattern, regex = self._compile(item['route'], prefix=prefix)
-            item['pattern'] = pattern
-            item['regex'] = regex
-
-            for method in item['methods']:
-                self[method][item['regex']] = item
-
-            print self['GET']
-            print self['POST']
+        item = Route(route, callable, methods, filters, formats, prefix)
+        for method in item.http_methods:
+            self[method][item.regex] = item
 
 
     def find(self, method, url):
 
-        if config.debug:
-            return self.find_with_output(method, url)
-
         method = method.upper().strip()
 
         if len(url) > 1 and url[-1] == '/':
-            url = url[0:-1]
+            url = url[:-1]
 
-        #for route, regex, test, func in self[method]:
         for regex, item in self[method].iteritems():
-            match = item['pattern'].search(url)
-            if match:
-                return (item['callable'], match.groupdict(), item['route'], item.get('filters', []))
+            params = item.test(url)
+            if params is not None:
+                return item, params
 
         raise NotFound(url=url, method=method)
 
 
-    def find_with_output(self, method, url):
-
-        method = method.upper().strip()
-
-        if len(url) > 1 and url[-1] == '/':
-            url = url[0:-1]
-
-        print "Finding url: %s" % url
-
-        #for route, regex, test, func in self[method]:
-        for regex, item in self[method].iteritems():
-            print "  Testing %s" % item['regex']
-            match = item['pattern'].search(url)
-            if match:
-                try:
-                    print ">>> Match found: %s > %s, calling %s (%s)" % (
-                        item['route'],
-                        item['regex'],
-                        item['callable'],
-                        item['callable'].__name__
-                        )
-                    print item
-                except:
-                    print ">>> Match found: %s > %s, calling %s" % (
-                        item['route'],
-                        item['regex'],
-                        item['callable']
-                        )
-                    print item
-                return (item['callable'], match.groupdict(), item['route'], item.get('filters', []))
-
-        raise NotFound(url=url, method=method)
+    def clear(self):
+        for method in self.__slots__:
+            if method[0] != '_':
+                self[method] = OrderedDict()
 
 
     # Properties
     urls = property(_get_urls, _set_urls)
-    debug = property(_get_debug_mode, _set_debug_mode)
 
 
 class HeaderContainer(threading.local):
@@ -1053,10 +1069,14 @@ class Request(threading.local):
         except:
             return {}
 
+    def _has_params(self):
+        return self.get_params() != {}
+
     params = property(get_params)
     session = property(get_session)
     querystring = property(build_get_string)
     poststring = property(build_post_string)
+    has_params = property(_has_params)
 
 
 
