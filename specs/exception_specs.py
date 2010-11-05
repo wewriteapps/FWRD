@@ -74,9 +74,15 @@ class MethodArgsErrorSpec(WSGITestBase):
 
     def it_should_fail_when_passed_unexpected_args(self):
         def foo(): pass
-        self.app.router.add('/index', foo)
+        self.assertRaises(RouteCompilationError,
+                          self.app.router.add,
+                          '/foo/:bar',
+                          foo
+                          )
+
+        """
         self.app.config.debug = True
-        self.assertStatus(403, '/index.xml', qs='foo=1')
+        self.assertStatus(403, '/foo/bar/baz.xml', qs='foo=1')
         self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/index" request="/index" method="get">
   <node name="__message__">method "foo" takes no arguments</node>
@@ -86,23 +92,20 @@ class MethodArgsErrorSpec(WSGITestBase):
 </response>
 ''', '/index.xml', qs='foo=bar')
 
-        def foo(foo): pass
-        self.app.router.add('/unexpected_params', foo)
-        self.assertStatus(403, '/unexpected_params.xml', qs='foo=1&bar=2')
-        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
-<response route="/unexpected_params" request="/unexpected_params" method="get">
-  <node name="__message__">method "foo" received unexpected params: bar</node>
-  <node name="__error__">403</node>
-  <node name="__request_path__">/unexpected_params.xml</node>
-  <node name="__http_method__">GET</node>
-</response>
-''', '/unexpected_params.xml', qs='foo=1&bar=2')
+        """
 
+  
     def it_should_report_missing_args(self):
 
-        def missing(foo, bar): pass
-        self.app.router.add('/missing_params', missing)
-        self.assertStatus(403, '/missing_params.xml', qs='foo=1')
+        def missing(missing, param): pass
+        self.assertRaises(RouteCompilationError,
+                          self.app.router.add,
+                          '/:missing',
+                          missing
+                          )
+
+        """
+        self.assertStatus(403, '/missing.xml', qs='param=1')
         self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/missing_params" request="/missing_params" method="get">
   <node name="__message__">method "missing" requires (foo, bar), missing (bar)</node>
@@ -111,6 +114,7 @@ class MethodArgsErrorSpec(WSGITestBase):
   <node name="__http_method__">GET</node>
 </response>
 ''', '/missing_params.xml', qs='foo=1')
+        """
 
     def it_should_allow_kwargs(self):
 

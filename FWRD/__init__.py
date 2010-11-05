@@ -72,6 +72,10 @@ __all__ = [
     'Forbidden',     # 403
     'NotFound',      # 404
     'InternalError', # 500
+
+    # Config exceptions
+    'ConfigError',
+    'RouteCompilationError',
     ]
 
 
@@ -143,8 +147,10 @@ class HTTPError(Exception):
 
     message = property(_get_message, _set_message)
 
+
 class HTTPServerError(HTTPError):
     pass
+
 
 class InternalError(HTTPServerError):
     pass
@@ -152,6 +158,7 @@ class InternalError(HTTPServerError):
 
 class HTTPClientError(HTTPError):
     code = 400
+
 
 class NotFound(HTTPClientError):
     code = 404
@@ -173,12 +180,13 @@ class NotFound(HTTPClientError):
     def __str__(self):
         return self.__repr__()
 
+
 class Forbidden(HTTPClientError):
     code = 403
 
     def __init__(self, message="Forbidden", *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
-        print message
+        print >>config.output, message
         self.message = message
 
 
@@ -189,20 +197,25 @@ class HTTPRedirection(HTTPError):
         self.headers['location'] = location
         self.message = ''
 
+
 class NotModified(HTTPRedirection):
     code = 304
     def __init__(self):
         """Not Modified doesn't issue a Location header"""
         self.headers = HeaderContainer()
 
+
 class Redirect(HTTPRedirection):
     code = 307
+
 
 class Moved(HTTPRedirection):
     code = 301
 
+
 class Found(HTTPRedirection):
     code = 302
+
 
 class SeeOther(HTTPRedirection):
     code = 303
@@ -213,8 +226,6 @@ class SeeOther(HTTPRedirection):
 class ConfigError(Exception):
     pass
 
-class RouteConfigError(ConfigError):
-    pass
 
 class Config(threading.local):
     __slots__ = [
@@ -250,14 +261,12 @@ class Application(threading.local):
         '_request',
         '_response',
         '_middleware',
-        '_globals'
         ]
 
     def __init__(self, config, router, *args, **kwargs):
         self._config = config
         self._router = router
         self._middleware = []
-        self._globals = globals()
 
     def __call__(self, environ, start_response):
         self._request = Request(environ)
@@ -268,26 +277,19 @@ class Application(threading.local):
 
         return self.process_request()
 
-    def _run_func(self):
+    def _execute_callable(self):
 
-        route, path_params = self._router.find(self._request.method, self._request.path[0])
+        item, path_params = self._router.find(self._request.method, self._request.path[0])
         self._request.set_path_params(path_params)
+        self._request.route = item.route
 
-        # check that the func will accept args
-        if not route.accepts_kwargs and \
-            not route.expects_args and \
-            self._request.has_params:
-            raise Forbidden('method "%s" takes no arguments' %
-                            func.__name__)
-        
-        # check that all non-default args have matching params
-        intersection = set(non_default_args) & set(req_params)
-        difference = set(non_default_args) ^ set(req_params)
-        if difference != non_default_args:
-            raise Forbidden('method "%s" requires (%s), missing (%s)' %
-                            (func.__name__, ', '.join(non_default_args), ', '.join(difference)))
-        
-        return route(**self._request.params)
+        try:
+            return item(**self._request.params)
+
+        except TypeError as e:
+            "Additional request params were found. Attempt to re-run the request without those params"
+            accepted_params = set(item._expected_args) & set(self._request.params.keys())
+            return item(**dict( (k,v) for k, v in self._request.params.iteritems() if k in accepted_params ))
 
             
     def process_request(self):
@@ -298,10 +300,10 @@ class Application(threading.local):
 
         try:
             body = {
-                'content': self._run_func(),
+                'content': self._execute_callable(),
                 'errors': self._response.errors,
                 }
-            
+
         except (KeyboardInterrupt, SystemExit) as e:
             print >>config.output, "Terminating."
 
@@ -325,7 +327,7 @@ class Application(threading.local):
             code = 500
             body = self._format_error(code, e)
             raise e
-            
+
         #finally:
         return self._response(body, code=code, additional_headers=headers)
 
@@ -445,25 +447,21 @@ class Application(threading.local):
 '''Routing'''
 
 
-def __none_method__(*args, **kwargs):
-    pass
-
-
-
 class RouteCompilationError(Exception):
     pass
 
 
-
 class Route(object):
     __slots__ = [
+        '_callable',
         '_compiled_regex',
         '_compiled_callable',
+        '_route_params',
         '_all_args',
         '_expected_args',
         '_preset_args',
         '_accepts_kwargs',
-        '_http_methods',
+        '_allowed_methods',
         'route',
         'regex',
         'callable',
@@ -471,7 +469,9 @@ class Route(object):
         'request_filters'
         ]
 
-    _tuple_pattern = ['route', 'callable', 'http_methods', 'filters', 'formats']
+    _http_methods = ['HEAD', 'GET', 'POST', 'PUT', 'DELETE']
+
+    _tuple_pattern = ['route', 'callable', 'methods', 'filters', 'formats']
 
     _compile_patterns = (
         # optional route items
@@ -500,12 +500,14 @@ class Route(object):
         (r'(\|.+)$', r'Partial route contains noise after break'),
         )
 
-    def __init__(self, route, callable, http_methods='GET', filters=[], formats=[], prefix=None):
+    _param_search = re.compile(r'(?<!\[)/(?<!\\):(\w+)')
+
+    def __init__(self, route, callable, methods='GET', filters=[], formats=[], prefix=None):
         self.route = route
-        self.callable = callable
-        self._set_http_methods(http_methods)
-        self._compile_callable()
+        self._set_allowed_methods(methods)
+        self._compile_callable(callable)
         self._compiled_regex, self.regex = self._compile_regex(route, prefix=prefix)
+        self._route_params = self._param_search.findall(self.route)
         self._validate()
 
     def test(self, test):
@@ -517,45 +519,63 @@ class Route(object):
     def __call__(self, **kwargs):
         return self._compiled_callable(**kwargs)
 
-    def _set_http_methods(self, methods):
+    def _set_allowed_methods(self, methods):
         if isinstance(methods, basestring):
-            self._http_methods = [method.upper() for method in re.split('\W+', methods) if method.upper() in self.__slots__]
+            self._allowed_methods = [method.upper() for method in re.split('\W+', methods) if method.upper() in self._http_methods]
 
         elif isinstance(methods, (tuple, list)):
-            self._http_methods = [method.upper() for method in methods if method.upper() in self.__slots__]
+            self._allowed_methods = [method.upper() for method in methods if method.upper() in self._http_methods]
 
         else:
-            self._http_methods = ['GET']
+            self._allowed_methods = ['GET']
 
-    def _get_http_methods(self):
-        return self._http_methods
+    def _get_allowed_methods(self):
+        return self._allowed_methods
 
-    def _compile_callable(self):
-        if isinstance(self.callable, basestring) and self.callable.lower == 'none':
-            self._compiled_callable = __none_method__
-            self._compiled_callable.__name__ = 'None'
+    def _compile_callable(self, callable):
+        if isinstance(callable, basestring) and callable.lower == 'none':
+            self._callable = None
+            self.callable = "None"
 
-        elif self.callable is None:
-            self._compiled_callable = __none_method__
-            self._compiled_callable.__name__ = 'None'
+        elif callable is None:
+            self._callable = None
+            self.callable = "None"
 
-        elif isinstance(self.callable, basestring):
+        elif isinstance(callable, basestring):
             try:
-                self._compiled_callable = self._import_callable(self.callable)
+                self.callable = callable
+                self._callable = self._import_callable(self.callable)
             except ImportError:
                 raise RouteCompilationError('unable to import callable "%s"' % self.callable)
 
-        elif hasattr(self.callable, '__call__'):
-            self._compiled_callable = self.callable
-            self.callable = self.callable.__name__
+        elif hasattr(callable, '__call__'):
+            self._callable = callable
+            self.callable = callable.__name__
 
         else:
             raise RouteCompilationError('callable "%s" cannot be processed' % self.callable)
 
+        self._compile_filters()
         self._process_argspec()
 
+    def _compile_filters(self):
+        def __none__(*args, **kwargs): pass
+        
+        if self._callable:
+            self._compiled_callable = self._callable
+        else:
+            self._compiled_callable = __none__
+
     def _process_argspec(self):
-        argspec = inspect.getargspec(self._compiled_callable)
+        self._accepts_kwargs = False
+        self._all_args = []
+        self._expected_args = []
+        self._preset_args = []
+
+        try:
+            argspec = inspect.getargspec(self._callable)
+        except TypeError:
+            return
 
         self._accepts_kwargs = argspec.keywords != None
 
@@ -565,8 +585,15 @@ class Route(object):
         else:
             self._all_args = argspec.args
 
-        self._expected_args = self._all_args[:-len(argspec.defaults)]
-        self._preset_args = self._all_args[-len(argspec.defaults):]
+        try:
+            self._expected_args = self._all_args[:-len(argspec.defaults)]
+        except TypeError:
+            self._expected_args = self._all_args
+
+        try:
+            self._preset_args = self._all_args[-len(argspec.defaults):]
+        except TypeError:
+            self._preset_args = self._all_args
 
     def _import_callable(self, callable):
         func = resolve(callable)
@@ -575,12 +602,26 @@ class Route(object):
         return func
 
     def _validate(self):
-        self._route_args_match_callable()
+        self._validate_route_args_are_not_repeated()
+        self._validate_route_args_match_callable()
 
-    def _route_args_match_callable(self):
-        path_params = re.findall(r'(\(\?P\<\w+\>)', self.regex)
-        if path_params and len(path_params) != len(self._expected_args) and self.accepts_kwargs:
+    def _validate_route_args_are_not_repeated(self):
+        if len(self._route_params) != len(set(self._route_params)):
+            raise RouteCompilationError('Route params can not be repeated')
+
+    def _validate_route_args_match_callable(self):
+        if self.route[0] is '^':
+            return
+        
+        if self._route_params and len(self._route_params) < len(self._expected_args) and not self.accepts_kwargs:
             raise RouteCompilationError('Route params do not match callable args')
+
+        difference = set(self._route_params) - set(self._expected_args) 
+        if difference and not self.accepts_kwargs:
+            raise RouteCompilationError('Route param list (%s) does not match arg list for "%s" (%s)' %
+                                        (', '.join(set(self._route_params)),
+                                         self.callable,
+                                         ', '.join(difference)))
 
     @classmethod
     def _compile_regex(cls, pattern, prefix=''):
@@ -603,13 +644,6 @@ class Route(object):
             else:
                 regex = r'^' + regex + r'$'
 
-        '''
-        for test, reason in cls._pattern_tests:
-            if re.search(test, regex):
-                reason += "\n  while testing %s" % regex
-                raise RouteCompilationError(reason)
-        '''
-        
         try:
             return re.compile(regex), regex
             
@@ -620,9 +654,9 @@ class Route(object):
         return self._expected_args != []
 
     def _callable_accepts_kwargs(self):
-        return self.accepts_kwargs
+        return self._accepts_kwargs
 
-    http_methods = property(_get_http_methods, _set_http_methods)
+    methods = property(_get_allowed_methods, _set_allowed_methods)
     expects_args = property(_callable_expects_args)
     accepts_kwargs = property(_callable_accepts_kwargs)
 
@@ -672,7 +706,7 @@ class Router(object):
 
 
     def _get_urls(self):
-        return dict( (item, getattr(self, item)) for item in self.__slots__ )
+        return dict( (item, self[item]) for item in self.__slots__ if item[0] != '_' )
 
 
     def _set_urls(self, urls=None):
@@ -683,7 +717,7 @@ class Router(object):
             self._define_routes(urls)
 
         else:
-            raise RouteConfigError('unable to define routes')
+            raise RouteCompilationError('unable to define routes')
 
 
     def _define_routes(self, urls, prefix=''):
@@ -699,8 +733,6 @@ class Router(object):
 
             if type(item) is tuple:
                 item_ = dict(zip(self._rule_pattern, item))
-                print ">>>>> Adding from tuple"
-                print item_
                 rule.update(item_)
             else:
                 rule.update(item)
@@ -711,7 +743,7 @@ class Router(object):
     def add(self, route, callable, methods='GET', prefix='', filters=[], formats=[]):
 
         item = Route(route, callable, methods, filters, formats, prefix)
-        for method in item.http_methods:
+        for method in item.methods:
             self[method][item.regex] = item
 
 

@@ -22,6 +22,7 @@ class GetRequestSpec(WSGITestBase):
             'stylesheet_path': 'specs',
             'default_stylesheet': 'translated_response_spec.xsl',
             }
+        self.app.router.clear()
 
     def it_should_parse_file_extensions_correctly(self):
         self.app.router.add('/foo/bar', None)
@@ -56,8 +57,15 @@ class GetRequestSpec(WSGITestBase):
             self.assertStatus(200, route=route)
 
     def it_should_match_parametered_routes_correctly(self):
+
+        def foo(foo):
+            pass
+
+        def bar(dept, name=None):
+            pass
+        
         routes = {
-            '/:foo': {
+            ('/:foo', foo): {
                 '/meh': {
                     'foo': 'meh'
                     },
@@ -65,7 +73,7 @@ class GetRequestSpec(WSGITestBase):
                     'foo': 'blah'
                     }
                 },
-            '/company/:dept[/:name]': {
+            ('/company/:dept[/:name]', bar): {
                 '/company/it': {
                     'dept': 'it'
                     },
@@ -81,7 +89,7 @@ class GetRequestSpec(WSGITestBase):
             }
 
         for route, requests in routes.iteritems():
-            self.app.router.add(route, None)
+            self.app.router.add(route[0], route[1])
 
             for request, params in requests.iteritems():
                 self.make_request(request)
@@ -161,6 +169,20 @@ With lots of whitespace
         for route, ext, func, body in routes:
             self.assertBody(body, route+ext)
         
+
+    def it_should_ignore_additional_qs_args(self):
+
+        def foo(foo): pass
+        self.app.router.add('/unexpected_params', foo)
+        self.assertStatus(200, '/unexpected_params.xml', qs='foo=1&bar=2')
+        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/unexpected_params" request="/unexpected_params" method="get">
+  <content/>
+  <errors/>
+</response>
+''', '/unexpected_params.xml', qs='foo=1&bar=2')
+
+
 
 
 class PostRequestSpec(WSGITestBase):
