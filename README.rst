@@ -30,23 +30,25 @@ FEATURES
 
 - Redirect support
 
-- Automatic Response formatting (XML, JSON, YAML, more to follow)
+- Automatic Response formatting: XSL-Translated output, XML, JSON (more to follow)
 
 NOT IMPLEMENTED
 ---------------
 
 Templating
     We don't support templating using any of the common Python templating 
-    libraries (Jinja, Cheetah, Mako, etc). It's XSL or nothing with FWRD.
-    And that's the point - FWRD's default output is XML, but you can define
-    the output to be JSON, YAML, etc. without any "work". A templating 
-    language would just "get in the way".
+    libraries such as Jinja, Cheetah, Mako, etc. It's XSL or nothing with FWRD.
+    Which is the point -- the default output format is XML passed through an
+    XSL stylesheet. Helpful formatters are available so you can change
+    the output to be JSON, YAML, etc. without any extra "work", just let your
+    method return it's results and it will be converted to something useful. 
+    A templating language would just add extra work and "get in the way".
 
 ORM
     We don't feel that we should dictate what database you use, so we don't
     supply an ORM. Feel free to use any of the popular ones, or an ODM, or 
     a flat-file database, or an in-memory database, or whatever persistance 
-    you wish!
+    you wish.
 
 INSTALLATION
 ------------
@@ -54,7 +56,7 @@ INSTALLATION
 Currently FWRD is alpha software. Until there are official releases please
 install from the master:
 
-    pip install http://github.com/digitala/FWRD/zipball/master
+    pip install http://github.com/digitala/FWRD/tarball/master
 
 USAGE
 -----
