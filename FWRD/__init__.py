@@ -409,8 +409,8 @@ class Application(threading.local):
             stream = config
 
         try:
-            config = yaml.load(stream)
-            config = CaseInsensitiveDictMapper(config)
+            config = CaseInsensitiveDictMapper(yaml.load(stream))
+
         except yaml.YAMLError as e:
             error = 'Import failed with malformed config'
             if hasattr(e, 'problem_mark'):
@@ -434,8 +434,8 @@ class Application(threading.local):
     def _update_config_from_import(self, config):
         self._config.update(**config)
 
-    def _update_routes_from_import(self, config):
-        self._router.urls = config
+    def _update_routes_from_import(self, routes):
+        self._router.urls = routes
 
     config    = property(_get_config)
     router    = property(_get_router)
@@ -462,6 +462,7 @@ class Route(object):
         '_preset_args',
         '_accepts_kwargs',
         '_allowed_methods',
+        '_request_filters',
         'route',
         'regex',
         'callable',
@@ -504,6 +505,7 @@ class Route(object):
 
     def __init__(self, route, callable, methods='GET', filters=[], formats=[], prefix=None):
         self.route = route
+        self.request_filters = filters
         self._set_allowed_methods(methods)
         self._compile_callable(callable)
         self._compiled_regex, self.regex = self._compile_regex(route, prefix=prefix)
@@ -555,16 +557,41 @@ class Route(object):
         else:
             raise RouteCompilationError('callable "%s" cannot be processed' % self.callable)
 
+        self._import_filters()
         self._compile_filters()
         self._process_argspec()
 
+    def _import_filters(self):
+        self._request_filters = []
+
+        for filter_ in self.request_filters:
+            try:
+                self._request_filters.append({
+                    'callable': self._import_callable(filter_['callable']),
+                    'args': filter_['args']
+                    })
+            except ImportError:
+                raise RouteCompilationError('unable to import callable for filter "%s"' % filter_['callable'])
+                
+
     def _compile_filters(self):
         def __none__(*args, **kwargs): pass
+
+        _callable = self._callable
         
-        if self._callable:
-            self._compiled_callable = self._callable
-        else:
-            self._compiled_callable = __none__
+        if not _callable:
+            _callable = __none__
+
+        #if not self.request_filters:
+        #self._compiled_callable = _callable
+
+        print _callable, [dict(x) for x in self.request_filters]
+
+        self._compiled_callable = reduce(
+            lambda stack, filter_: filter_['callable'](stack, **filter_['args']),
+            self._request_filters,
+            _callable
+            )
 
     def _process_argspec(self):
         self._accepts_kwargs = False
@@ -673,19 +700,6 @@ class Router(object):
         'DELETE',
         ]
 
-    _pattern_tests = (
-        #('',''),
-        )
-
-
-    _default_rule = {
-        'route': '/[index]',
-        'callable': None,
-        'methods': ['GET'],
-        'filters': [],
-        'formats': []
-        }
-
     def __init__(self, urls=None):
         self.clear()
         
@@ -710,10 +724,9 @@ class Router(object):
 
 
     def _set_urls(self, urls=None):
-        if urls and type(urls) in (tuple, list):
-            self._define_routes(urls)
-
-        elif urls and isinstance(urls, CaseInsensitiveDict):
+        self.clear()
+        
+        if urls and isinstance(urls, (list, tuple, dict, CaseInsensitiveDict)):
             self._define_routes(urls)
 
         else:
@@ -729,18 +742,20 @@ class Router(object):
             if not  isinstance(item, (tuple, dict, CaseInsensitiveDict)):
                 continue
 
-            rule = self._default_rule.copy()
+            rule = dict((key, None) for key in Route._tuple_pattern)
+            rule['prefix'] = prefix
 
-            if type(item) is tuple:
-                item_ = dict(zip(self._rule_pattern, item))
-                rule.update(item_)
+            if isinstance(item, (list, tuple)):
+                self.add(**dict(zip(Route._tuple_pattern, item)))
+
+            elif isinstance(item, CaseInsensitiveDict):
+                self.add(**dict(item))
+
             else:
-                rule.update(item)
-
-            self.add(prefix=prefix, **rule)
+                self.add(**item)
 
 
-    def add(self, route, callable, methods='GET', prefix='', filters=[], formats=[]):
+    def add(self, route, callable=None, methods='GET', prefix='', filters=[], formats=[]):
 
         item = Route(route, callable, methods, filters, formats, prefix)
         for method in item.methods:

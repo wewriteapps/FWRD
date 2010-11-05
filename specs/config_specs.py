@@ -20,7 +20,7 @@ class ConfigSpec(unittest.TestCase):
     '''Configuration Import spec'''
 
     def setUp(self):
-        pass
+        router.clear()
 
 
     def it_should_import_successfully(self):
@@ -36,6 +36,10 @@ Routes:
         for config in configs:
             config = StringIO(config)
             self.assertTrue(application.import_config(config) != False)
+
+
+    def it_should_import_from_a_file(self):
+        self.assertTrue(application.import_config('specs/import_config_test.yaml') != False)
             
 
     def it_must_raise_for_malformed_config(self):
@@ -73,5 +77,21 @@ Routes:
         for config in configs:
             config = StringIO(config)
             application.import_config(config)
+            print router.urls['GET']
             self.assertEqual(len(router.urls['GET']), 2)
             self.assertEqual(len(router.urls['POST']), 1)
+
+    def it_should_add_filters_successfully(self):
+        config = StringIO('''
+Routes:
+  - route: /[index]
+    filters:
+      - callable: specs.example_methods:basic_filter
+        args:
+          message: hello world
+        ''')
+
+        self.assertTrue(application.import_config(config) != False)
+        route = application._router['GET']['^/(index)?$']
+        print [dict(x) for x in route.request_filters]
+        self.assertTrue(False)
