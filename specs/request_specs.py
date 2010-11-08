@@ -212,6 +212,31 @@ Routes:
 ''', '/index.xml')
 
 
+    def it_should_process_multiple_filters_successfully(self):
+        config = StringIO('''
+Routes:
+  - route: /[index]
+    filters:
+      - callable: specs.example_methods:hello_filter
+      - callable: specs.example_methods:world_filter
+        ''')
+
+        self.assertTrue(self.app.import_config(config) != False)
+        self.assertStatus(200, '/index.xml')
+        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/[index]" request="/index" method="get">
+  <content nodetype="fixed-list">
+    <i>hello</i>
+    <i nodetype="fixed-list">
+      <i>world</i>
+      <i/>
+    </i>
+  </content>
+  <errors/>
+</response>
+''', '/index.xml')
+
+
 
 
 class PostRequestSpec(WSGITestBase):

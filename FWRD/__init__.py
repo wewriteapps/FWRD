@@ -568,7 +568,7 @@ class Route(object):
             try:
                 self._request_filters.append({
                     'callable': self._import_callable(filter_['callable']),
-                    'args': filter_['args']
+                    'args': filter_.get('args', None)
                     })
             except ImportError:
                 raise RouteCompilationError('unable to import callable for filter "%s"' % filter_['callable'])
@@ -586,8 +586,8 @@ class Route(object):
             self._compiled_callable = _callable
             return
 
-        for filter_ in reversed([dict(x) for x in self._request_filters]):
-            if filter_['args']:
+        for filter_ in reversed(self._request_filters):
+            if filter_['args'] is not None:
                 _callable = filter_['callable'](**dict(filter_['args']))(_callable)
             else:
                 _callable = filter_['callable'](_callable)
