@@ -3,6 +3,11 @@ import re
 import sys
 import unittest
 
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
 from http_spec import WSGITestBase
 
 FWRD_PATH = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
@@ -181,6 +186,30 @@ With lots of whitespace
   <errors/>
 </response>
 ''', '/unexpected_params.xml', qs='foo=1&bar=2')
+
+
+
+    def it_should_process_filters_successfully(self):
+        config = StringIO('''
+Routes:
+  - route: /[index]
+    filters:
+      - callable: specs.example_methods:basic_filter
+        args:
+          message: hello world
+        ''')
+
+        self.assertTrue(self.app.import_config(config) != False)
+        self.assertStatus(200, '/index.xml')
+        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/[index]" request="/index" method="get">
+  <content nodetype="fixed-list">
+    <i>hello world</i>
+    <i/>
+  </content>
+  <errors/>
+</response>
+''', '/index.xml')
 
 
 

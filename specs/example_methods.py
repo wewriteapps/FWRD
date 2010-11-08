@@ -7,7 +7,6 @@ def bar(*args, **kwargs):
 def basic_filter(message):
     def wrapper(func):
         def wrapped(*args, **kwargs):
-            print message
-            return func(*args, **kwargs)
+            return (message, func(*args, **kwargs))
         return wrapped
     return wrapper

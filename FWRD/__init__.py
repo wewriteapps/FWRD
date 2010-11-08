@@ -582,16 +582,17 @@ class Route(object):
         if not _callable:
             _callable = __none__
 
-        #if not self.request_filters:
-        #self._compiled_callable = _callable
+        if not self._request_filters:
+            self._compiled_callable = _callable
+            return
 
-        print _callable, [dict(x) for x in self.request_filters]
+        for filter_ in reversed([dict(x) for x in self._request_filters]):
+            if filter_['args']:
+                _callable = filter_['callable'](**dict(filter_['args']))(_callable)
+            else:
+                _callable = filter_['callable'](_callable)
 
-        self._compiled_callable = reduce(
-            lambda stack, filter_: filter_['callable'](stack, **filter_['args']),
-            self._request_filters,
-            _callable
-            )
+        self._compiled_callable = _callable
 
     def _process_argspec(self):
         self._accepts_kwargs = False
