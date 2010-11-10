@@ -326,7 +326,6 @@ class Application(threading.local):
         self._router.urls = routes
 
     def _update_global_filters_from_import(self, filters):
-        print "setting filters"
         Route._global_filters = [dict(filter_) for filter_ in filters]
 
         for filter_ in filters:
@@ -602,7 +601,6 @@ class Route(object):
             return
 
         for filter_ in reversed(self._global_filters_imported + self._request_filters):
-            print filter_['callable']
             if filter_['args'] is not None:
                 _callable = filter_['callable'](**dict(filter_['args']))(_callable)
             else:
@@ -806,11 +804,6 @@ class Router(object):
             if method[0] != '_':
                 self[method] = OrderedDict()
 
-    def clear_filters(self):
-        print "clearing filters"
-        Route._global_filters = []
-        Route._global_filters_imported = []
-        
 
     # Properties
     urls = property(_get_urls, _set_urls)
