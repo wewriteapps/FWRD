@@ -326,6 +326,9 @@ class Application(threading.local):
         self._router.urls = routes
 
     def _update_global_filters_from_import(self, filters):
+
+        print >>self._config.output, "Configuring %d global filters..." % len(filters),
+        
         Route._global_filters = [dict(filter_) for filter_ in filters]
 
         for filter_ in filters:
@@ -337,6 +340,8 @@ class Application(threading.local):
                 
             except ImportError:
                 raise RouteCompilationError('unable to import global filter "%s"' % filter_['callable'])
+
+        print >>self._config.output, "done."
             
     def _execute_callable(self):
 
@@ -366,7 +371,7 @@ class Application(threading.local):
                 }
 
         except (KeyboardInterrupt, SystemExit) as e:
-            print >>config.output, "Terminating."
+            print >>self._config.output, "Terminating."
 
         except HTTPRedirection as e:
             code = e.code
