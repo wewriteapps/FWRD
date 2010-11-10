@@ -13,7 +13,7 @@ FWRD_PATH = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1]
 if FWRD_PATH not in sys.path:
     sys.path.insert(1, FWRD_PATH)
 
-from FWRD import application, router, ConfigError
+from FWRD import application, router, Route, ConfigError
 
 
 class ConfigSpec(unittest.TestCase):
@@ -21,7 +21,6 @@ class ConfigSpec(unittest.TestCase):
 
     def setUp(self):
         router.clear()
-
 
     def it_should_import_successfully(self):
         configs = ('''
@@ -35,11 +34,11 @@ Routes:
 
         for config in configs:
             config = StringIO(config)
-            self.assertTrue(application.import_config(config) != False)
+            self.assertTrue(application.setup(config) != False)
 
 
     def it_should_import_from_a_file(self):
-        self.assertTrue(application.import_config('specs/import_config_test.yaml') != False)
+        self.assertTrue(application.setup('specs/setup_test.yaml') != False)
             
 
     def it_must_raise_for_malformed_config(self):
@@ -50,7 +49,7 @@ Routes:
         for config in configs:
             config = StringIO(config)
             self.assertRaises(ConfigError,
-                              application.import_config,
+                              application.setup,
                               config)
 
 
@@ -62,7 +61,7 @@ Routes:
         for config in configs:
             config = StringIO(config)
             self.assertRaises(ConfigError,
-                              application.import_config,
+                              application.setup,
                               config)
 
     def it_should_add_routes_successfully(self):
@@ -76,8 +75,40 @@ Routes:
 
         for config in configs:
             config = StringIO(config)
-            application.import_config(config)
-            print router.urls['GET']
+            application.setup(config)
             self.assertEqual(len(router.urls['GET']), 2)
             self.assertEqual(len(router.urls['POST']), 1)
 
+
+    def it_should_add_filters_successfully(self):
+        configs = ('''
+Routes:
+  - route: /[index]
+    filters:
+      - callable: specs.example_methods:basic_filter
+        args:
+          message: hello world
+        ''',)
+
+        for config in configs:
+            config = StringIO(config)
+            application.setup(config)
+            route = router.urls['GET'].values()[0]
+            filter_ = [dict(x) for x in route.request_filters][0]
+            self.assertEqual(filter_['callable'], 'specs.example_methods:basic_filter')
+            self.assertTrue('args' in filter_)
+
+    def it_should_add_global_filters(self):
+
+        config = '''
+Global Filters:
+  - callable: specs.example_methods:basic_filter
+Routes:
+  - route: /[index]
+'''
+
+        print 'setting config'
+        application.setup(StringIO(config))
+        print 'running tests'
+        self.assertEqual(Route._global_filters, [{'callable': 'specs.example_methods:basic_filter'}])
+            

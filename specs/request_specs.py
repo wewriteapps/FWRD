@@ -23,6 +23,7 @@ class GetRequestSpec(WSGITestBase):
 
     def setUp(self):
         super(self.__class__, self).setUp()
+        self.app.reset()
         self.app.config.format['xsl'] = {
             'stylesheet_path': 'specs',
             'default_stylesheet': 'translated_response_spec.xsl',
@@ -199,7 +200,7 @@ Routes:
           message: hello world
         ''')
 
-        self.assertTrue(self.app.import_config(config) != False)
+        self.assertTrue(self.app.setup(config) != False)
         self.assertStatus(200, '/index.xml')
         self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/[index]" request="/index" method="get">
@@ -221,7 +222,33 @@ Routes:
       - callable: specs.example_methods:world_filter
         ''')
 
-        self.assertTrue(self.app.import_config(config) != False)
+        self.assertTrue(self.app.setup(config) != False)
+        self.assertStatus(200, '/index.xml')
+        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/[index]" request="/index" method="get">
+  <content nodetype="fixed-list">
+    <i>hello</i>
+    <i nodetype="fixed-list">
+      <i>world</i>
+      <i/>
+    </i>
+  </content>
+  <errors/>
+</response>
+''', '/index.xml')
+
+
+    def it_should_process_global_filters_correctly(self):
+        config = StringIO('''
+Global Filters:
+  - callable: specs.example_methods:hello_filter
+Routes:
+  - route: /[index]
+    filters:
+      - callable: specs.example_methods:world_filter
+        ''')
+
+        self.assertTrue(self.app.setup(config) != False)
         self.assertStatus(200, '/index.xml')
         self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/[index]" request="/index" method="get">

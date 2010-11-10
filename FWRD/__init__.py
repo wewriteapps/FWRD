@@ -16,7 +16,7 @@ import xml.parsers.expat
 import yaml
 from datetime import datetime
 from lxml import etree
-from resolver import resolve
+from resolver import resolve as resolve_import
 from urllib import unquote as urlunquote
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
@@ -24,12 +24,12 @@ from xml.sax.saxutils import escape
 
 try:
     import re2 as re
-except:
+except ImportError:
     import re
 
 try:
     from cStringIO import StringIO
-except:
+except ImportError:
     from StringIO import StringIO
 
 try:
@@ -38,12 +38,12 @@ except ImportError:
     from cgi import parse_qs
 
 try:
-    try:
-        import simplejson as json
-    except:
-        import json
+    # simplejson is faster than the
+    # standard json module, so use it
+    # when available
+    import simplejson as json
 except ImportError:
-    json = None
+    import json
 
 try:
     from collections import MutableMapping as DictMixin
@@ -277,6 +277,68 @@ class Application(threading.local):
 
         return self.process_request()
 
+    def reset(self):
+        self._config = Config()
+        self._router = Router(())
+        self._middleware = []
+        Route._global_filters = []
+        Route._global_filters_imported = []        
+
+    def setup(self, config):
+        try:
+            try:
+                stream = config.read()
+            except (AttributeError, TypeError):
+                stream = file(config).read()
+        except (AttributeError, TypeError):
+            stream = config
+
+        try:
+            config = CaseInsensitiveDictMapper(yaml.load(stream))
+
+        except yaml.YAMLError as e:
+            error = 'Import failed with malformed config'
+            if hasattr(e, 'problem_mark'):
+                mark = e.problem_mark
+                error += ' at: (%s:%s)' % (mark.line+1, mark.column+1)
+            raise ConfigError(error)
+
+        if not self._validate_imported_config(config):
+            raise ConfigError('Import failed: config invalid')
+
+        if 'config' in config:
+            self._update_config_from_import(config['config'])
+
+        if 'global filters' in config:
+            self._update_global_filters_from_import(config['global filters'])
+
+        if 'routes' in config:
+            self._update_routes_from_import(config['routes'])
+
+
+    def _validate_imported_config(self, config):
+        return any([x in config for x in ['config', 'routes', 'formats']])
+
+    def _update_config_from_import(self, config):
+        self._config.update(**config)
+
+    def _update_routes_from_import(self, routes):
+        self._router.urls = routes
+
+    def _update_global_filters_from_import(self, filters):
+        print "setting filters"
+        Route._global_filters = [dict(filter_) for filter_ in filters]
+
+        for filter_ in filters:
+            try:
+                Route._global_filters_imported.append({
+                    'callable': resolve(filter_['callable']),
+                    'args': filter_.get('args', None)
+                    })
+                
+            except ImportError:
+                raise RouteCompilationError('unable to import global filter "%s"' % filter_['callable'])
+            
     def _execute_callable(self):
 
         item, path_params = self._router.find(self._request.method, self._request.path[0])
@@ -399,44 +461,6 @@ class Application(threading.local):
             pass
 
 
-    def import_config(self, config):
-        try:
-            try:
-                stream = config.read()
-            except (AttributeError, TypeError):
-                stream = file(config).read()
-        except (AttributeError, TypeError):
-            stream = config
-
-        try:
-            config = CaseInsensitiveDictMapper(yaml.load(stream))
-
-        except yaml.YAMLError as e:
-            error = 'Import failed with malformed config'
-            if hasattr(e, 'problem_mark'):
-                mark = e.problem_mark
-                error += ' at: (%s:%s)' % (mark.line+1, mark.column+1)
-            raise ConfigError(error)
-
-        if not self._validate_imported_config(config):
-            raise ConfigError('Import failed: config invalid')
-
-        if 'config' in config:
-            self._update_config_from_import(config['config'])
-
-        if 'routes' in config:
-            self._update_routes_from_import(config['routes'])
-
-
-    def _validate_imported_config(self, config):
-        return any([x in config for x in ['config', 'routes', 'formats']])
-
-    def _update_config_from_import(self, config):
-        self._config.update(**config)
-
-    def _update_routes_from_import(self, routes):
-        self._router.urls = routes
-
     config    = property(_get_config)
     router    = property(_get_router)
     request   = property(_get_request)
@@ -503,6 +527,10 @@ class Route(object):
 
     _param_search = re.compile(r'(?<!\[)/(?<!\\):(\w+)')
 
+    _global_filters = []
+
+    _global_filters_imported = []
+
     def __init__(self, route, callable, methods='GET', filters=[], formats=[], prefix=None):
         self.route = route
         self.request_filters = filters
@@ -521,19 +549,6 @@ class Route(object):
     def __call__(self, **kwargs):
         return self._compiled_callable(**kwargs)
 
-    def _set_allowed_methods(self, methods):
-        if isinstance(methods, basestring):
-            self._allowed_methods = [method.upper() for method in re.split('\W+', methods) if method.upper() in self._http_methods]
-
-        elif isinstance(methods, (tuple, list)):
-            self._allowed_methods = [method.upper() for method in methods if method.upper() in self._http_methods]
-
-        else:
-            self._allowed_methods = ['GET']
-
-    def _get_allowed_methods(self):
-        return self._allowed_methods
-
     def _compile_callable(self, callable):
         if isinstance(callable, basestring) and callable.lower == 'none':
             self._callable = None
@@ -546,7 +561,7 @@ class Route(object):
         elif isinstance(callable, basestring):
             try:
                 self.callable = callable
-                self._callable = self._import_callable(self.callable)
+                self._callable = resolve(self.callable)
             except ImportError:
                 raise RouteCompilationError('unable to import callable "%s"' % self.callable)
 
@@ -567,7 +582,7 @@ class Route(object):
         for filter_ in self.request_filters:
             try:
                 self._request_filters.append({
-                    'callable': self._import_callable(filter_['callable']),
+                    'callable': resolve(filter_['callable']),
                     'args': filter_.get('args', None)
                     })
             except ImportError:
@@ -586,7 +601,8 @@ class Route(object):
             self._compiled_callable = _callable
             return
 
-        for filter_ in reversed(self._request_filters):
+        for filter_ in reversed(self._global_filters_imported + self._request_filters):
+            print filter_['callable']
             if filter_['args'] is not None:
                 _callable = filter_['callable'](**dict(filter_['args']))(_callable)
             else:
@@ -622,12 +638,6 @@ class Route(object):
             self._preset_args = self._all_args[-len(argspec.defaults):]
         except TypeError:
             self._preset_args = self._all_args
-
-    def _import_callable(self, callable):
-        func = resolve(callable)
-        if not func:
-            raise ImportError()
-        return func
 
     def _validate(self):
         self._validate_route_args_are_not_repeated()
@@ -677,6 +687,19 @@ class Route(object):
             
         except Exception as e:
             raise RouteCompilationError(e.message+' while testing: %s' % regex)
+
+    def _set_allowed_methods(self, methods):
+        if isinstance(methods, basestring):
+            self._allowed_methods = [method.upper() for method in re.split('\W+', methods) if method.upper() in self._http_methods]
+
+        elif isinstance(methods, (tuple, list)):
+            self._allowed_methods = [method.upper() for method in methods if method.upper() in self._http_methods]
+
+        else:
+            self._allowed_methods = ['GET']
+
+    def _get_allowed_methods(self):
+        return self._allowed_methods
 
     def _callable_expects_args(self):
         return self._expected_args != []
@@ -783,6 +806,11 @@ class Router(object):
             if method[0] != '_':
                 self[method] = OrderedDict()
 
+    def clear_filters(self):
+        print "clearing filters"
+        Route._global_filters = []
+        Route._global_filters_imported = []
+        
 
     # Properties
     urls = property(_get_urls, _set_urls)
@@ -2085,6 +2113,7 @@ class XPathCallbacks(object):
 
 '''General Utility Objects'''
 
+
 class CaseInsensitiveDict(collections.Mapping):
     def __init__(self, d):
         self._d = d
@@ -2105,18 +2134,32 @@ class CaseInsensitiveDict(collections.Mapping):
     def original_key(self, k):
         return self._s.get(k.lower())
 
+
 def CaseInsensitiveDictMapper(d):
     if type(d) is dict:
         _d = {}
         for k, v in d.iteritems():
             _d[k] = CaseInsensitiveDictMapper(v)
         return CaseInsensitiveDict(_d)
+
     elif type(d) is list:
         return [CaseInsensitiveDictMapper(x) for x in d]
+
     elif type(d) is tuple:
         return tuple([CaseInsensitiveDictMapper(x) for x in d])
+
     elif type(d) is set:
         return set([CaseInsensitiveDictMapper(x) for x in d])
+
     else:
         return d
+
+
+def resolve(callable):
+    func = resolve_import(callable)
+
+    if not func:
+        raise ImportError()
+
+    return func
 
