@@ -628,11 +628,13 @@ class Route(object):
         if not _callable:
             _callable = __none__
 
-        if not self._request_filters:
+        filters = router._global_filters_imported + self._request_filters
+
+        if not filters:
             self._compiled_callable = _callable
             return
 
-        for filter_ in reversed(router._global_filters_imported + self._request_filters):
+        for filter_ in reversed(filters):
             if filter_['args'] is not None:
                 _callable = filter_['callable'](**dict(filter_['args']))(_callable)
             else:

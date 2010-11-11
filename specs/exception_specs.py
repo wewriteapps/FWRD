@@ -117,7 +117,6 @@ class MethodArgsErrorSpec(WSGITestBase):
         """
 
     def it_should_allow_kwargs(self):
-
         def bar(foo, **kwargs): pass
         self.app.router.add('/additional_params', bar)
         self.assertStatus(200, '/additional_params.xml', qs='foo=1&bar=2')

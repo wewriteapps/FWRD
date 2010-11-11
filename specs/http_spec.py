@@ -25,6 +25,7 @@ class WSGITestBase(unittest.TestCase):
     def setUp(self):
         self.config = config
         self.app = application
+        self.app.reset()
         self.config.port = 9090
         self.wsgiapp = wsgiref.validate.validator(self.app)
 
