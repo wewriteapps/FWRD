@@ -348,9 +348,6 @@ class Application(threading.local):
 
 
     def _update_global_filters_from_import(self, filters):
-
-        print >>self._config.output, "Configuring %d global filters..." % len(filters),
-        
         self._router._global_filters = [dict(filter_) for filter_ in filters]
 
         for filter_ in filters:
@@ -362,8 +359,6 @@ class Application(threading.local):
                 
             except ImportError:
                 raise RouteCompilationError('unable to import global filter "%s"' % filter_['callable'])
-
-        print >>self._config.output, "done."
             
 
     def _execute_callable(self):
@@ -635,8 +630,12 @@ class Route(object):
             return
 
         for filter_ in reversed(filters):
-            if filter_['args'] is not None:
+            if filter_['args'] is not None and type(filter_['args']) is dict:
                 _callable = filter_['callable'](**dict(filter_['args']))(_callable)
+            elif filter_['args'] is not None and type(filter_['args']) in (list, tuple, set):
+                _callable = filter_['callable'](*filter_['args'])(_callable)
+            elif filter_['args'] is not None:
+                _callable = filter_['callable'](filter_['args'])(_callable)
             else:
                 _callable = filter_['callable'](_callable)
 
