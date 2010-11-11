@@ -110,5 +110,5 @@ Routes:
         print 'setting config'
         application.setup(StringIO(config))
         print 'running tests'
-        self.assertEqual(Route._global_filters, [{'callable': 'specs.example_methods:basic_filter'}])
+        self.assertEqual(application.router._global_filters, [{'callable': 'specs.example_methods:basic_filter'}])
             

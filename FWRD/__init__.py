@@ -1,6 +1,6 @@
-__author__ = 'Phillip B Oldham'
-__version__ = '0.2.0-dev'
-__licence__ = 'MIT'
+__author__   = 'Phillip B Oldham'
+__version__  = '0.2.0-dev'
+__licence__  = 'MIT'
 
 import cgi
 import collections
@@ -14,6 +14,7 @@ import threading
 import traceback
 import xml.parsers.expat
 import yaml
+
 from datetime import datetime
 from lxml import etree
 from resolver import resolve as resolve_import
@@ -148,16 +149,20 @@ class HTTPError(Exception):
     message = property(_get_message, _set_message)
 
 
+
 class HTTPServerError(HTTPError):
     pass
+
 
 
 class InternalError(HTTPServerError):
     pass
 
 
+
 class HTTPClientError(HTTPError):
     code = 400
+
 
 
 class NotFound(HTTPClientError):
@@ -170,6 +175,7 @@ class NotFound(HTTPClientError):
 
         self.message = str(self)
 
+
     def __repr__(self):
         if self.url:
             message = 'routing failed when searching for "%s"' % self.url
@@ -177,17 +183,19 @@ class NotFound(HTTPClientError):
                 message += ' using method %s' % self.method
             return message
 
+
     def __str__(self):
         return self.__repr__()
 
 
+
 class Forbidden(HTTPClientError):
     code = 403
-
     def __init__(self, message="Forbidden", *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
         print >>config.output, message
         self.message = message
+
 
 
 class HTTPRedirection(HTTPError):
@@ -198,6 +206,7 @@ class HTTPRedirection(HTTPError):
         self.message = ''
 
 
+
 class NotModified(HTTPRedirection):
     code = 304
     def __init__(self):
@@ -205,26 +214,32 @@ class NotModified(HTTPRedirection):
         self.headers = HeaderContainer()
 
 
+
 class Redirect(HTTPRedirection):
     code = 307
+
 
 
 class Moved(HTTPRedirection):
     code = 301
 
 
+
 class Found(HTTPRedirection):
     code = 302
+
 
 
 class SeeOther(HTTPRedirection):
     code = 303
 
 
+
 '''Main application objects'''
 
 class ConfigError(Exception):
     pass
+
 
 
 class Config(threading.local):
@@ -238,6 +253,7 @@ class Config(threading.local):
         'default_format',
         ]
 
+
     def __init__(self, **kwargs):
         self.debug = False
         self.host = ''
@@ -247,6 +263,7 @@ class Config(threading.local):
         self.format = {}
 
         self.update(**kwargs)
+
 
     def update(self, **kwargs):
         for key, value in kwargs.iteritems():
@@ -263,10 +280,12 @@ class Application(threading.local):
         '_middleware',
         ]
 
+
     def __init__(self, config, router, *args, **kwargs):
         self._config = config
         self._router = router
         self._middleware = []
+
 
     def __call__(self, environ, start_response):
         self._request = Request(environ)
@@ -277,12 +296,12 @@ class Application(threading.local):
 
         return self.process_request()
 
+
     def reset(self):
         self._config = Config()
         self._router = Router(())
         self._middleware = []
-        Route._global_filters = []
-        Route._global_filters_imported = []        
+
 
     def setup(self, config):
         try:
@@ -319,21 +338,24 @@ class Application(threading.local):
     def _validate_imported_config(self, config):
         return any([x in config for x in ['config', 'routes', 'formats']])
 
+
     def _update_config_from_import(self, config):
         self._config.update(**config)
 
+
     def _update_routes_from_import(self, routes):
         self._router.urls = routes
+
 
     def _update_global_filters_from_import(self, filters):
 
         print >>self._config.output, "Configuring %d global filters..." % len(filters),
         
-        Route._global_filters = [dict(filter_) for filter_ in filters]
+        self._router._global_filters = [dict(filter_) for filter_ in filters]
 
         for filter_ in filters:
             try:
-                Route._global_filters_imported.append({
+                self._router._global_filters_imported.append({
                     'callable': resolve(filter_['callable']),
                     'args': filter_.get('args', None)
                     })
@@ -343,6 +365,7 @@ class Application(threading.local):
 
         print >>self._config.output, "done."
             
+
     def _execute_callable(self):
 
         item, path_params = self._router.find(self._request.method, self._request.path[0])
@@ -397,8 +420,10 @@ class Application(threading.local):
         #finally:
         return self._response(body, code=code, additional_headers=headers)
 
+
     def register_middleware(self, middleware, opts={}):
         self._middleware.append((middleware, opts))
+
 
     def run(self, server_func=None, host=None, port=None, debug=False, **kwargs):
 
@@ -428,15 +453,18 @@ class Application(threading.local):
             **kwargs
             )
 
+
     def _serve_once(self, app, host, port):
         from wsgiref.simple_server import make_server
         server = make_server(host, port, app)
         server.handle_request()
 
+
     def _serve_forever(self, app, host, port):
         from wsgiref.simple_server import make_server
         server = make_server(host, port, app)
         server.serve_forever()
+
 
     def _format_error(self, code, error):
         return {
@@ -446,17 +474,21 @@ class Application(threading.local):
             '__request_path__': self._request.path[2],
             }
 
+
     def _get_config(self):
         return self._config
         
+
     def _get_router(self):
         return self._router
+
 
     def _get_request(self):
         try:
             return self._request
         except AttributeError:
             pass
+
 
     def _get_response(self):
         try:
@@ -477,6 +509,7 @@ class Application(threading.local):
 
 class RouteCompilationError(Exception):
     pass
+
 
 
 class Route(object):
@@ -531,9 +564,6 @@ class Route(object):
 
     _param_search = re.compile(r'(?<!\[)/(?<!\\):(\w+)')
 
-    _global_filters = []
-
-    _global_filters_imported = []
 
     def __init__(self, route, callable, methods='GET', filters=[], formats=[], prefix=None):
         self.route = route
@@ -544,14 +574,10 @@ class Route(object):
         self._route_params = self._param_search.findall(self.route)
         self._validate()
 
-    def test(self, test):
-        try:
-            return self._compiled_regex.search(test).groupdict()
-        except:
-            return None
 
     def __call__(self, **kwargs):
         return self._compiled_callable(**kwargs)
+
 
     def _compile_callable(self, callable):
         if isinstance(callable, basestring) and callable.lower == 'none':
@@ -580,6 +606,7 @@ class Route(object):
         self._compile_filters()
         self._process_argspec()
 
+
     def _import_filters(self):
         self._request_filters = []
 
@@ -605,13 +632,14 @@ class Route(object):
             self._compiled_callable = _callable
             return
 
-        for filter_ in reversed(self._global_filters_imported + self._request_filters):
+        for filter_ in reversed(router._global_filters_imported + self._request_filters):
             if filter_['args'] is not None:
                 _callable = filter_['callable'](**dict(filter_['args']))(_callable)
             else:
                 _callable = filter_['callable'](_callable)
 
         self._compiled_callable = _callable
+
 
     def _process_argspec(self):
         self._accepts_kwargs = False
@@ -642,13 +670,16 @@ class Route(object):
         except TypeError:
             self._preset_args = self._all_args
 
+
     def _validate(self):
         self._validate_route_args_are_not_repeated()
         self._validate_route_args_match_callable()
 
+
     def _validate_route_args_are_not_repeated(self):
         if len(self._route_params) != len(set(self._route_params)):
             raise RouteCompilationError('Route params can not be repeated')
+
 
     def _validate_route_args_match_callable(self):
         if self.route[0] is '^':
@@ -663,6 +694,7 @@ class Route(object):
                                         (', '.join(set(self._route_params)),
                                          self.callable,
                                          ', '.join(difference)))
+
 
     @classmethod
     def _compile_regex(cls, pattern, prefix=''):
@@ -691,6 +723,7 @@ class Route(object):
         except Exception as e:
             raise RouteCompilationError(e.message+' while testing: %s' % regex)
 
+
     def _set_allowed_methods(self, methods):
         if isinstance(methods, basestring):
             self._allowed_methods = [method.upper() for method in re.split('\W+', methods) if method.upper() in self._http_methods]
@@ -701,14 +734,25 @@ class Route(object):
         else:
             self._allowed_methods = ['GET']
 
+
     def _get_allowed_methods(self):
         return self._allowed_methods
+
 
     def _callable_expects_args(self):
         return self._expected_args != []
 
+
     def _callable_accepts_kwargs(self):
         return self._accepts_kwargs
+
+
+    def test(self, test):
+        try:
+            return self._compiled_regex.search(test).groupdict()
+        except:
+            return None
+
 
     methods = property(_get_allowed_methods, _set_allowed_methods)
     expects_args = property(_callable_expects_args)
@@ -717,8 +761,9 @@ class Route(object):
 
 
 class Router(object):
-
     __slots__ = [
+        '_global_filters',
+        '_global_filters_imported',
         '_routes',
         'HEAD',
         'GET',
@@ -727,7 +772,11 @@ class Router(object):
         'DELETE',
         ]
 
+
     def __init__(self, urls=None):
+        self._global_filters = []
+        self._global_filters_imported = []
+
         self.clear()
         
         if urls:
@@ -790,7 +839,6 @@ class Router(object):
 
 
     def find(self, method, url):
-
         method = method.upper().strip()
 
         if len(url) > 1 and url[-1] == '/':
@@ -805,6 +853,8 @@ class Router(object):
 
 
     def clear(self):
+        #self._global_filters = []
+        #self._global_filters_imported = []
         for method in self.__slots__:
             if method[0] != '_':
                 self[method] = OrderedDict()
@@ -814,81 +864,105 @@ class Router(object):
     urls = property(_get_urls, _set_urls)
 
 
+
 class HeaderContainer(threading.local):
     __slots__ = [
         'headers'
         ]
+
 
     def __init__(self, *args, **kwargs):
         self.headers = WSGIHeaderObject([])
         for key, value in dict(*args, **kwargs).iteritems():
             self.add_header(key, value)
 
+
     def __call__(self):
         return str(self.headers)
+
 
     def __len__(self):
         return len(set(self.headers.keys()))
 
+
     def __setitem__(self, name, value):
         self.add(name, value)
+
 
     def __getitem__(self, name):
         return self.headers[name]
 
+
     def __contains__(self, name):
         return name in self.headers
+
 
     def __delitem__(self, name):
         del self.headers[name]
 
+
     def __repr__(self):
         return str(self.headers)
+
 
     def get(self, name):
         return self.headers[name]
 
+
     def get_all(self, name):
         return self.headers.get_all(name)
+
 
     def keys(self):
         return self.headers.keys()
 
+
     def values(self):
         return self.headers.values()
 
+
     def items(self):
         return self.headers.items()
+
 
     def iteritems(self):
         for item in self.items():
             yield item
 
+
     def has_key(self, name):
         return self.headers.has_key(name)
+
 
     def list(self):
         return self.headers.items()
 
+
     def add(self, name, value, **params):
         self.add_header(name, value, **params)
 
+
     def add_header(self, name, value, **params):
         self.headers.add_header(name.replace('_', '-').title(), str(value), **params)
+
 
     def replace(self, name, value, **params):
         del self.headers[name]
         self.add_header(name, value, **params)
 
+
     def clear(self):
         self.headers = WSGIHeaderObject([])
+
 
     def drop(self, name):
         del self.headers[name]
 
+
     def update(self, items):
         for name, value in items.iteritems():
             self.add_header(name, value)
+
 
 
 class Request(threading.local):
@@ -925,8 +999,8 @@ class Request(threading.local):
         'QUERY_STRING': '',
         }
 
-    def __init__(self, environ=None, **kwargs):
 
+    def __init__(self, environ=None, **kwargs):
         for slot in (slot for slot in self.__slots__ if slot.isupper()):
             setattr(self, slot, {})
 
@@ -962,14 +1036,18 @@ class Request(threading.local):
         if self.method in ('POST', 'PUT'):
             self.parse_body()
 
+
     def __getitem__(self, name):
         return getattr(self, name, None)
+
 
     def set_path_params(self, params):
         self.PATH = dict((k, self.unquote(v)) for k, v in params.iteritems())
 
+
     def parse_qs(self):
         self.GET = self.parse_parameters(parse_qs(self.environ['QUERY_STRING']))
+
 
     def parse_body(self):
         if self.environ.get('CONTENT_TYPE', '').lower()[:10] == 'multipart/':
@@ -982,6 +1060,7 @@ class Request(threading.local):
         self.POST = self.parse_parameters(cgi.FieldStorage(fp=fp,
                                                            environ=self.environ,
                                                            keep_blank_values=True))
+
 
     def parse_parameters(self, params):
         parsed = {}
@@ -1036,6 +1115,7 @@ class Request(threading.local):
             parsed[name].update(self.build_dict(trie, value))
 
         return parsed
+
     
     def parse_simple_parameters(self, params, parsed={}):
 
@@ -1051,6 +1131,7 @@ class Request(threading.local):
         
         return parsed
 
+
     def build_dict(self, sequence, value):
         if len(sequence) == 1:
             return {
@@ -1060,6 +1141,7 @@ class Request(threading.local):
         return {
             sequence.pop(0): self.build_dict(sequence, value)
             }
+
 
     def update_param_type(self, param):
         if isinstance(param, cgi.MiniFieldStorage):
@@ -1090,12 +1172,15 @@ class Request(threading.local):
             return False
         
         return param
+
     
     def build_get_string(self):
         return self.build_qs(self.GET)
+
     
     def build_post_string(self):
         return self.build_qs(self.POST)
+
         
     def build_qs(self, params, key=None):
         parts = []
@@ -1117,6 +1202,7 @@ class Request(threading.local):
                     parts.extend('%s=%s' % (self.build_qs_key(key, cgi.escape(name)), cgi.escape(str(value))))
                     
         return '&'.join(parts)
+
                         
     def build_qs_key(self, key, addition):
         if not key:
@@ -1124,10 +1210,12 @@ class Request(threading.local):
         
         return '%s[%s]' % (key, addition)
 
+
     def unquote(self, value):
         if isinstance(value, basestring):
             return urlunquote(value)
         return value
+
     
     def get_params(self):
         params = {}
@@ -1137,14 +1225,17 @@ class Request(threading.local):
             
         return params
 
+
     def get_session(self):
         try:
             return self.SESSION
         except:
             return {}
 
+
     def _has_params(self):
         return self.get_params() != {}
+
 
     params = property(get_params)
     session = property(get_session)
@@ -1158,12 +1249,15 @@ class InvalidResponseTypeError(Exception):
     pass
 
 
+
 class ResponseTranslationError(Exception):
     pass
 
 
+
 class ResponseParameterError(Exception):
     pass
+
 
 
 class PluginMount(type):
@@ -1173,6 +1267,7 @@ class PluginMount(type):
 
         else:
             cls.plugins.insert(0, cls)
+
 
 
 class Response(threading.local):
@@ -1187,6 +1282,7 @@ class Response(threading.local):
     params = None
     errors = None
 
+
     def __init__(self, start_response, request, config={}, **kwargs):
         self.start_response = start_response
         self.request = request
@@ -1199,6 +1295,7 @@ class Response(threading.local):
         if kwargs:
             self._update_params(**kwargs)
 
+
     def _update_params(self, **kwargs):
         
         try:
@@ -1208,6 +1305,7 @@ class Response(threading.local):
 
         self.params.update(kwargs)
 
+
     def __call__(self, responsebody, code=200, additional_headers=None, **kwargs):
         self.code = code
         self.responsebody = responsebody
@@ -1216,8 +1314,10 @@ class Response(threading.local):
         self.start_response(self.code, self.headers.list())
         return [output]
 
+
     def _set_code(self, code):
         self._code = code
+
 
     def _get_code(self):
         if not self._code:
@@ -1228,13 +1328,17 @@ class Response(threading.local):
 
         return "%d %s" % (self._code, HTTP_STATUS_CODES[self._code])
 
+
     def set_error(self, name, value):
         self.errors[name] = value
+
 
     def format(self, *args, **kwargs):
         raise NotImplementedError()
 
+
     code = property(_get_code, _set_code)
+
 
 
 class ResponseFactory(threading.local):
@@ -1261,14 +1365,15 @@ class TranslatedResponse(Response):
     extensions = (None, '', 'htm', 'html')
     contenttype = ''
 
+
     def __init__(self, start_response, request, config={}, **kwargs):
         super(self.__class__, self).__init__(start_response, request, config=config)
         self.params['stylesheet_path'] = None
         self.params['default_stylesheet'] = None
         self._update_params(**kwargs)
 
-    def format(self, data=None, **kwargs):
 
+    def format(self, data=None, **kwargs):
         if 'stylesheet_path' not in self.params or not self.params['stylesheet_path']:
             raise ResponseParameterError("the stylesheet path must be set")
 
@@ -1309,6 +1414,7 @@ class TranslatedResponse(Response):
         return xsl.to_string(xml=xml)
 
 
+
 class TextResponse(Response):
     '''Takes the response data and formats it into
     a text representation'''
@@ -1327,6 +1433,7 @@ class TextResponse(Response):
             return str(data)
 
         raise ResponseTranslationError
+
     
 
 class XMLResponse(Response):
@@ -1346,6 +1453,7 @@ class XMLResponse(Response):
             route=self.request.route,
             method=self.request.method.lower()
             ).to_string()
+
 
 
 class JSONResponse(Response):
@@ -1375,27 +1483,36 @@ class JSONResponse(Response):
             raise ResponseTranslationError(e)
 
 
+
 class PropertyProxy(object):
     __slots__ = [
         '_property'
         ]
+
     def __init__(self, prop):
         object.__setattr__(self, '_property', prop)
+
 
     def __getattribute__(self, name):
         return getattr(object.__getattribute__(self, '_property')(), name)
 
+
     def __setattr__(self, name, value):
         setattr(object.__getattribute__(self, '_property')(), name, value)
+
 
     def __delattr__(self, name):
         delattr(object.__getattribute__(self, '_property')(), name)
 
+
     def __str__(self):
         return str(object.__getattribute__(self, '_property')())
 
+
     def __repr__(self):
         return repr(object.__getattribute__(self, '_property')())
+
+
 
 '''Setup'''
 
@@ -1412,10 +1529,10 @@ request = PropertyProxy(application._get_request)
 response = PropertyProxy(application._get_response)
 
 
+
 '''Utility JSON methods'''
 
 class ComplexJSONEncoder(json.JSONEncoder):
-
     def default(self, obj):
         if hasattr(obj, '__iter__'):
             return list(obj)
@@ -1433,6 +1550,7 @@ class ComplexJSONEncoder(json.JSONEncoder):
             return
 
         return json.JSONEncoder.default(self, obj)
+
 
     def _encode_std_object(self, obj):
         newobj = {}
@@ -1459,6 +1577,7 @@ class ComplexJSONEncoder(json.JSONEncoder):
         newobj['__name__'] = obj.__class__.__name__
         
         return newobj
+
     
     def _encode_lite_object(self, obj):
         newobj = {}
@@ -1473,9 +1592,10 @@ class ComplexJSONEncoder(json.JSONEncoder):
         newobj['__name__'] = obj.__class__.__name__
         
         return newobj
+
+
     
 '''Utility XML/XSL classes'''
-
 
 class XMLEncoder(object):
 
@@ -1681,23 +1801,25 @@ class XMLEncoder(object):
         return text
 
 
+
 class LocalFileResolver(etree.Resolver):
     def __init__(self, path):
         self.path = path
         
+
     def resolve(self, url, id, context):
         if url.startswith('local:'):
             return self.resolve_filename(self.path, url.replace('local:', ''))
 
 
 class XSLTranslator(object):
-
     extensions = []
     path = ''
     xml = None
     xsl = None
     params = {}
     resolvers = []
+
 
     def __init__(self, xml=None, stylesheet=None, path=None, extensions=[], params={}, resolvers=[]):
         if path:
@@ -1717,6 +1839,7 @@ class XSLTranslator(object):
         self._load_stylesheet(stylesheet)
         self._configure_extensions()
 
+
     def set_params(self, **params):
         self.params = params
 
@@ -1733,6 +1856,7 @@ class XSLTranslator(object):
         """
         pass
 
+
     def _configure_extensions(self):
         for extension in self.extensions:
             module = extension(**self.params)
@@ -1744,7 +1868,6 @@ class XSLTranslator(object):
                 ns[re.sub('_', '-', key)] = getattr(module, key)
 
      
-        
     def _transform(self, xml=None, xsl=None):
         if xml is not None:
             self._load_xml(xml)
@@ -1877,6 +2000,7 @@ class XPathCallbacks(object):
     def __init__(self, **kwargs):
         self._params = kwargs
 
+
     def param(self, _, name, method=''):
         if method.upper() not in ('PATH','GET','POST','SESSION'):
             params = self._params['request'].params
@@ -1888,6 +2012,7 @@ class XPathCallbacks(object):
 
         return None
 
+
     def params(self, _, method=''):
         if method.upper() not in ('PATH','GET','POST','SESSION'):
             params = self._params['request'].params
@@ -1896,16 +2021,20 @@ class XPathCallbacks(object):
 
         return XMLEncoder(params, doc_el='params').to_xml()
 
+
     """
     def config(self, _):
         return list(XMLEncoder(dict((key, value) for key, value in fwrd.config.iteritems()), doc_el='config').to_xml())
     """
+
     
     def session(self, _):
         return XMLEncoder(dict(self._params['request'].session), doc_el='session').to_xml()
 
+
     def environ(self, _):
         return XMLEncoder(self._params['request'].environ, doc_el='environ').to_xml()
+
 
     def title(self, _, items):
         if isinstance(items, basestring):
@@ -1992,6 +2121,7 @@ class XPathCallbacks(object):
             if item:
                 return item
 
+
     def join(self, _, sep, items):
         resp = []
 
@@ -2019,6 +2149,7 @@ class XPathCallbacks(object):
             raise
         return elements
 
+
     def timeformat(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
         try:
             returned = []
@@ -2032,6 +2163,7 @@ class XPathCallbacks(object):
         except:
             raise
         return elements
+
 
     def isempty(self, _, items):
 
@@ -2064,8 +2196,10 @@ class XPathCallbacks(object):
         
         return u','.join((unicode(i) for i in xrange(int(start), int(stop))))
 
+
     def range_as_nodes(self, _, start, stop, step=None):
         return etree.XML((u'<item>%d</item>' % i for i in xrange(int(start), int(stop))))
+
 
     def str_replace(self, _, elements, search_, replace_):
         try:
@@ -2109,28 +2243,34 @@ class XPathCallbacks(object):
         return es.join(list)
 
 
-'''General Utility Objects'''
 
+'''General Utility Objects'''
 
 class CaseInsensitiveDict(collections.Mapping):
     def __init__(self, d):
         self._d = d
         self._s = dict((k.lower(), k) for k in d)
 
+
     def __contains__(self, k):
         return k.lower() in self._s
+
 
     def __len__(self):
         return len(self._s)
 
+
     def __iter__(self):
         return iter(self._s)
+
 
     def __getitem__(self, k):
         return self._d[self._s[k.lower()]]
 
+
     def original_key(self, k):
         return self._s.get(k.lower())
+
 
 
 def CaseInsensitiveDictMapper(d):
@@ -2151,6 +2291,7 @@ def CaseInsensitiveDictMapper(d):
 
     else:
         return d
+
 
 
 def resolve(callable):
