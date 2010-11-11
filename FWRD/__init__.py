@@ -630,12 +630,15 @@ class Route(object):
             return
 
         for filter_ in reversed(filters):
-            if filter_['args'] is not None and type(filter_['args']) is dict:
+            if filter_['args'] is not None and isinstance(filter_['args'], (CaseInsensitiveDict, dict)):
                 _callable = filter_['callable'](**dict(filter_['args']))(_callable)
-            elif filter_['args'] is not None and type(filter_['args']) in (list, tuple, set):
+
+            elif filter_['args'] is not None and isinstance(filter_['args'], (list, tuple, set)):
                 _callable = filter_['callable'](*filter_['args'])(_callable)
+
             elif filter_['args'] is not None:
                 _callable = filter_['callable'](filter_['args'])(_callable)
+
             else:
                 _callable = filter_['callable'](_callable)
 
