@@ -1,7 +1,3 @@
-__author__   = 'Phillip B Oldham'
-__version__  = '0.2.0-dev'
-__licence__  = 'MIT'
-
 import cgi
 import collections
 import copy
@@ -22,6 +18,8 @@ from urllib import unquote as urlunquote
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
 from xml.sax.saxutils import escape
+
+from __version__ import *
 
 try:
     import re2 as re
