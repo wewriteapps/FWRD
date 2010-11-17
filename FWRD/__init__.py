@@ -992,7 +992,7 @@ class Request(threading.local):
         ]
 
     _get_ext = re.compile(r'^(.+)\.([a-z]+)$')
-    _is_float = re.compile(r'^\d+\.\d+$')
+    _is_float = re.compile(r'^\-?\d+\.\d+$')
     _is_named = re.compile(r'^(\w+)(\[.+\])$')
 
     _default_env = {

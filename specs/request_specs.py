@@ -54,6 +54,20 @@ class GetRequestSpec(WSGITestBase):
             self.assert_(key in self.app.request['GET'])
             self.assertEqual(value, self.app.request['GET'][key])
 
+    def it_should_parse_flats_params_correctly(self):
+        self.app.router.add('/', None)
+        self.make_request('/', qs='a=1.0&b=-2.4&c=53.1,32.2')
+
+        params = {
+            'a': float('1.0'),
+            'b': float('-2.4'),
+            'c': "53.1,32.2"
+            }
+
+        for key, value in params.iteritems():
+            self.assert_(key in self.app.request['GET'])
+            self.assertEqual(value, self.app.request['GET'][key])
+
     def it_should_match_basic_routes_correctly(self):
         routes = ['/', '/foo', '/bar']
         for route in routes:
