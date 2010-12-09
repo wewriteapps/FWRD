@@ -32,9 +32,9 @@ except ImportError:
     from StringIO import StringIO
 
 try:
-    from urlparse import parse_qs
+    from urlparse import parse_qs, parse_qsl
 except ImportError:
-    from cgi import parse_qs
+    from cgi import parse_qs, parse_qsl
 
 try:
     # simplejson is faster than the
@@ -44,10 +44,6 @@ try:
 except ImportError:
     import json
 
-try:
-    from collections import MutableMapping as DictMixin
-except ImportError:
-    from UserDict import DictMixin
 
 try:
     from collections import OrderedDict
@@ -1048,7 +1044,7 @@ class Request(threading.local):
 
 
     def parse_qs(self):
-        self.GET = self.parse_parameters(parse_qs(self.environ['QUERY_STRING']))
+        self.GET = ParameterContainer().parse_qs(self.environ['QUERY_STRING'])
 
 
     def parse_body(self):
@@ -1058,124 +1054,12 @@ class Request(threading.local):
         else:
             length = int(self.environ.get('CONTENT_LENGTH', 0) or 0)
             fp = StringIO(self.environ['wsgi.input'].read(length))
-            
-        self.POST = self.parse_parameters(cgi.FieldStorage(fp=fp,
-                                                           environ=self.environ,
-                                                           keep_blank_values=True))
+
+        self.POST = ParameterContainer().parse_qs(cgi.FieldStorage(fp=fp,
+                                                                   environ=self.environ,
+                                                                   keep_blank_values=True))
 
 
-    def parse_parameters(self, params):
-        parsed = {}
-
-        if hasattr(params, 'list'):
-            params = self.simplify_params(params.list)
-
-        self.parse_simple_parameters(params, parsed)
-        self.parse_sequenced_parameters(params, parsed)
-        self.parse_named_parameters(params, parsed)
-
-        return parsed
-
-
-    def simplify_params(self, params):
-        simplified = {}
-
-        for item in params:
-            if item.name not in simplified:
-                simplified[item.name] = []
-            simplified[item.name].append(item.value)
-
-        return simplified
-                      
-
-    def parse_sequenced_parameters(self, params, parsed={}):
-
-        sequenced = dict(((name[:-2], self.update_param_type(value)) for name, value in params.iteritems() if name[-2:] == '[]'))
-
-        for item, values in sequenced.iteritems():
-            parsed[item] = dict(zip(xrange(0, len(values)), list(values)))
-
-        return parsed
-            
-    def parse_named_parameters(self, params, parsed={}):
-
-        named = (name for name in params if self._is_named.search(name))
-
-        for item in named:
-            matches = self._is_named.search(item)
-            name = matches.groups()[0]
-            value = self.update_param_type(params[item])
-            
-            if name not in parsed:
-                parsed[name] = {}
-                
-            trie = [self.update_param_type(item) for item in matches.groups()[1][1:-1].split('][')]
-
-            if type(parsed[name]) is not dict:
-                params[name] = {'_': params[name]}
-
-            parsed[name].update(self.build_dict(trie, value))
-
-        return parsed
-
-    
-    def parse_simple_parameters(self, params, parsed={}):
-
-        simple = set([name for name in params if '[' not in name])
-        indexed = set([name for name in params if '[' not in name and name+'[]' in params])
-
-        for name in indexed:
-            params[name+'[]'].extend(params[name])
-            del params[name]
-
-        for name in simple - indexed:
-            parsed[name] = self.update_param_type(params[name])
-        
-        return parsed
-
-
-    def build_dict(self, sequence, value):
-        if len(sequence) == 1:
-            return {
-                sequence[0]: value
-                }
-
-        return {
-            sequence.pop(0): self.build_dict(sequence, value)
-            }
-
-
-    def update_param_type(self, param):
-        if isinstance(param, cgi.MiniFieldStorage):
-            return param.value
-        
-        if type(param) is list and len(param) == 1:
-            return self.update_param_type(param[0])
-        
-        if type(param) is list:
-            return list(self.update_param_type(item) for item in param)
-        
-        if param.strip() == '':
-            return None
-        
-        if self._is_float.match(param):
-            return float(param)
-        
-        if len(param) > 1 and param[0] is not '0' and param.isdigit():
-            return int(param)
-
-        if len(param) == 1 and param.isdigit():
-            return int(param)
-        
-        if param.lower() == 'true':
-            return True
-        
-        if param.lower() == 'false':
-            return False
-        
-        return param
-
-    
     def build_get_string(self):
         return self.build_qs(self.GET)
 
@@ -2304,3 +2188,198 @@ def resolve(callable):
 
     return func
 
+
+
+class ParameterContainer(collections.Mapping):
+    """Parameter Container Object
+
+    This object parses parameters into a dict; automatically
+    nesting, grouping, and updating values. The type of each
+    value is inferred and set (integers, floats, booleans)
+    where possible.
+
+    Nested values/dicts can be created using the following
+    querystring format:
+
+    `?spam[level1][level2][level3]=eggs`
+
+    which will stored as:
+
+    >>> {'spam': {'level1': {'level2': {'level3': 'eggs'}}}}
+
+    Values with the same key will be grouped in a list:
+
+    `?a=1&a=2&a=3&a[]=4&a[]=5`
+
+    would be stored as:
+
+    >>> {'a': [1,2,3,4,5]}
+
+    PLEASE NOTE:
+    In a querystring which contains both simple and nested
+    values, values later in the string, or to the right, will
+    overwrite those earlier, or to the left:
+
+    `?a=1&a=2&a[spam]=eggs`
+
+    would be stored as:
+
+    >>> {'a': {'spam': 'eggs'}}
+
+    """
+
+    _is_float = re.compile(r'^\-?\d+\.\d+$')
+    _split_names = re.compile(r'\[(\w+)?\]')
+    
+    def __init__(self, params=None):
+        self._params = params or {}
+
+
+    def __contains__(self, k):
+        return k in self._params
+
+
+    def __len__(self):
+        return len(self._params)
+
+
+    def __iter__(self):
+        return iter(self._params)
+
+
+    def __getitem__(self, k):
+        return self._params[k]
+
+
+    def __eq__(self, other):
+        return self._params.__eq__(other)
+
+
+    def __repr__(self):
+        return self._params.__repr__()
+
+
+    def __str__(self):
+        return self._params.__str__()
+
+
+    def parse_qs(self, qs):
+        if isinstance(qs, basestring):
+            qs = self._parse_string(qs)
+        elif isinstance(qs, cgi.FieldStorage):
+            qs = self._parse_fieldstorage(qs)
+
+        for key, value in qs:
+            self._nest_params(self._clean_key(key),
+                              value,
+                              self._params)
+
+        self._params = self._clean_values(self._params)
+
+        return self
+
+
+    def to_qs(self):
+        pass
+
+
+    def _parse_string(self, qs):
+        return parse_qsl(self._clean_qs(qs), True)
+
+
+    def _parse_fieldstorage(self, params):
+        return self._parse_string("&".join('%s=%s' % (item.name, item.value) for item in params.list))
+        
+
+    def _nest_params(self, keys, value, level):
+        key = keys.pop(0) or '_'
+
+        if key not in level:
+            level[key] = {}
+
+        if keys:
+            if not isinstance(level[key], dict):
+                level[key] = {}
+            # recursivly add the next level
+            self._nest_params(keys, value, level[key])
+            
+        else:
+            if not isinstance(level[key], (dict, list)):
+                # wrap scalar values in a list
+                level[key] = [level[key]]
+
+            if isinstance(level[key], list):
+                # append scalar values to the list
+                level[key].append(value)
+                
+            else:
+                # store the scalar value
+                level[key] = value
+
+
+    def _clean_qs(self, qs):
+        cleaned = []
+        parsed = [tuple(item.split('=')) for item in qs.split('&')]
+        
+        for i in range(len(parsed)):
+            k, v = parsed.pop(0)
+            if k[-2:] == '[]':
+                k = k[:-2]
+            cleaned.append((k, v))
+
+        return "&".join("%s=%s" % (k, v) for k, v in cleaned)
+                
+
+    def _clean_key(self, key):
+        return [i for i in self._split_names.split(key) if i is not '']
+
+
+    def _clean_values(self, params):
+        for key, value in params.iteritems():
+            if isinstance(value, dict):
+                params[key] = self._clean_values(value)
+
+            elif isinstance(value, list):
+                if len(value) > 1:
+                    params[key] = self._update_type(value)
+                elif len(value) == 1:
+                    params[key] = self._update_type(value[0])
+
+            else:
+                params[key] = self._update_type(value)
+
+        return params
+
+
+    def _update_type(self, param):
+        if isinstance(param, cgi.MiniFieldStorage):
+            return param.value
+        
+        if type(param) is list and len(param) == 1:
+            return self._update_type(param[0])
+        
+        if type(param) is list:
+            return list(self._update_type(item) for item in param)
+        
+        if param.strip() == '':
+            return None
+        
+        if self._is_float.match(param):
+            return float(param)
+        
+        if len(param) > 1 and \
+            param[0] is not '0' and \
+            param.isdigit():
+            return int(param)
+
+        if len(param) == 1 and \
+            param.isdigit():
+            return int(param)
+        
+        if param.lower() == 'true':
+            return True
+        
+        if param.lower() == 'false':
+            return False
+        
+        return param

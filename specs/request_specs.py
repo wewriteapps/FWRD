@@ -45,7 +45,7 @@ class GetRequestSpec(WSGITestBase):
 
         params = {
             'a': 1,
-            'b': {0: 2, 1: 3, 2: 4, 'foo': 'bar'},
+            'b': {'foo': 'bar'},
             'baz': True,
             'tel': '01234567890'
             }
@@ -54,7 +54,7 @@ class GetRequestSpec(WSGITestBase):
             self.assert_(key in self.app.request['GET'])
             self.assertEqual(value, self.app.request['GET'][key])
 
-    def it_should_parse_flats_params_correctly(self):
+    def it_should_parse_float_params_correctly(self):
         self.app.router.add('/', None)
         self.make_request('/', qs='a=1.0&b=-2.4&c=53.1,32.2')
 
@@ -290,20 +290,50 @@ class PostRequestSpec(WSGITestBase):
             'default_stylesheet': 'translated_response_spec.xsl',
             }
 
-    def it_should_parse_post_params_correctly(self):
+
+    def it_should_parse_params_correctly(self):
         self.app.router.add('/', None, methods='GET,POST')
         self.make_request('/', method='POST', qs='a=1&b[]=2&b[]=3&baz=true&b=4&b[foo]=bar&tel=01234567890')
 
         params = {
             'a': 1,
-            'b': {0: 2, 1: 3, 2: 4, 'foo': 'bar'},
+            'b': {'foo': 'bar'},
             'baz': True,
             'tel': '01234567890'
             }
 
+        self.assertEqual(self.app.request['POST'], params)
+        
+        '''
         for key, value in params.iteritems():
             self.assert_(key in self.app.request['POST'])
             self.assertEqual(value, self.app.request['POST'][key])
+        '''
+
+    def it_should_parse_grouped_params_correctly(self):
+        self.app.router.add('/', None, methods='POST')
+        self.make_request('/', method='POST', qs="a[x]=1&a[y]=2&a[z][]=3&a[z][]=4&a[z][]=5&b[foo][0]=foo&b[foo][1]=bar")
+
+        params = {
+            'a': {
+                'x': 1,
+                'y': 2,
+                'z': [3,4,5],
+                },
+            'b': {'foo': {
+                '0': 'foo',
+                '1': 'bar',
+                }},
+            }
+
+        self.assertEqual(self.app.request['POST'], params)
+
+        '''
+        for key, value in params.iteritems():
+            print key, value, self.app.request['POST']
+            self.assert_(key in self.app.request['POST'])
+            self.assertEqual(value, self.app.request['POST'][key])
+        '''
 
 
     """
