@@ -8,13 +8,13 @@ import os
 import sys
 import threading
 import traceback
+import urllib
 import xml.parsers.expat
 import yaml
 
 from datetime import datetime
 from lxml import etree
 from resolver import resolve as resolve_import
-from urllib import unquote as urlunquote
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
 from xml.sax.saxutils import escape
@@ -1099,7 +1099,7 @@ class Request(threading.local):
 
     def unquote(self, value):
         if isinstance(value, basestring):
-            return urlunquote(value)
+            return urllib.unquote(value)
         return value
 
     
@@ -2288,7 +2288,7 @@ class ParameterContainer(collections.Mapping):
 
 
     def _parse_fieldstorage(self, params):
-        return self._parse_string("&".join('%s=%s' % (item.name, item.value) for item in params.list))
+        return self._parse_string("&".join('%s=%s' % (item.name, urllib.quote_plus(item.value)) for item in params.list))
         
 
     def _nest_params(self, keys, value, level):
@@ -2320,12 +2320,18 @@ class ParameterContainer(collections.Mapping):
     def _clean_qs(self, qs):
         cleaned = []
         parsed = [tuple(item.split('=')) for item in qs.split('&')]
-        
+
         for i in range(len(parsed)):
-            k, v = parsed.pop(0)
-            if k[-2:] == '[]':
-                k = k[:-2]
-            cleaned.append((k, v))
+            try:
+
+                k, v = parsed.pop(0)
+                if k[-2:] == '[]':
+                    k = k[:-2]
+                cleaned.append((k, v))
+            except ValueError:
+                print parsed
+                raise
+            
 
         return "&".join("%s=%s" % (k, v) for k, v in cleaned)
                 

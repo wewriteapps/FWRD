@@ -304,12 +304,6 @@ class PostRequestSpec(WSGITestBase):
 
         self.assertEqual(self.app.request['POST'], params)
         
-        '''
-        for key, value in params.iteritems():
-            self.assert_(key in self.app.request['POST'])
-            self.assertEqual(value, self.app.request['POST'][key])
-        '''
-
     def it_should_parse_grouped_params_correctly(self):
         self.app.router.add('/', None, methods='POST')
         self.make_request('/', method='POST', qs="a[x]=1&a[y]=2&a[z][]=3&a[z][]=4&a[z][]=5&b[foo][0]=foo&b[foo][1]=bar")
@@ -328,12 +322,15 @@ class PostRequestSpec(WSGITestBase):
 
         self.assertEqual(self.app.request['POST'], params)
 
-        '''
-        for key, value in params.iteritems():
-            print key, value, self.app.request['POST']
-            self.assert_(key in self.app.request['POST'])
-            self.assertEqual(value, self.app.request['POST'][key])
-        '''
+    def it_should_unquote_params_correctly(self):
+        self.app.router.add('/', None, methods='POST')
+        self.make_request('/', method='POST', qs="a=%26+%26+%26")
+
+        params = {
+            'a': '& & &'
+            }
+
+        self.assertEqual(self.app.request['POST'], params)
 
 
     """
