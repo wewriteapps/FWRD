@@ -17,7 +17,6 @@ from lxml import etree
 from resolver import resolve as resolve_import
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
-from xml.sax.saxutils import escape
 
 from __version__ import *
 
@@ -1534,7 +1533,7 @@ class XMLEncoder(object):
             else:
                 node.set('nodetype', u'uuid')
             finally:
-                node.text = escape(self._to_unicode(data))
+                node.text = self._to_unicode(data)
 
         elif hasattr(data, 'isoformat'):
             node.set('nodetype', u'timestamp')
@@ -1544,7 +1543,7 @@ class XMLEncoder(object):
             node.text = None
 
         elif self._is_scalar(data):
-            node.text = escape(self._to_unicode(data))
+            node.text = self._to_unicode(data)
 
         elif type(data) == dict:
             for name, items in data.iteritems():

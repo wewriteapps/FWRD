@@ -215,6 +215,13 @@ class XmlResponseSpec(ResponseBaseSpec):
 
         self._format_each_should_equal(tests, 'application/xml')
 
+    def it_should_format_special_characters(self):
+        tests = (
+            ('< & >', '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get">&lt; &amp; &gt;</response>'),
+            )
+
+        self._format_each_should_equal(tests, 'application/xml')
+
     def it_should_format_newlines(self):
         tests = (
             ('''This
