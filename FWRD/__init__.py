@@ -17,6 +17,7 @@ from lxml import etree
 from resolver import resolve as resolve_import
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
+from xml.sax.saxutils import unescape as xml_unescape
 
 from __version__ import *
 
@@ -2092,6 +2093,20 @@ class XPathCallbacks(object):
             for item in elements:
                 newitem = copy.deepcopy(item)
                 newitem.text = newitem.text.replace(search_, replace_)
+                returned.append(newitem)
+            return returned
+
+        except:
+            raise
+        return elements
+
+
+    def unescape(self, _, elements):
+        try:
+            returned = []
+            for item in elements:
+                newitem = copy.deepcopy(item)
+                newitem.text = xml_unescape(newitem.text)
                 returned.append(newitem)
             return returned
 

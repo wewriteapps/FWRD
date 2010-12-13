@@ -59,4 +59,5 @@ class XpathSpec(unittest.TestCase):
     def it_should_return_a_range_as_nodes(self):
         pass
 
-    
+    def it_should_unescape_xml_entities(self):
+        pass
