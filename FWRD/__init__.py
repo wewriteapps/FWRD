@@ -2102,17 +2102,15 @@ class XPathCallbacks(object):
 
 
     def unescape(self, _, elements):
-        try:
-            returned = []
-            for item in elements:
+        returned = []
+        for item in elements:
+            try:
                 newitem = copy.deepcopy(item)
                 newitem.text = xml_unescape(newitem.text)
                 returned.append(newitem)
-            return returned
-
-        except:
-            raise
-        return elements
+            except:
+                returned.append(item)
+        return returned
 
 
     def __unescape(self, s):
