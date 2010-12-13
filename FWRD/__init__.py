@@ -2113,6 +2113,30 @@ class XPathCallbacks(object):
         return returned
 
 
+    def call_method(self, _, name, qs=None):
+        if qs:
+            params = ParameterContainer().parse_qs(qs)
+        else:
+            params = {}
+
+        try:
+            func = resolve(name)
+
+            return XMLEncoder(
+                func(**params),
+                doc_el='result').to_xml()
+
+        except ImportError as e:
+            return XMLEncoder(
+                str(e),
+                doc_el='ImportError').to_xml()
+
+        except AttributeError as e:
+            return XMLEncoder(
+                str(e),
+                doc_el='AttributeError').to_xml()
+          
+
     def __unescape(self, s):
         want_unicode = False
         if isinstance(s, unicode):
