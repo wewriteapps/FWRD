@@ -1,3 +1,6 @@
+class PlainObject(object):
+    pass
+
 def string_test(*args, **kwargs):
     return "spam"
 
@@ -9,3 +12,14 @@ def tuple_test(*args, **kwargs):
 
 def dict_test(*args, **kwargs):
     return {'spam': 'eggs'}
+
+def object_test(*args, **kwargs):
+    o = PlainObject()
+    o.spam = 'eggs'
+    return o
+
+def arg_test(spam):
+    return spam
+
+def noarg_test():
+    return None

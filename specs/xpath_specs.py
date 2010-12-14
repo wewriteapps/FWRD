@@ -12,7 +12,7 @@ from FWRD import ResponseFactory, XPathCallbacks
 from response_specs import ResponseBaseSpec, PlainObject, ComplexObject
 
 class XpathSpec(ResponseBaseSpec):
-    """NOT IMPLEMENTED: XPath Spec"""
+    """XPath Spec"""
 
     def setUp(self):
         self.request = PlainObject()
@@ -29,6 +29,7 @@ class XpathSpec(ResponseBaseSpec):
 
         #self.xpath = XPathCallbacks()
 
+    """
     def it_should_get_parameters(self):
         pass
 
@@ -37,42 +38,127 @@ class XpathSpec(ResponseBaseSpec):
 
     def it_should_get_environ(self):
         pass
+    """
 
     def it_should_format_a_title(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='title.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format Title</title></head><body>Format Title</body></html>')
 
     def it_should_format_to_lower(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='lower.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Lower-Case</title></head><body>lower-case</body></html>')
 
     def it_should_format_to_upper(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='upper.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Upper-Case</title></head><body>UPPER-CASE</body></html>')
 
     def it_should_strip_whitespace(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='whitespace.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Strip Whitespace</title></head><body>"whitespace"</body></html>')
 
     def it_should_coalesce_values(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='coalesce.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Coalesce</title></head><body>true</body></html>')
 
     def it_should_join_values_into_a_string(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='join.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Join</title></head><body>this-is-a-test</body></html>')
 
     def it_should_format_a_date(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='date.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format a Date</title></head><body>Jan  1, 2010</body></html>')
 
     def it_should_format_a_time(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='time.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format a Time</title></head><body>Jan  1, 2010</body></html>')
 
     def it_should_recognise_empty_values(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='empty.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Empty Tests</title></head><body><ul><li>true</li><li>true</li><li>true</li><li>true</li></ul></body></html>')
 
     def it_should_return_a_range(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='range.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Range</title></head><body>0,1,2,3,4</body></html>')
 
     def it_should_return_a_range_as_nodes(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='range_as_nodes.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Range of Nodes</title></head><body><items><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item></items></body></html>')
 
     def it_should_unescape_xml_entities(self):
-        pass
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='specs/xpath',
+            default_stylesheet='xml_entities.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>XML Entities</title></head><body><input value="&gt;&amp;&lt;"/></body></html>')
 
     def it_should_call_a_method_successfully(self):
         response = ResponseFactory.new(
@@ -100,6 +186,17 @@ class XpathSpec(ResponseBaseSpec):
             """<dt>Dict</dt>""",
             """<dd><result><spam>eggs</spam></result></dd>""",
             """<dd>eggs</dd>"""
-            """</dl></body></html>"""])
+            """<dt>Object</dt>""",
+            """<dd><result><PlainObject nodetype="container"><spam>eggs</spam></PlainObject></result></dd>""",
+            """<dd>eggs</dd>""",
+            """</dl>""",
+            """<h1>Advanced Calls</h1>""",
+            """<dl>""",
+            """<dt>Accepts Args</dt>""",
+            """<dd>eggs</dd>""",
+            """<dt>No Args</dt>""",
+            """<dd>noarg_test() takes no arguments (1 given)</dd>""",
+            """</dl>""",
+            """</body></html>"""])
 
         self.assertEqual(response, expected)

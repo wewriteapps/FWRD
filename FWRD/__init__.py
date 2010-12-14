@@ -2000,9 +2000,9 @@ class XPathCallbacks(object):
 
     def coalesce(self, _, *args, **kwargs):
         for item in args:
-            if isinstance(item, basestring) and item.trim() != '':
+            if isinstance(item, basestring) and item.strip() != '':
                 return item
-            if hasattr(item, 'text') and item.text != '':
+            if hasattr(item, 'text') and item.text.strip() != '':
                 return item
             if item:
                 return item
@@ -2024,6 +2024,9 @@ class XPathCallbacks(object):
 
     def dateformat(self, _, elements, format):
         try:
+            if isinstance(elements, basestring) and elements.strip() != '':
+                return self.__unescape(unicode(iso8601.parse_date(elements).strftime(format)))
+            
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
@@ -2038,6 +2041,10 @@ class XPathCallbacks(object):
 
     def timeformat(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
         try:
+            if isinstance(elements, basestring) and elements.strip() != '':
+                value = datetime.strptime(elements, informat)
+                return self.__unescape(unicode(value.strftime(outformat)))
+            
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
@@ -2084,7 +2091,7 @@ class XPathCallbacks(object):
 
 
     def range_as_nodes(self, _, start, stop, step=None):
-        return etree.XML((u'<item>%d</item>' % i for i in xrange(int(start), int(stop))))
+        return etree.XML('<items>'+''.join('<item>%d</item>' % i for i in xrange(int(start), int(stop)))+'</items>')
 
 
     def str_replace(self, _, elements, search_, replace_):
@@ -2103,6 +2110,10 @@ class XPathCallbacks(object):
 
     def unescape(self, _, elements):
         returned = []
+
+        if isinstance(elements, basestring) and elements.strip() != '':
+            return xml_unescape(elements)
+        
         for item in elements:
             try:
                 newitem = copy.deepcopy(item)
@@ -2135,6 +2146,12 @@ class XPathCallbacks(object):
             return XMLEncoder(
                 str(e),
                 doc_el='AttributeError').to_xml()
+
+        except TypeError as e:
+            if 'takes no arguments' in str(e):
+                return XMLEncoder(
+                    str(e),
+                    doc_el='MethodTakesNoArgsError').to_xml()
           
 
     def __unescape(self, s):

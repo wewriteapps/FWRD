@@ -48,6 +48,16 @@
       <dt>Dict</dt>
         <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:dict_test')" /></dd>
 	<dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:dict_test')/spam" /></dd>
+      <dt>Object</dt>
+        <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:object_test')" /></dd>
+	<dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:object_test')/PlainObject/spam" /></dd>
+    </dl>
+    <h1>Advanced Calls</h1>
+    <dl>
+      <dt>Accepts Args</dt>
+        <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:arg_test', 'spam=eggs')/text()" /></dd>
+      <dt>No Args</dt>
+        <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:noarg_test', 'spam=eggs')/text()" /></dd>
     </dl>
   </body>
 </html>
