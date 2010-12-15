@@ -2282,7 +2282,7 @@ class ParameterContainer(collections.Mapping):
     """
 
     _is_float = re.compile(r'^\-?\d+\.\d+$')
-    _split_names = re.compile(r'\[(\w+)?\]')
+    _split_names = re.compile(r'\[([-\.\w]+)?\]')
     
     def __init__(self, params=None):
         self._params = params or {}

@@ -62,7 +62,8 @@ class ParameterContainerSpec(unittest.TestCase):
         tests = {
             'a[foo]=1': {'a': {'foo': 1}},
             'a[foo][bar]=1': {'a': {'foo': {'bar': 1}}},
-            'a[foo]=1&a[bar]=2': {'a': {'foo': 1, 'bar': 2}}
+            'a[foo]=1&a[bar]=2': {'a': {'foo': 1, 'bar': 2}},
+            'a[foo-bar]=1': {'a': {'foo-bar': 1}},
             }
 
         self._test_items(tests)

@@ -41,13 +41,14 @@ class GetRequestSpec(WSGITestBase):
 
     def it_should_parse_GET_params_correctly(self):
         self.app.router.add('/', None)
-        self.make_request('/', qs='a=1&b[]=2&b[]=3&baz=true&b=4&b[foo]=bar&tel=01234567890')
+        self.make_request('/', qs='a=1&b[]=2&b[]=3&baz=true&b=4&b[foo]=bar&tel=01234567890&c[foo-bar]=baz')
 
         params = {
             'a': 1,
             'b': {'foo': 'bar'},
             'baz': True,
-            'tel': '01234567890'
+            'tel': '01234567890',
+            'c': {'foo-bar': 'baz'},
             }
 
         for key, value in params.iteritems():
