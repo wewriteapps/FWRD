@@ -2083,15 +2083,18 @@ class XPathCallbacks(object):
         return False
 
 
-    def range(self, _, start, stop, step=None):
-        if step:
+    def range(self, _, start, stop, step=1):
+        try:
             return u','.join((unicode(i) for i in xrange(int(start), int(stop), int(step))))
-        
-        return u','.join((unicode(i) for i in xrange(int(start), int(stop))))
+        except:
+            return u','.join((unicode(i) for i in xrange(int(start), int(stop))))
 
 
-    def range_as_nodes(self, _, start, stop, step=None):
-        return etree.XML('<items>'+''.join('<item>%d</item>' % i for i in xrange(int(start), int(stop)))+'</items>')
+    def range_as_nodes(self, _, start, stop, step=1):
+        try:
+            return etree.XML('<items>'+''.join('<item>%d</item>' % i for i in xrange(int(start), int(stop), int(step)))+'</items>')
+        except:
+            return etree.XML('<items>'+''.join('<item>%d</item>' % i for i in xrange(int(start), int(stop)))+'</items>')
 
 
     def str_replace(self, _, elements, search_, replace_):
