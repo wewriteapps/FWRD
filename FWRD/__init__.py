@@ -1541,9 +1541,9 @@ class XMLEncoder(object):
                 node.text = self._to_unicode(data)
 
         elif hasattr(data, 'isoformat'):
-            node.set('nodetype', u'timestamp')
             try:
                 node.text = data.isoformat()
+                node.set('nodetype', u'timestamp')
             except TypeError:
                 pass
 
