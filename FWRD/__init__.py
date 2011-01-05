@@ -684,7 +684,9 @@ class Route(object):
             return
         
         if self._route_params and len(self._route_params) < len(self._expected_args) and not self.accepts_kwargs:
-            raise RouteCompilationError('Route params do not match callable args')
+            raise RouteCompilationError('Route params do not match callable args for route "%s" -> (%s)' %
+                                        (self.route,
+                                         self.callable))
 
         difference = set(self._route_params) - set(self._expected_args) 
         if difference and not self.accepts_kwargs:
