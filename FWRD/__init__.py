@@ -1547,6 +1547,7 @@ class XMLEncoder(object):
             node.text = self._to_unicode(data)
 
         elif type(data) == dict:
+            #node.set('nodetype',u'map')
             for name, items in data.iteritems():
                 if isinstance(name, basestring) and name != '' and str(name[0]) is '?':
                     ''' processing instruction '''
@@ -1569,17 +1570,12 @@ class XMLEncoder(object):
                     child = etree.SubElement(node, u"node", name=unicode(name))
 
                 child = self._update_document(child, items)
-
-        elif type(data) == list and any(self._is_scalar(i) for i in data):
+        
+        elif type(data) == list:
             node.set('nodetype',u'list')
             for item in data:
                 child = etree.SubElement(node, u'i')
                 child = self._update_document(child, item)
-
-        elif type(data) == list:
-            node.set('nodetype',u'list')
-            for item in data:
-                child = self._update_document(node, item)
 
         elif type(data) == set:
             node.set('nodetype',u'unique-list')

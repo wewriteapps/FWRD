@@ -41,6 +41,10 @@
         <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:list_test')" /></dd>
 	<dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:list_test')/i[1]" /></dd>
 	<dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:list_test')/i[2]" /></dd>
+      <dt>Set</dt>
+        <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:set_test')" /></dd>
+	<dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:set_test')/i[1]" /></dd>
+	<dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:set_test')/i[2]" /></dd>
       <dt>Tuple</dt>
         <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:tuple_test')" /></dd>
 	<dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:tuple_test')/i[1]" /></dd>
@@ -48,6 +52,8 @@
       <dt>Dict</dt>
         <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:dict_test')" /></dd>
 	<dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:dict_test')/spam" /></dd>
+      <dt>List of Dicts</dt>
+        <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:list_dicts_test')" /></dd>
       <dt>Object</dt>
         <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:object_test')" /></dd>
 	<dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:object_test')/PlainObject/spam" /></dd>
