@@ -20,3 +20,8 @@ def world_filter(func):
     def wrapped(*args, **kwargs):
         return ("world", func(*args, **kwargs))
     return wrapped
+
+
+class Bar(object):
+    def bar(self, id):
+        pass

@@ -71,12 +71,15 @@ Routes:
   - route: /[index]
   - route: /foo
     callable: specs.example_methods:foo
-    methods: [GET, POST]''',)
+    methods: [GET, POST]
+  - route: /bar/:id
+    callable: specs.example_methods:Bar().bar
+    ''',)
 
         for config in configs:
             config = StringIO(config)
             application.setup(config)
-            self.assertEqual(len(router.urls['GET']), 2)
+            self.assertEqual(len(router.urls['GET']), 3)
             self.assertEqual(len(router.urls['POST']), 1)
 
 

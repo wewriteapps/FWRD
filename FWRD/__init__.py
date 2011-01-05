@@ -653,7 +653,7 @@ class Route(object):
         self._accepts_kwargs = argspec.keywords != None
 
         # skip the "self" arg for class methods
-        if inspect.ismethod(self._compiled_callable):
+        if inspect.ismethod(self._callable):
             self._all_args = argspec.args[1:]
         else:
             self._all_args = argspec.args
