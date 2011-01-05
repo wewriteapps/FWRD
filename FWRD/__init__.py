@@ -1542,7 +1542,10 @@ class XMLEncoder(object):
 
         elif hasattr(data, 'isoformat'):
             node.set('nodetype', u'timestamp')
-            node.text = data.isoformat()
+            try:
+                node.text = data.isoformat()
+            except TypeError:
+                pass
 
         elif data is None:
             node.text = None
