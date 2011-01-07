@@ -2104,6 +2104,9 @@ class XPathCallbacks(object):
 
     def str_replace(self, _, elements, search_, replace_):
         try:
+            if isinstance(elements, basestring) and elements.strip() != '':
+                return elements.replace(search_, replace_)
+            
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
