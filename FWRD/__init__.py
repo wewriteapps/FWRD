@@ -605,6 +605,8 @@ class Route(object):
                     'callable': resolve(filter_['callable']),
                     'args': filter_.get('args', None)
                     })
+            except TypeError:
+                raise RouteCompilationError('incorrect syntax used for filter; should be a list')
             except ImportError:
                 raise RouteCompilationError('unable to import callable for filter "%s"' % filter_['callable'])
                 

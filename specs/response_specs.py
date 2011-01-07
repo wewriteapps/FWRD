@@ -215,6 +215,44 @@ class XmlResponseSpec(ResponseBaseSpec):
 
         self._format_each_should_equal(tests, 'application/xml')
 
+    def it_should_format_nested_unicode_dicts(self):
+        tests = (
+            ({u'foo': u'bar'},
+             '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get">\n  <foo>bar</foo>\n</response>\n'),
+            ({u'foo': {u'bar': u'baz'}}, '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get">\n  <foo>\n    <bar>baz</bar>\n  </foo>\n</response>\n'),
+            ({u'packages': [],
+              u'terms': None,
+              u'description': {
+                  u'short': u'sldf',
+                  u'long': u'skdjhfskjfdgn'
+                  },
+              u'title': u'meh',
+              u'expires': datetime.datetime(2010, 2, 1, 0, 0),
+              u'venues': [],
+              u'activity': None,
+              u'_id': '4d2596f7fa5bd80e18000001',
+              u'type': None
+              },
+             """<?xml version='1.0' encoding='UTF-8'?>
+<response route="/" request="/" method="get">
+  <activity/>
+  <expires nodetype="timestamp">2010-02-01T00:00:00</expires>
+  <terms/>
+  <description>
+    <short>sldf</short>
+    <long>skdjhfskjfdgn</long>
+  </description>
+  <title>meh</title>
+  <packages nodetype="list"/>
+  <type/>
+  <venues nodetype="list"/>
+  <node name="_id">4d2596f7fa5bd80e18000001</node>
+</response>
+"""),
+            )
+
+        self._format_each_should_equal(tests, 'application/xml')
+
     def it_should_format_special_characters(self):
         tests = (
             ('< & >', '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get">&lt; &amp; &gt;</response>'),

@@ -13,7 +13,7 @@ FWRD_PATH = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1]
 if FWRD_PATH not in sys.path:
     sys.path.insert(1, FWRD_PATH)
 
-from FWRD import application, router, Route, ConfigError
+from FWRD import application, router, Route, ConfigError, RouteCompilationError
 
 
 class ConfigSpec(unittest.TestCase):
@@ -100,6 +100,17 @@ Routes:
             filter_ = [dict(x) for x in route.request_filters][0]
             self.assertEqual(filter_['callable'], 'specs.example_methods:basic_filter')
             self.assertTrue('args' in filter_)
+
+    def it_should_fail_on_incorrect_filters(self):
+        config = StringIO('''
+Routes:
+  - route: /[index]
+    filters: specs.example_methods:basic_filter
+''')
+        self.assertRaises(RouteCompilationError,
+                          application.setup,
+                          config)
+                          
 
     def it_should_add_global_filters(self):
 
