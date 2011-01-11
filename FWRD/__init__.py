@@ -2025,6 +2025,10 @@ class XPathCallbacks(object):
                 resp.append(unicode(item))
         
         return sep.join(resp)
+
+
+    def utcnow(self, _, *args, **kwargs):
+        return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
                 
 
     def dateformat(self, _, elements, format):
