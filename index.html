@@ -71,7 +71,31 @@ things simple for the developer.</p>
 <dl class="class">
 <dt id="FWRD.Application">
 <em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">Application</tt><big>(</big><em>config</em>, <em>router</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Application" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><dl class="method">
+<dt id="FWRD.Application.register_middleware">
+<tt class="descname">register_middleware</tt><big>(</big><em>middleware</em>, <em>opts={}</em><big>)</big><a class="headerlink" href="#FWRD.Application.register_middleware" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a middleware component</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.Application.reset">
+<tt class="descname">reset</tt><big>(</big><big>)</big><a class="headerlink" href="#FWRD.Application.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the current config and routing map with blank objects</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.Application.run">
+<tt class="descname">run</tt><big>(</big><em>server_func=None</em>, <em>host=None</em>, <em>port=None</em>, <em>debug=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Application.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start the WSGI server</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.Application.setup">
+<tt class="descname">setup</tt><big>(</big><em>config</em><big>)</big><a class="headerlink" href="#FWRD.Application.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a config file and apply the settings.</p>
+</dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="FWRD.Config">
@@ -81,17 +105,48 @@ things simple for the developer.</p>
 <dl class="class">
 <dt id="FWRD.Router">
 <em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">Router</tt><big>(</big><em>urls=None</em><big>)</big><a class="headerlink" href="#FWRD.Router" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>An object which contains the application&#8217;s URL routing map.</p>
+<dl class="method">
+<dt id="FWRD.Router.add">
+<tt class="descname">add</tt><big>(</big><em>route</em>, <em>callable=None</em>, <em>methods='GET'</em>, <em>prefix=''</em>, <em>filters=</em><span class="optional">[</span><span class="optional">]</span>, <em>formats=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#FWRD.Router.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a route to the routing map</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.Router.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#FWRD.Router.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the current routing map.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.Router.find">
+<tt class="descname">find</tt><big>(</big><em>method</em>, <em>url</em><big>)</big><a class="headerlink" href="#FWRD.Router.find" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find a route based on the <tt class="docutils literal"><span class="pre">method</span></tt> and <tt class="docutils literal"><span class="pre">url</span></tt>.</p>
+</dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="FWRD.Request">
 <em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">Request</tt><big>(</big><em>environ=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Request" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><dl class="method">
+<dt id="FWRD.Request.build_qs">
+<tt class="descname">build_qs</tt><big>(</big><em>params</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#FWRD.Request.build_qs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a HTTP querystring from the <tt class="docutils literal"><span class="pre">params</span></tt> passed.</p>
+</dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="FWRD.Response">
 <em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">Response</tt><big>(</big><em>start_response</em>, <em>request</em>, <em>config={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Response" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><dl class="method">
+<dt id="FWRD.Response.set_error">
+<tt class="descname">set_error</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#FWRD.Response.set_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set an error message to be applied to the formatted response.</p>
+</dd></dl>
+
+</dd></dl>
 
 <dl class="class">
 <dt id="FWRD.TranslatedResponse">
