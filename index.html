@@ -136,7 +136,7 @@ things simple for the developer.</p>
 <em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">XPathFunctions</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions" title="Permalink to this definition">¶</a></dt>
 <dd><p>XPath Functions</p>
 <p>FWRD provides a number of utility functions to the XSL formatter. To use these
-functions you need to add the <cite>fwrd</cite> namespace as an extension namespace in your
+functions you need to add the <tt class="docutils literal"><span class="pre">fwrd:</span></tt> namespace as an extension namespace in your
 stylesheet:</p>
 <div class="highlight-python"><pre>&lt;xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -150,24 +150,27 @@ stylesheet:</p>
 <dl class="method">
 <dt id="FWRD.XPathFunctions.call_method">
 <tt class="descname">call_method</tt><big>(</big><em>_</em>, <em>name</em>, <em>qs=None</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.call_method" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:call-method(name, querystring)</p>
-<p>Provides a mechanism to call the method <cite>name</cite> from within the webapp,
-optionally passing keyword arguments through <cite>querystring</cite>. An XML
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:call-method(name,</span> <span class="pre">querystring)</span></tt></p>
+<p>Provides a mechanism to call the method <tt class="docutils literal"><span class="pre">name</span></tt> from within the webapp,
+optionally passing keyword arguments through <tt class="docutils literal"><span class="pre">querystring</span></tt>. An XML
 nodeset returned.</p>
-<p>The method <cite>name</cite> should be of the same format used for <cite>callables</cite> in the
+<p>The method <tt class="docutils literal"><span class="pre">name</span></tt> should be of the same format used for <tt class="docutils literal"><span class="pre">callables</span></tt> in the
 config file.</p>
 <p>Arguments should be encoded in HTTP querystring format and passed as the
-<cite>querystring</cite> argument.</p>
+<tt class="docutils literal"><span class="pre">querystring</span></tt> argument.</p>
 <p>For example:</p>
-<div class="highlight-python"><pre>&lt;xsl:variable name="items" select="fwrd:call-method('packagename.modulename:ClassName().method_name()', 'spam=eggs&amp;foo=bar'" /&gt;</pre>
+<div class="highlight-python"><pre>&lt;xsl:variable
+    name="items"
+    select="fwrd:call-method('packagename.modulename:ClassName().method_name()',
+                             'spam=eggs&amp;foo=bar'" /&gt;</pre>
 </div>
 </dd></dl>
 
 <dl class="method">
 <dt id="FWRD.XPathFunctions.coalesce">
 <tt class="descname">coalesce</tt><big>(</big><em>_</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.coalesce" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:coalesce(item, [item, ...])</p>
-<p>Returns the first non-empty item.</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:coalesce(item,</span> <span class="pre">[item,</span> <span class="pre">...])</span></tt></p>
+<p>Returns the first non-empty element.</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:coalesce('','','','some text')" /&gt;
 &lt;!-- output: some text --&gt;</pre>
 </div>
@@ -176,11 +179,10 @@ config file.</p>
 <dl class="method">
 <dt id="FWRD.XPathFunctions.dateformat">
 <tt class="descname">dateformat</tt><big>(</big><em>_</em>, <em>elements</em>, <em>format</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.dateformat" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:dateformat(string|node|nodeset, output-format)</p>
-<p>Accepts an ISO 8601 date formatted string and returns a string
-formatted according to the pattern <cite>output-format</cite>, following
-the same rules as the Python Datetime module:
-<a class="reference external" href="http://docs.python.org/library/datetime.html#strftime-strptime-behavior">http://docs.python.org/library/datetime.html#strftime-strptime-behavior</a></p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:dateformat(string|node|nodeset,</span> <span class="pre">output-format)</span></tt></p>
+<p>Accepts an ISO 8601 date formatted element and returns a string
+formatted according to the pattern <tt class="docutils literal"><span class="pre">output-format</span></tt>, following
+the same rules as the _Python Datetime module:</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:dateformat('2012-12-21T00:00:00Z', '')" /&gt;
 &lt;!-- output:  --&gt;</pre>
 </div>
@@ -189,8 +191,8 @@ the same rules as the Python Datetime module:
 <dl class="method">
 <dt id="FWRD.XPathFunctions.format_date">
 <tt class="descname">format_date</tt><big>(</big><em>_</em>, <em>elements</em>, <em>format</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.format_date" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:format-date(string|node|nodeset, output-format)</p>
-<p>Alias of the <cite>fwrd:dateformat()</cite> function.</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:format-date(string|node|nodeset,</span> <span class="pre">output-format)</span></tt></p>
+<p>Alias of the <tt class="docutils literal"><span class="pre">fwrd:dateformat()</span></tt> function.</p>
 </dd></dl>
 
 <dl class="method">
@@ -203,8 +205,8 @@ the same rules as the Python Datetime module:
 <dl class="method">
 <dt id="FWRD.XPathFunctions.isempty">
 <tt class="descname">isempty</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.isempty" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:empty(string|node|nodeset)</p>
-<p>Returns <cite>true()</cite> if the element is an empty string, node, or nodeset, <cite>false()</cite> otherwise.</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:empty(string|node|nodeset)</span></tt></p>
+<p>Returns <tt class="docutils literal"><span class="pre">true()</span></tt> if the element is an empty string, node, or nodeset, <tt class="docutils literal"><span class="pre">false()</span></tt> otherwise.</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:empty('')" /&gt;
 &lt;!-- output: true() --&gt;</pre>
 </div>
@@ -213,9 +215,9 @@ the same rules as the Python Datetime module:
 <dl class="method">
 <dt id="FWRD.XPathFunctions.join">
 <tt class="descname">join</tt><big>(</big><em>_</em>, <em>sep</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.join" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:coalesce(separator, seq&lt;string|node|noteset&gt;)</p>
-<p>Return a string which is the concatenation of the strings in the sequence <cite>seq</cite>
-separated by the string <cite>separator</cite>.</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:join(separator,</span> <span class="pre">seq&lt;string|node|noteset&gt;)</span></tt></p>
+<p>Return a string which is the concatenation of the elements in the sequence <tt class="docutils literal"><span class="pre">seq</span></tt>
+separated by the string <tt class="docutils literal"><span class="pre">separator</span></tt>.</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:coalesce('','','','some text')" /&gt;
 &lt;!-- output: some text --&gt;</pre>
 </div>
@@ -224,8 +226,8 @@ separated by the string <cite>separator</cite>.</p>
 <dl class="method">
 <dt id="FWRD.XPathFunctions.lower">
 <tt class="descname">lower</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.lower" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:lower(string|node|noteset)</p>
-<p>Return a copy of the string converted to lowercase.</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:lower(string|node|noteset)</span></tt></p>
+<p>Return a copy of the element converted to lowercase.</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:lower('SOME TEXT')" /&gt;
 &lt;!-- output: some text --&gt;</pre>
 </div>
@@ -234,13 +236,12 @@ separated by the string <cite>separator</cite>.</p>
 <dl class="method">
 <dt id="FWRD.XPathFunctions.range">
 <tt class="descname">range</tt><big>(</big><em>_</em>, <em>start</em>, <em>stop</em>, <em>step=1</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.range" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:range(start, stop[, step])</p>
-<p>Returns a string of comma-separate integers starting from the integer <cite>start</cite>,
-ending on or before the integer <cite>stop</cite> incrementing by the integer <cite>step</cite> which
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:range(start,</span> <span class="pre">stop[,</span> <span class="pre">step])</span></tt></p>
+<p>Returns a string of comma-separate integers starting from the integer <tt class="docutils literal"><span class="pre">start</span></tt>,
+ending on or before the integer <tt class="docutils literal"><span class="pre">stop</span></tt> incrementing by the integer <tt class="docutils literal"><span class="pre">step</span></tt> which
 by default is 1.</p>
-<p>This method operates in the same manner as Python&#8217;s <cite>range()</cite> method except
-that a <cite>start</cite> argument is required:
-<a class="reference external" href="http://docs.python.org/library/functions.html#range">http://docs.python.org/library/functions.html#range</a></p>
+<p>This method operates in the same manner as Python&#8217;s <tt class="docutils literal"><span class="pre">range()</span></tt> method with the exception
+that a <tt class="docutils literal"><span class="pre">start</span></tt> argument is required:</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:range(1,10,2)" /&gt;
 &lt;!-- output: 1,3,5,9 --&gt;</pre>
 </div>
@@ -249,13 +250,12 @@ that a <cite>start</cite> argument is required:
 <dl class="method">
 <dt id="FWRD.XPathFunctions.range_as_nodes">
 <tt class="descname">range_as_nodes</tt><big>(</big><em>_</em>, <em>start</em>, <em>stop</em>, <em>step=1</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.range_as_nodes" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:range-as-nodes(start, stop[, step])</p>
-<p>Returns a nodeset of integers starting from the integer <cite>start</cite>,
-ending on or before the integer <cite>stop</cite> incrementing by the integer <cite>step</cite> which
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:range-as-nodes(start,</span> <span class="pre">stop[,</span> <span class="pre">step])</span></tt></p>
+<p>Returns a nodeset of integers starting from the integer <tt class="docutils literal"><span class="pre">start</span></tt>,
+ending on or before the integer <tt class="docutils literal"><span class="pre">stop</span></tt> incrementing by the integer <tt class="docutils literal"><span class="pre">step</span></tt> which
 by default is 1.</p>
-<p>This method operates in the same manner as Python&#8217;s <cite>range()</cite> method except
-that a <cite>start</cite> argument is required:
-<a class="reference external" href="http://docs.python.org/library/functions.html#range">http://docs.python.org/library/functions.html#range</a></p>
+<p>This method operates in the same manner as Python&#8217;s <tt class="docutils literal"><span class="pre">range()</span></tt> method with the exception
+that a <cite>start</cite> argument is required:</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:range-as-nodes(1,10,2)" /&gt;
 &lt;!-- output --&gt;
 &lt;items&gt;&lt;item&gt;0&lt;/item&gt;&lt;item&gt;1&lt;/item&gt;&lt;item&gt;3&lt;/item&gt;&lt;item&gt;5&lt;/item&gt;&lt;item&gt;9&lt;/item&gt;&lt;/items&gt;</pre>
@@ -265,8 +265,8 @@ that a <cite>start</cite> argument is required:
 <dl class="method">
 <dt id="FWRD.XPathFunctions.str_replace">
 <tt class="descname">str_replace</tt><big>(</big><em>_</em>, <em>elements</em>, <em>search_</em>, <em>replace_</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.str_replace" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:str-replace(string|node|nodeset, search, replace)</p>
-<p>Returns a copy of the string/element with all occurrences of substring <cite>search</cite> replaced by <cite>replace</cite>.</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:str-replace(string|node|nodeset,</span> <span class="pre">search,</span> <span class="pre">replace)</span></tt></p>
+<p>Returns a copy of the element with all occurrences of substring <tt class="docutils literal"><span class="pre">search</span></tt> replaced by <tt class="docutils literal"><span class="pre">replace</span></tt>.</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:str-replace('foobar', 'ar', 'oz')" /&gt;
 &lt;!-- output: fooboz --&gt;</pre>
 </div>
@@ -275,8 +275,8 @@ that a <cite>start</cite> argument is required:
 <dl class="method">
 <dt id="FWRD.XPathFunctions.strip">
 <tt class="descname">strip</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.strip" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:strip(string|node|noteset)</p>
-<p>Return a copy of the string with the leading and trailing characters removed.</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:strip(string|node|noteset)</span></tt></p>
+<p>Return a copy of the element with leading and trailing white-space characters removed.</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:strip('    some text    ')" /&gt;
 &lt;!-- output: some text --&gt;</pre>
 </div>
@@ -285,14 +285,15 @@ that a <cite>start</cite> argument is required:
 <dl class="method">
 <dt id="FWRD.XPathFunctions.timeformat">
 <tt class="descname">timeformat</tt><big>(</big><em>_</em>, <em>elements</em>, <em>outformat</em>, <em>informat='%Y-%m-%dT%H:%M:%S'</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.timeformat" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:dateformat(string|node|nodeset, output-format, input-format)</p>
-<p>Accepts a string which is parsed according to pattern <cite>input-format</cite> and
-returns a string formatted according to the pattern <cite>output-format</cite>.</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:timeformat(string|node|nodeset,</span> <span class="pre">output-format,</span> <span class="pre">input-format)</span></tt></p>
+<p>Accepts a string which is parsed according to pattern <tt class="docutils literal"><span class="pre">input-format</span></tt> and
+returns a string formatted according to the pattern <tt class="docutils literal"><span class="pre">output-format</span></tt>.</p>
 <p>By default the pattern <cite>input-format</cite> is <cite>%Y-%m-%dT%H:%M:%S</cite>.</p>
 <p>Both <cite>input-format</cite> and <cite>output-format</cite> follow the same rules as the
-Python Datetime module:
-<a class="reference external" href="http://docs.python.org/library/datetime.html#strftime-strptime-behavior">http://docs.python.org/library/datetime.html#strftime-strptime-behavior</a></p>
-<div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:timeformat('2012-12-21T00:00:00Z', '%Y-%m-%dT%H:%M:%SZ', '%A %B %d %H:%M:%S %p %Y')" /&gt;
+_Python Datetime module:</p>
+<div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:timeformat('2012-12-21T00:00:00Z',
+                                      '%Y-%m-%dT%H:%M:%SZ',
+                                      '%A %B %d %H:%M:%S %p %Y')" /&gt;
 &lt;!-- output: Friday December 21 00:00:00 AM 2012 --&gt;</pre>
 </div>
 </dd></dl>
@@ -300,8 +301,8 @@ Python Datetime module:
 <dl class="method">
 <dt id="FWRD.XPathFunctions.title">
 <tt class="descname">title</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.title" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:title(string|node|noteset)</p>
-<p>Return a titlecased version of the string: words start with uppercase
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:title(string|node|noteset)</span></tt></p>
+<p>Return a titlecased version of the element; words start with uppercase
 characters, all remaining cased characters are lowercase.</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:title('some text')" /&gt;
 &lt;!-- output: Some Text --&gt;</pre>
@@ -311,14 +312,14 @@ characters, all remaining cased characters are lowercase.</p>
 <dl class="method">
 <dt id="FWRD.XPathFunctions.trim">
 <tt class="descname">trim</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.trim" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:trim()</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:trim()</span></tt></p>
 <p>Alias of fwrd:strip()</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="FWRD.XPathFunctions.unescape">
 <tt class="descname">unescape</tt><big>(</big><em>_</em>, <em>elements</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.unescape" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:unescape(string|node|nodeset)</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:unescape(string|node|nodeset)</span></tt></p>
 <p>Returns a copy of the element with any escaped XML entities unescaped.</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:unescape('&amp;amp; &amp;amp;amp;')" /&gt;
 &lt;!-- output: &amp; &amp;amp; --&gt;</pre>
@@ -328,8 +329,8 @@ characters, all remaining cased characters are lowercase.</p>
 <dl class="method">
 <dt id="FWRD.XPathFunctions.upper">
 <tt class="descname">upper</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.upper" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:upper()</p>
-<p>Return a copy of the string converted to uppercase.</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:upper()</span></tt></p>
+<p>Return a copy of the element converted to uppercase.</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:upper('some text')" /&gt;
 &lt;!-- output: SOME TEXT --&gt;</pre>
 </div>
@@ -338,9 +339,9 @@ characters, all remaining cased characters are lowercase.</p>
 <dl class="method">
 <dt id="FWRD.XPathFunctions.utcnow">
 <tt class="descname">utcnow</tt><big>(</big><em>_</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.utcnow" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:utcnow()</p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:utcnow()</span></tt></p>
 <p>Return the current UTC date and time in the ISO 8601 combined date and
-time format (<cite>YYYYMMDDThhmmssZ</cite>).</p>
+time format (<tt class="docutils literal"><span class="pre">YYYYMMDDThhmmssZ</span></tt>).</p>
 <div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:utcnow()" /&gt;
 &lt;!-- output: 2012-12-21T00:00:00Z --&gt;</pre>
 </div>
