@@ -2048,6 +2048,10 @@ class XPathCallbacks(object):
         return elements
 
 
+    def format_date(self, _, elements, format):
+        return self.dateformat(_, elements, format)
+
+
     def timeformat(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
@@ -2065,6 +2069,10 @@ class XPathCallbacks(object):
         except:
             raise
         return elements
+
+
+    def format_time(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
+        return self.timeformat(_, elements, outformat, informat)
 
 
     def isempty(self, _, items):
