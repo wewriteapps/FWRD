@@ -135,6 +135,36 @@ things simple for the developer.</p>
 <dd><p>Return a HTTP querystring from the <tt class="docutils literal"><span class="pre">params</span></tt> passed.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="FWRD.Request.has_params">
+<tt class="descname">has_params</tt><a class="headerlink" href="#FWRD.Request.has_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns True if the current request has parameters, False otherwise</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="FWRD.Request.params">
+<tt class="descname">params</tt><a class="headerlink" href="#FWRD.Request.params" title="Permalink to this definition">¶</a></dt>
+<dd><p>params is a dict of parameters parsed from the request</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="FWRD.Request.poststring">
+<tt class="descname">poststring</tt><a class="headerlink" href="#FWRD.Request.poststring" title="Permalink to this definition">¶</a></dt>
+<dd><p>the current request&#8217;s POST querystring</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="FWRD.Request.querystring">
+<tt class="descname">querystring</tt><a class="headerlink" href="#FWRD.Request.querystring" title="Permalink to this definition">¶</a></dt>
+<dd><p>the current request&#8217;s GET querystring</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="FWRD.Request.session">
+<tt class="descname">session</tt><a class="headerlink" href="#FWRD.Request.session" title="Permalink to this definition">¶</a></dt>
+<dd><p>session provides an interface to the <tt class="docutils literal"><span class="pre">session</span></tt> object (Beaker) if available</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
