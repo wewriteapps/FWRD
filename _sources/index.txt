@@ -12,9 +12,31 @@ Contents:
    :maxdepth: 2
 
 .. automodule:: FWRD
+   
+.. autoclass:: Application
    :members:
 
-.. autoclass :: XPathFunctions
+.. autoclass:: Config
+   :members:
+
+.. autoclass:: Router
+   :members:
+
+.. autoclass:: Request
+   :members:
+
+.. autoclass:: Response
+   :members:
+
+.. autoclass:: TranslatedResponse
+
+.. autoclass:: XMLResponse
+
+.. autoclass:: JSONResponse
+
+.. autoclass:: TextResponse
+
+.. autoclass:: XPathFunctions
    :members:
 
 Indices and tables
