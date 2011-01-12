@@ -138,17 +138,15 @@ things simple for the developer.</p>
 <p>FWRD provides a number of utility functions to the XSL formatter. To use these
 functions you need to add the <cite>fwrd</cite> namespace as an extension namespace in your
 stylesheet:</p>
-<blockquote>
-<dl class="docutils">
-<dt>&lt;xsl:stylesheet version=&#8221;1.0&#8221;</dt>
-<dd><p class="first">xmlns:xsl=&#8221;http://www.w3.org/1999/XSL/Transform&#8221;
-xmlns:fwrd=&#8221;http://fwrd.org/fwrd.extensions&#8221;
-extension-element-prefixes=&#8221;fwrd&#8221;&gt;</p>
-<p class="last">...</p>
-</dd>
-</dl>
-<p>&lt;/xsl:stylesheet&gt;</p>
-</blockquote>
+<div class="highlight-python"><pre>&lt;xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:fwrd="http://fwrd.org/fwrd.extensions"
+    extension-element-prefixes="fwrd"&gt;
+
+    ...
+
+&lt;/xsl:stylesheet&gt;</pre>
+</div>
 <dl class="method">
 <dt id="FWRD.XPathFunctions.call_method">
 <tt class="descname">call_method</tt><big>(</big><em>_</em>, <em>name</em>, <em>qs=None</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.call_method" title="Permalink to this definition">¶</a></dt>
