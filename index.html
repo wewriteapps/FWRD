@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,7 +7,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
     <title>Documentation for FWRD &mdash; FWRD v0.2.1 documentation</title>
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -134,8 +133,7 @@ things simple for the developer.</p>
 <dl class="class">
 <dt id="FWRD.XPathFunctions">
 <em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">XPathFunctions</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions" title="Permalink to this definition">¶</a></dt>
-<dd><p>XPath Functions</p>
-<p>FWRD provides a number of utility functions to the XSL formatter. To use these
+<dd><p><tt class="docutils literal"><span class="pre">FWRD</span></tt> provides a number of utility functions to the XSL formatter. To use these
 functions you need to add the <tt class="docutils literal"><span class="pre">fwrd:</span></tt> namespace as an extension namespace in your
 stylesheet:</p>
 <div class="highlight-python"><pre>&lt;xsl:stylesheet version="1.0"
@@ -183,8 +181,8 @@ config file.</p>
 <p>Accepts an ISO 8601 date formatted element and returns a string
 formatted according to the pattern <tt class="docutils literal"><span class="pre">output-format</span></tt>, following
 the same rules as the _Python Datetime module:</p>
-<div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:dateformat('2012-12-21T00:00:00Z', '')" /&gt;
-&lt;!-- output:  --&gt;</pre>
+<div class="highlight-python"><pre>&lt;xsl:value-of select="fwrd:dateformat('2012-12-21T00:00:00Z', '%A %B %d, %Y')" /&gt;
+&lt;!-- output: Friday December 21, 2012 --&gt;</pre>
 </div>
 </dd></dl>
 
