@@ -31,6 +31,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li><a href="#">FWRD v0.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -46,6 +49,87 @@
 <div class="toctree-wrapper compound">
 <ul class="simple">
 </ul>
+</div>
+<span class="target" id="module-FWRD"></span><div class="section" id="fwrd">
+<h2>FWRD<a class="headerlink" href="#fwrd" title="Permalink to this headline">¶</a></h2>
+<p>FWRD is a Python microframework designed to keep
+things simple for the developer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">copyright:</th><td class="field-body"><ol class="first loweralpha simple" start="3">
+<li>2011 by Phillip B Oldham</li>
+</ol>
+</td>
+</tr>
+<tr class="field"><th class="field-name">licence:</th><td class="field-body"><p class="first last">MIT, please see the licence file</p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="data">
+<dt id="FWRD.response">
+<tt class="descclassname">FWRD.</tt><tt class="descname">response</tt><a class="headerlink" href="#FWRD.response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Utility JSON methods</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="FWRD.Moved">
+<em class="property">exception </em><tt class="descclassname">FWRD.</tt><tt class="descname">Moved</tt><big>(</big><em>location</em><big>)</big><a class="headerlink" href="#FWRD.Moved" title="Permalink to this definition">¶</a></dt>
+<dd><p>Moved (301)</p>
+<p>Raise this object to return a &#8220;301 Moved&#8221; HTTP redirect response to the client.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="FWRD.Found">
+<em class="property">exception </em><tt class="descclassname">FWRD.</tt><tt class="descname">Found</tt><a class="headerlink" href="#FWRD.Found" title="Permalink to this definition">¶</a></dt>
+<dd><p>Found (302)</p>
+<p>Raise this object to return a &#8220;302 Found&#8221; HTTP response to the client.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="FWRD.SeeOther">
+<em class="property">exception </em><tt class="descclassname">FWRD.</tt><tt class="descname">SeeOther</tt><big>(</big><em>location</em><big>)</big><a class="headerlink" href="#FWRD.SeeOther" title="Permalink to this definition">¶</a></dt>
+<dd><p>SeeOther (303)</p>
+<p>Raise this object to return a &#8220;303 See Other&#8221; HTTP redirect response to the client.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="FWRD.NotModified">
+<em class="property">exception </em><tt class="descclassname">FWRD.</tt><tt class="descname">NotModified</tt><a class="headerlink" href="#FWRD.NotModified" title="Permalink to this definition">¶</a></dt>
+<dd><p>NotModified (304)</p>
+<p>Raise this object to return a &#8220;304 Not Modified&#8221; HTTP response to the client.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="FWRD.Redirect">
+<em class="property">exception </em><tt class="descclassname">FWRD.</tt><tt class="descname">Redirect</tt><big>(</big><em>location</em><big>)</big><a class="headerlink" href="#FWRD.Redirect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Redirect (307)</p>
+<p>Raise this object to return a &#8220;307 Redirect&#8221; HTTP redirect response to the client.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="FWRD.Forbidden">
+<em class="property">exception </em><tt class="descclassname">FWRD.</tt><tt class="descname">Forbidden</tt><big>(</big><em>message='Forbidden'</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Forbidden" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forbidden (403)</p>
+<p>Raise this object to return a &#8220;403 Forbidden&#8221; HTTP error response to the client.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="FWRD.NotFound">
+<em class="property">exception </em><tt class="descclassname">FWRD.</tt><tt class="descname">NotFound</tt><big>(</big><em>url=None</em>, <em>method='GET'</em><big>)</big><a class="headerlink" href="#FWRD.NotFound" title="Permalink to this definition">¶</a></dt>
+<dd><p>NotFound (404)</p>
+<p>Raise this object to return a &#8220;404 Not Found&#8221; HTTP error response to the client.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="FWRD.RouteCompilationError">
+<em class="property">exception </em><tt class="descclassname">FWRD.</tt><tt class="descname">RouteCompilationError</tt><a class="headerlink" href="#FWRD.RouteCompilationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>RouteCompilationError</p>
+<p>Thrown when the config for a route is invalid</p>
+</dd></dl>
+
 </div>
 </div>
 <div class="section" id="indices-and-tables">
@@ -66,6 +150,7 @@
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Documentation for FWRD</a><ul>
+<li><a class="reference internal" href="#fwrd">FWRD</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
@@ -99,6 +184,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
         <li><a href="#">FWRD v0.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
