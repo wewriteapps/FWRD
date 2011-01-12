@@ -212,14 +212,15 @@ a text representation</p>
 <dd><p><tt class="docutils literal"><span class="pre">FWRD</span></tt> provides a number of utility functions to the XSL formatter. To use these
 functions you need to add the <tt class="docutils literal"><span class="pre">fwrd:</span></tt> namespace as an extension namespace in your
 stylesheet:</p>
-<div class="highlight-python"><pre>&lt;xsl:stylesheet version="1.0"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:fwrd="http://fwrd.org/fwrd.extensions"
-    extension-element-prefixes="fwrd"&gt;
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:stylesheet</span> <span class="na">version=</span><span class="s">&quot;1.0&quot;</span>
+    <span class="na">xmlns:xsl=</span><span class="s">&quot;http://www.w3.org/1999/XSL/Transform&quot;</span>
+    <span class="na">xmlns:fwrd=</span><span class="s">&quot;http://fwrd.org/fwrd.extensions&quot;</span>
+    <span class="na">extension-element-prefixes=</span><span class="s">&quot;fwrd&quot;</span><span class="nt">&gt;</span>
 
     ...
 
-&lt;/xsl:stylesheet&gt;</pre>
+<span class="k">&lt;/xsl:stylesheet&gt;</span>
+</pre></div>
 </div>
 <dl class="method">
 <dt id="FWRD.XPathFunctions.call_method">
