@@ -1,3 +1,15 @@
+"""
+    FWRD
+    ====
+
+    FWRD is a Python microframework designed to keep
+    things simple for the developer.
+
+    :copyright: (c) 2011 by Phillip B Oldham
+    :licence: MIT, please see the licence file
+
+"""
+
 import cgi
 import collections
 import copy
@@ -73,10 +85,8 @@ __all__ = [
     'RouteCompilationError',
     ]
 
+# Global variables
 
-'''Global variables'''
-
-# http://www.faqs.org/rfcs/rfc2616.html
 HTTP_STATUS_CODES = {
     100: "Continue", 
     101: "Switching Protocols", 
@@ -121,7 +131,7 @@ HTTP_STATUS_CODES = {
     }
 
 
-'''Utility Exceptions for error codes'''
+# Utility Exceptions for error codes
 
 class HTTPError(Exception):
     code = 500
@@ -160,6 +170,8 @@ class HTTPClientError(HTTPError):
 
 
 class NotFound(HTTPClientError):
+    """Raise this object to return a ``404 Not Found`` HTTP error response to the client."""
+    
     code = 404
     def __init__(self, url=None, method='GET'):
         if url:
@@ -184,6 +196,7 @@ class NotFound(HTTPClientError):
 
 
 class Forbidden(HTTPClientError):
+    """Raise this object to return a ``403 Forbidden`` HTTP error response to the client."""
     code = 403
     def __init__(self, message="Forbidden", *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
@@ -202,6 +215,7 @@ class HTTPRedirection(HTTPError):
 
 
 class NotModified(HTTPRedirection):
+    """Raise this object to return a ``304 Not Modified`` HTTP response to the client."""
     code = 304
     def __init__(self):
         """Not Modified doesn't issue a Location header"""
@@ -209,27 +223,34 @@ class NotModified(HTTPRedirection):
 
 
 
+class Found(HTTPRedirection):
+    """Raise this object to return a ``302 Found`` HTTP response to the client."""
+    code = 302
+    def __init__(self):
+        """Found doesn't issue a Location header"""
+        self.headers = HeaderContainer()
+
+
+
 class Redirect(HTTPRedirection):
+    """Raise this object to return a ``307 Redirect`` HTTP redirect response to the client."""
     code = 307
 
 
 
 class Moved(HTTPRedirection):
+    """Raise this object to return a ``301 Moved`` HTTP redirect response to the client."""
     code = 301
 
 
 
-class Found(HTTPRedirection):
-    code = 302
-
-
-
 class SeeOther(HTTPRedirection):
+    """Raise this object to return a ``303 See Other`` HTTP redirect response to the client."""
     code = 303
 
 
 
-'''Main application objects'''
+# Main application objects
 
 class ConfigError(Exception):
     pass
@@ -292,12 +313,14 @@ class Application(threading.local):
 
 
     def reset(self):
+        """Reset the current config and routing map with blank objects"""
         self._config = Config()
         self._router = Router(())
         self._middleware = []
 
 
     def setup(self, config):
+        """Parse a config file and apply the settings."""
         try:
             try:
                 stream = config.read()
@@ -411,10 +434,12 @@ class Application(threading.local):
 
 
     def register_middleware(self, middleware, opts={}):
+        """Register a middleware component"""
         self._middleware.append((middleware, opts))
 
 
     def run(self, server_func=None, host=None, port=None, debug=False, **kwargs):
+        """Start the WSGI server"""
 
         if server_func is None and debug:
             server_func = self._serve_once
@@ -493,7 +518,7 @@ class Application(threading.local):
 
 
 
-'''Routing'''
+# Routing
 
 
 class RouteCompilationError(Exception):
@@ -765,6 +790,7 @@ class Route(object):
 
 
 class Router(object):
+    """An object which contains the application's URL routing map."""
     __slots__ = [
         '_global_filters',
         '_global_filters_imported',
@@ -814,9 +840,8 @@ class Router(object):
 
 
     def _define_routes(self, urls, prefix=''):
-        '''Basic structure: (route, callable [, http_method_list [, filter_list [, allowed_formats]]])
-        Prefix structure: (prefix, (tuple_of_basic_structure_tuples, ...))
-        '''
+        # Basic structure: (route, callable [, http_method_list [, filter_list [, allowed_formats]]])
+        # Prefix structure: (prefix, (tuple_of_basic_structure_tuples, ...))
 
         for item in urls:
             if not  isinstance(item, (tuple, dict, CaseInsensitiveDict)):
@@ -836,6 +861,7 @@ class Router(object):
 
 
     def add(self, route, callable=None, methods='GET', prefix='', filters=[], formats=[]):
+        """Add a route to the routing map"""
 
         item = Route(route, callable, methods, filters, formats, prefix)
         for method in item.methods:
@@ -843,6 +869,7 @@ class Router(object):
 
 
     def find(self, method, url):
+        """Find a route based on the ``method`` and ``url``."""
         method = method.upper().strip()
 
         if len(url) > 1 and url[-1] == '/':
@@ -857,6 +884,7 @@ class Router(object):
 
 
     def clear(self):
+        """Clear the current routing map."""
         #self._global_filters = []
         #self._global_filters_imported = []
         for method in self.__slots__:
@@ -970,7 +998,7 @@ class HeaderContainer(threading.local):
 
 
 class Request(threading.local):
-    ''' Should a factory be used to create a request/response obj per "request"?'''
+    # Should a factory be used to create a request/response obj per "request"?
     __slots__ = [
 
         # HTTP param containers
@@ -1075,18 +1103,19 @@ class Request(threading.local):
 
         
     def build_qs(self, params, key=None):
+        """Return a HTTP querystring from the ``params`` passed."""
         parts = []
         
         if params and hasattr(params, 'items'):
             for name, value in params.items():
                 
                 if hasattr(value, 'values'):
-                    '''Encode a dict'''
+                    # Encode a dict
                     parts.extend(self.build_qs(params=value.values(),
                                                key=self.build_qs_key(key, cgi.escape(name))))
 
                 elif hasattr(value, '__iter__'):
-                    '''Encode an iterable (list, tuple, etc)'''
+                    # Encode an iterable (list, tuple, etc)
                     parts.extend(self.build_qs(params=dict(zip(xrange(0, len(value)), value)),
                                                key=self.build_qs_key(key, cgi.escape(name))))
                     
@@ -1129,11 +1158,11 @@ class Request(threading.local):
         return self.get_params() != {}
 
 
-    params = property(get_params)
-    session = property(get_session)
-    querystring = property(build_get_string)
-    poststring = property(build_post_string)
-    has_params = property(_has_params)
+    params = property(get_params, doc="A dict of parameters parsed from the request")
+    session = property(get_session, doc="An interface to the ``session`` object (Beaker) if available")
+    querystring = property(build_get_string, doc="The current request's GET querystring")
+    poststring = property(build_post_string, doc="The current request's POST querystring")
+    has_params = property(_has_params, doc="``True`` if the current request has parameters, ``False`` otherwise")
 
 
 
@@ -1222,6 +1251,7 @@ class Response(threading.local):
 
 
     def set_error(self, name, value):
+        """Set an error message to be applied to the formatted response."""
         self.errors[name] = value
 
 
@@ -1246,12 +1276,12 @@ class ResponseFactory(threading.local):
         raise InvalidResponseTypeError()
 
 
-''' Default response formatters '''
+# Default response formatters
 
 
 class TranslatedResponse(Response):
-    '''Takes the response data and formats it first
-    into XML then passes it through an XSL translator'''
+    """Takes the response data and formats it first
+    into XML then passes it through an XSL translator"""
 
     responsetype = 'xsl'
     extensions = (None, '', 'htm', 'html')
@@ -1294,7 +1324,7 @@ class TranslatedResponse(Response):
         xsl = XSLTranslator(None,
                             xslfile,
                             path=self.params['stylesheet_path'],
-                            extensions=[XPathCallbacks],
+                            extensions=[XPathFunctions],
                             params={
                                 'request': self.request,
                                 },
@@ -1308,8 +1338,8 @@ class TranslatedResponse(Response):
 
 
 class TextResponse(Response):
-    '''Takes the response data and formats it into
-    a text representation'''
+    """Takes the response data and formats it into
+    a text representation"""
 
     extensions = ('txt', 'text')
     contenttype = 'text/plain'
@@ -1329,8 +1359,8 @@ class TextResponse(Response):
     
 
 class XMLResponse(Response):
-    '''Takes the response data and converts it into
-    a "generic" XML representation'''
+    """Takes the response data and converts it into
+    a "generic" XML representation"""
 
     extensions = ('xml',)
     contenttype = 'application/xml'
@@ -1349,8 +1379,8 @@ class XMLResponse(Response):
 
 
 class JSONResponse(Response):
-    '''Takes the response data and converts it into
-    a "generic" JSON representation'''
+    """Takes the response data and converts it into
+    a "generic" JSON representation"""
 
     extensions = ('json',)
     contenttype = 'application/json'
@@ -1406,7 +1436,7 @@ class PropertyProxy(object):
 
 
 
-'''Setup'''
+# Setup
 
 local = threading.local()
 
@@ -1422,7 +1452,7 @@ response = PropertyProxy(application._get_response)
 
 
 
-'''Utility JSON methods'''
+# Utility JSON methods
 
 class ComplexJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -1447,16 +1477,14 @@ class ComplexJSONEncoder(json.JSONEncoder):
     def _encode_std_object(self, obj):
         newobj = {}
         
-        '''
         # class attributes
         # causing problems with thrift class attrs (thrift_spec, instancemethods, etc)
-        newobj.update(dict(
-            (name, value)
-            for name, value
-            in dict(obj.__class__.__dict__).iteritems()
-            if name[0] != '_'
-            ))
-        '''
+        #newobj.update(dict(
+        #    (name, value)
+        #    for name, value
+        #    in dict(obj.__class__.__dict__).iteritems()
+        #    if name[0] != '_'
+        #    ))
         
         # object attributes
         newobj.update(dict(
@@ -1487,7 +1515,7 @@ class ComplexJSONEncoder(json.JSONEncoder):
 
 
     
-'''Utility XML/XSL classes'''
+# Utility XML/XSL classes
 
 class XMLEncoder(object):
 
@@ -1559,12 +1587,12 @@ class XMLEncoder(object):
             #node.set('nodetype',u'map')
             for name, items in data.iteritems():
                 if isinstance(name, basestring) and name != '' and str(name[0]) is '?':
-                    ''' processing instruction '''
+                    #  processing instruction 
                     #self._add_processing_instruction(node, items)
                     pass
 
                 elif isinstance(name, basestring) and name != '' and str(name[0]) is '!':
-                    ''' doctype '''
+                    # doctype 
                     #self._add_docype(node, items)
                     pass
                 
@@ -1884,7 +1912,24 @@ class XSLTranslator(object):
 
 
 
-class XPathCallbacks(object):
+class XPathFunctions(object):
+    """
+    .. highlight:: xslt
+
+    ``FWRD`` provides a number of utility functions to the XSL formatter. To use these
+    functions you need to add the ``fwrd:`` namespace as an extension namespace in your
+    stylesheet::
+
+        <xsl:stylesheet version="1.0"
+            xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+            xmlns:fwrd="http://fwrd.org/fwrd.extensions"
+            extension-element-prefixes="fwrd">
+    
+            ...
+    
+        </xsl:stylesheet>
+
+    """
 
     ns = ('fwrd', 'http://fwrd.org/fwrd.extensions')
 
@@ -1913,10 +1958,8 @@ class XPathCallbacks(object):
         return XMLEncoder(params, doc_el='params').to_xml()
 
 
-    """
-    def config(self, _):
-        return list(XMLEncoder(dict((key, value) for key, value in fwrd.config.iteritems()), doc_el='config').to_xml())
-    """
+    #def config(self, _):
+    #    return list(XMLEncoder(dict((key, value) for key, value in fwrd.config.iteritems()), doc_el='config').to_xml())
 
     
     def session(self, _):
@@ -1928,6 +1971,17 @@ class XPathCallbacks(object):
 
 
     def title(self, _, items):
+        """``fwrd:title(string|node|noteset)``
+
+        Return a titlecased version of the element; words start with uppercase
+        characters, all remaining cased characters are lowercase.
+
+        ::
+
+            <xsl:value-of select="fwrd:title('some text')" />
+            <!-- output: Some Text -->
+        """
+        
         if isinstance(items, basestring):
             return items.title()
 
@@ -1948,6 +2002,15 @@ class XPathCallbacks(object):
 
 
     def lower(self, _, items):
+        """``fwrd:lower(string|node|noteset)``
+
+        Return a copy of the element converted to lowercase.
+
+        ::
+
+            <xsl:value-of select="fwrd:lower('SOME TEXT')" />
+            <!-- output: some text -->
+        """
         if isinstance(items, basestring):
             return items.lower()
 
@@ -1965,6 +2028,15 @@ class XPathCallbacks(object):
 
 
     def upper(self, _, items):
+        """``fwrd:upper()``
+
+        Return a copy of the element converted to uppercase.
+
+        ::
+
+            <xsl:value-of select="fwrd:upper('some text')" />
+            <!-- output: SOME TEXT -->
+        """
         if isinstance(items, basestring):
             return items.upper()
         
@@ -1982,6 +2054,15 @@ class XPathCallbacks(object):
 
 
     def strip(self, _, items):
+        """``fwrd:strip(string|node|noteset)``
+
+        Return a copy of the element with leading and trailing white-space characters removed.
+
+        ::
+
+            <xsl:value-of select="fwrd:strip('    some text    ')" />
+            <!-- output: some text -->
+        """
         if isinstance(items, basestring):
             return items.strip()
         
@@ -2000,10 +2081,22 @@ class XPathCallbacks(object):
 
 
     def trim(self, _, items):
+        """``fwrd:trim()``
+
+        Alias of fwrd:strip()"""
         return self.strip(_, items)
 
 
     def coalesce(self, _, *args, **kwargs):
+        """``fwrd:coalesce(item, [item, ...])``
+
+        Returns the first non-empty element.
+
+        ::
+
+            <xsl:value-of select="fwrd:coalesce('','','','some text')" />
+            <!-- output: some text -->
+        """
         for item in args:
             if isinstance(item, basestring) and item.strip() != '':
                 return item
@@ -2014,6 +2107,16 @@ class XPathCallbacks(object):
 
 
     def join(self, _, sep, items):
+        """``fwrd:join(separator, seq<string|node|noteset>)``
+
+        Return a string which is the concatenation of the elements in the sequence ``seq``
+        separated by the string ``separator``.
+
+        ::
+
+            <xsl:value-of select="fwrd:coalesce('','','','some text')" />
+            <!-- output: some text -->
+        """
         resp = []
 
         for item in items:
@@ -2028,10 +2131,32 @@ class XPathCallbacks(object):
 
 
     def utcnow(self, _, *args, **kwargs):
+        """``fwrd:utcnow()``
+
+        Return the current UTC date and time in the ISO 8601 combined date and
+        time format (``YYYYMMDDThhmmssZ``).
+
+        ::
+
+            <xsl:value-of select="fwrd:utcnow()" />
+            <!-- output: 2012-12-21T00:00:00Z -->
+        """
         return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
                 
 
     def dateformat(self, _, elements, format):
+        """``fwrd:dateformat(string|node|nodeset, output-format)``
+
+        Accepts an ISO 8601 date formatted element and returns a string
+        formatted according to the pattern ``output-format``, following
+        the same rules as the _Python Datetime module::
+
+            <xsl:value-of select="fwrd:dateformat('2012-12-21T00:00:00Z', '%A %B %d, %Y')" />
+            <!-- output: Friday December 21, 2012 -->
+
+        .. _Python Datetime module: http://docs.python.org/library/datetime.html#strftime-strptime-behavior
+
+        """
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
                 return self.__unescape(unicode(iso8601.parse_date(elements).strftime(format)))
@@ -2049,10 +2174,32 @@ class XPathCallbacks(object):
 
 
     def format_date(self, _, elements, format):
+        """``fwrd:format-date(string|node|nodeset, output-format)``
+
+        Alias of the ``fwrd:dateformat()`` function.
+        """        
         return self.dateformat(_, elements, format)
 
 
     def timeformat(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
+        """``fwrd:timeformat(string|node|nodeset, output-format, input-format)``
+
+        Accepts a string which is parsed according to pattern ``input-format`` and
+        returns a string formatted according to the pattern ``output-format``.
+
+        By default the pattern `input-format` is `%Y-%m-%dT%H:%M:%S`.
+        
+        Both `input-format` and `output-format` follow the same rules as the
+        _Python Datetime module::
+
+            <xsl:value-of select="fwrd:timeformat('2012-12-21T00:00:00Z',
+                                                  '%Y-%m-%dT%H:%M:%SZ',
+                                                  '%A %B %d %H:%M:%S %p %Y')" />
+            <!-- output: Friday December 21 00:00:00 AM 2012 -->
+
+        .. _Python Datetime module: http://docs.python.org/library/datetime.html#strftime-strptime-behavior
+
+        """
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
                 value = datetime.strptime(elements, informat)
@@ -2072,11 +2219,24 @@ class XPathCallbacks(object):
 
 
     def format_time(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
+        """fwrd:format-time(string|node|nodeset, output-format, input-format)
+
+        Alias of the `fwrd:timeformat()` function.
+        """
         return self.timeformat(_, elements, outformat, informat)
 
 
     def isempty(self, _, items):
+        """``fwrd:empty(string|node|nodeset)``
 
+        Returns ``true()`` if the element is an empty string, node, or nodeset, ``false()`` otherwise.
+
+        ::
+        
+            <xsl:value-of select="fwrd:empty('')" />
+            <!-- output: true() -->
+
+        """
         if not items:
             return True
 
@@ -2101,6 +2261,21 @@ class XPathCallbacks(object):
 
 
     def range(self, _, start, stop, step=1):
+        """``fwrd:range(start, stop[, step])``
+
+        Returns a string of comma-separate integers starting from the integer ``start``,
+        ending on or before the integer ``stop`` incrementing by the integer ``step`` which
+        by default is 1.
+
+        This method operates in the same manner as Python's ``range()`` method with the exception
+        that a ``start`` argument is required::
+        
+            <xsl:value-of select="fwrd:range(1,10,2)" />
+            <!-- output: 1,3,5,9 -->
+
+        .. _Python's ``range()`` method: http://docs.python.org/library/functions.html#range
+
+        """
         try:
             return u','.join((unicode(i) for i in xrange(int(start), int(stop), int(step))))
         except:
@@ -2108,6 +2283,21 @@ class XPathCallbacks(object):
 
 
     def range_as_nodes(self, _, start, stop, step=1):
+        """``fwrd:range-as-nodes(start, stop[, step])``
+
+        Returns a nodeset of integers starting from the integer ``start``,
+        ending on or before the integer ``stop`` incrementing by the integer ``step`` which
+        by default is 1.
+
+        This method operates in the same manner as Python's ``range()`` method with the exception
+        that a `start` argument is required::
+        
+            <xsl:value-of select="fwrd:range-as-nodes(1,10,2)" />
+            <!-- output -->
+            <items><item>0</item><item>1</item><item>3</item><item>5</item><item>9</item></items>
+
+        .. _Python's ``range()`` method: http://docs.python.org/library/functions.html#range
+        """
         try:
             return etree.XML('<items>'+''.join('<item>%d</item>' % i for i in xrange(int(start), int(stop), int(step)))+'</items>')
         except:
@@ -2115,6 +2305,16 @@ class XPathCallbacks(object):
 
 
     def str_replace(self, _, elements, search_, replace_):
+        """``fwrd:str-replace(string|node|nodeset, search, replace)``
+
+        Returns a copy of the element with all occurrences of substring ``search`` replaced by ``replace``.
+
+        ::
+
+            <xsl:value-of select="fwrd:str-replace('foobar', 'ar', 'oz')" />
+            <!-- output: fooboz -->
+
+        """
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
                 return elements.replace(search_, replace_)
@@ -2132,6 +2332,16 @@ class XPathCallbacks(object):
 
 
     def unescape(self, _, elements):
+        """``fwrd:unescape(string|node|nodeset)``
+
+        Returns a copy of the element with any escaped XML entities unescaped.
+
+        ::
+        
+            <xsl:value-of select="fwrd:unescape('&amp; &amp;amp;')" />
+            <!-- output: & &amp; -->
+
+        """
         returned = []
 
         if isinstance(elements, basestring) and elements.strip() != '':
@@ -2148,6 +2358,26 @@ class XPathCallbacks(object):
 
 
     def call_method(self, _, name, qs=None):
+        """``fwrd:call-method(name, querystring)``
+
+        Provides a mechanism to call the method ``name`` from within the webapp,
+        optionally passing keyword arguments through ``querystring``. An XML
+        nodeset returned.
+
+        The method ``name`` should be of the same format used for ``callables`` in the
+        config file.
+
+        Arguments should be encoded in HTTP querystring format and passed as the
+        ``querystring`` argument.
+
+        For example::
+
+            <xsl:variable
+                name="items"
+                select="fwrd:call-method('packagename.modulename:ClassName().method_name()',
+                                         'spam=eggs&foo=bar'" />
+
+        """
         if qs:
             params = ParameterContainer().parse_qs(qs)
         else:
@@ -2206,7 +2436,7 @@ class XPathCallbacks(object):
 
 
 
-'''General Utility Objects'''
+# General Utility Objects
 
 class CaseInsensitiveDict(collections.Mapping):
     def __init__(self, d):
