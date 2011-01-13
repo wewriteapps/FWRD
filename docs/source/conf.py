@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # FWRD documentation build configuration file, created by
-# sphinx-quickstart on Wed Jan 12 12:44:17 2011.
+# sphinx-quickstart on Thu Jan 13 13:10:45 2011.
 #
 # This file is execfile()d with the current directory set to its containing dir.
 #
@@ -16,7 +16,7 @@ import sys, os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../..'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'FWRD'
-copyright = u'2011, Phillip B Oldham'
+copyright = u'2011, Phillip B Oldham <phillip.oldham@gmail.com>'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -64,7 +64,7 @@ release = '0.2.1'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = []
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -91,7 +91,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'nature' #'default'
+html_theme = 'nature'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -179,7 +179,7 @@ htmlhelp_basename = 'FWRDdoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'FWRD.tex', u'FWRD Documentation',
-   u'Phillip B Oldham', 'manual'),
+   u'Phillip B Oldham \\textless{}phillip.oldham@gmail.com\\textgreater{}', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -212,7 +212,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'fwrd', u'FWRD Documentation',
-     [u'Phillip B Oldham'], 1)
+     [u'Phillip B Oldham <phillip.oldham@gmail.com>'], 1)
 ]
 
 
@@ -220,9 +220,9 @@ man_pages = [
 
 # Bibliographic Dublin Core info.
 epub_title = u'FWRD'
-epub_author = u'Phillip B Oldham'
-epub_publisher = u'Phillip B Oldham'
-epub_copyright = u'2011, Phillip B Oldham'
+epub_author = u'Phillip B Oldham <phillip.oldham@gmail.com>'
+epub_publisher = u'Phillip B Oldham <phillip.oldham@gmail.com>'
+epub_copyright = u'2011, Phillip B Oldham <phillip.oldham@gmail.com>'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

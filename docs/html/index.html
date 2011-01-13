@@ -1,0 +1,495 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>FWRD &mdash; FWRD v0.2.1 documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="FWRD v0.2.1 documentation" href="#" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">FWRD v0.2.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<span class="target" id="module-FWRD"></span><div class="section" id="fwrd">
+<h1>FWRD<a class="headerlink" href="#fwrd" title="Permalink to this headline">¶</a></h1>
+<p>FWRD is a Python microframework designed to keep
+things simple for the developer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">copyright:</th><td class="field-body">2011 by Phillip B Oldham</td>
+</tr>
+<tr class="field"><th class="field-name">licence:</th><td class="field-body">MIT, please see the licence file</td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="class">
+<dt id="FWRD.Application">
+<em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">Application</tt><big>(</big><em>config</em>, <em>router</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Application" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="FWRD.Application.register_middleware">
+<tt class="descname">register_middleware</tt><big>(</big><em>middleware</em>, <em>opts={}</em><big>)</big><a class="headerlink" href="#FWRD.Application.register_middleware" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a middleware component</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.Application.reset">
+<tt class="descname">reset</tt><big>(</big><big>)</big><a class="headerlink" href="#FWRD.Application.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the current config and routing map with blank objects</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.Application.run">
+<tt class="descname">run</tt><big>(</big><em>server_func=None</em>, <em>host=None</em>, <em>port=None</em>, <em>debug=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Application.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start the WSGI server</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.Application.setup">
+<tt class="descname">setup</tt><big>(</big><em>config</em><big>)</big><a class="headerlink" href="#FWRD.Application.setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a config file and apply the settings.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="FWRD.Config">
+<em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">Config</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="FWRD.Router">
+<em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">Router</tt><big>(</big><em>urls=None</em><big>)</big><a class="headerlink" href="#FWRD.Router" title="Permalink to this definition">¶</a></dt>
+<dd><p>An object which contains the application&#8217;s URL routing map.</p>
+<dl class="method">
+<dt id="FWRD.Router.add">
+<tt class="descname">add</tt><big>(</big><em>route</em>, <em>callable=None</em>, <em>methods='GET'</em>, <em>prefix=''</em>, <em>filters=</em><span class="optional">[</span><span class="optional">]</span>, <em>formats=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="headerlink" href="#FWRD.Router.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a route to the routing map</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.Router.clear">
+<tt class="descname">clear</tt><big>(</big><big>)</big><a class="headerlink" href="#FWRD.Router.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the current routing map.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.Router.find">
+<tt class="descname">find</tt><big>(</big><em>method</em>, <em>url</em><big>)</big><a class="headerlink" href="#FWRD.Router.find" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find a route based on the <tt class="docutils literal"><span class="pre">method</span></tt> and <tt class="docutils literal"><span class="pre">url</span></tt>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="FWRD.Request">
+<em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">Request</tt><big>(</big><em>environ=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Request" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="FWRD.Request.build_qs">
+<tt class="descname">build_qs</tt><big>(</big><em>params</em>, <em>key=None</em><big>)</big><a class="headerlink" href="#FWRD.Request.build_qs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a HTTP querystring from the <tt class="docutils literal"><span class="pre">params</span></tt> passed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="FWRD.Request.has_params">
+<tt class="descname">has_params</tt><a class="headerlink" href="#FWRD.Request.has_params" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="xref docutils literal"><span class="pre">True</span></tt> if the current request has parameters, <tt class="xref docutils literal"><span class="pre">False</span></tt> otherwise</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="FWRD.Request.params">
+<tt class="descname">params</tt><a class="headerlink" href="#FWRD.Request.params" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict of parameters parsed from the request</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="FWRD.Request.poststring">
+<tt class="descname">poststring</tt><a class="headerlink" href="#FWRD.Request.poststring" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current request&#8217;s POST querystring</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="FWRD.Request.querystring">
+<tt class="descname">querystring</tt><a class="headerlink" href="#FWRD.Request.querystring" title="Permalink to this definition">¶</a></dt>
+<dd><p>The current request&#8217;s GET querystring</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="FWRD.Request.session">
+<tt class="descname">session</tt><a class="headerlink" href="#FWRD.Request.session" title="Permalink to this definition">¶</a></dt>
+<dd><p>An interface to the <tt class="docutils literal"><span class="pre">session</span></tt> object (Beaker) if available</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="FWRD.Response">
+<em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">Response</tt><big>(</big><em>start_response</em>, <em>request</em>, <em>config={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Response" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="FWRD.Response.set_error">
+<tt class="descname">set_error</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#FWRD.Response.set_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set an error message to be applied to the formatted response.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="FWRD.TranslatedResponse">
+<em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">TranslatedResponse</tt><big>(</big><em>start_response</em>, <em>request</em>, <em>config={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.TranslatedResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the response data and formats it first
+into XML then passes it through an XSL translator</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="FWRD.XMLResponse">
+<em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">XMLResponse</tt><big>(</big><em>start_response</em>, <em>request</em>, <em>config={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.XMLResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the response data and converts it into
+a &#8220;generic&#8221; XML representation</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="FWRD.JSONResponse">
+<em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">JSONResponse</tt><big>(</big><em>start_response</em>, <em>request</em>, <em>config={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.JSONResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the response data and converts it into
+a &#8220;generic&#8221; JSON representation</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="FWRD.TextResponse">
+<em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">TextResponse</tt><big>(</big><em>start_response</em>, <em>request</em>, <em>config={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.TextResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the response data and formats it into
+a text representation</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="FWRD.XPathFunctions">
+<em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">XPathFunctions</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">FWRD</span></tt> provides a number of utility functions to the XSL formatter. To use these
+functions you need to add the <tt class="docutils literal"><span class="pre">fwrd:</span></tt> namespace as an extension namespace in your
+stylesheet:</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:stylesheet</span> <span class="na">version=</span><span class="s">&quot;1.0&quot;</span>
+    <span class="na">xmlns:xsl=</span><span class="s">&quot;http://www.w3.org/1999/XSL/Transform&quot;</span>
+    <span class="na">xmlns:fwrd=</span><span class="s">&quot;http://fwrd.org/fwrd.extensions&quot;</span>
+    <span class="na">extension-element-prefixes=</span><span class="s">&quot;fwrd&quot;</span><span class="nt">&gt;</span>
+
+    ...
+
+<span class="k">&lt;/xsl:stylesheet&gt;</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="FWRD.XPathFunctions.call_method">
+<tt class="descname">call_method</tt><big>(</big><em>_</em>, <em>name</em>, <em>qs=None</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.call_method" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:call-method(name,</span> <span class="pre">querystring)</span></tt></p>
+<p>Provides a mechanism to call the method <tt class="docutils literal"><span class="pre">name</span></tt> from within the webapp,
+optionally passing keyword arguments through <tt class="docutils literal"><span class="pre">querystring</span></tt>. An XML
+nodeset returned.</p>
+<p>The method <tt class="docutils literal"><span class="pre">name</span></tt> should be of the same format used for <tt class="docutils literal"><span class="pre">callables</span></tt> in the
+config file.</p>
+<p>Arguments should be encoded in HTTP querystring format and passed as the
+<tt class="docutils literal"><span class="pre">querystring</span></tt> argument.</p>
+<p>For example:</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:variable</span>
+    <span class="na">name=</span><span class="s">&quot;items&quot;</span>
+    <span class="na">select=</span><span class="s">&quot;fwrd:call-method(&#39;packagename.modulename:ClassName().method_name()&#39;,</span>
+<span class="s">                             &#39;spam=eggs&amp;foo=bar&#39;&quot;</span> <span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.coalesce">
+<tt class="descname">coalesce</tt><big>(</big><em>_</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.coalesce" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:coalesce(item,</span> <span class="pre">[item,</span> <span class="pre">...])</span></tt></p>
+<p>Returns the first non-empty element.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:coalesce(&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;some text&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: some text --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.dateformat">
+<tt class="descname">dateformat</tt><big>(</big><em>_</em>, <em>elements</em>, <em>format</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.dateformat" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:dateformat(string|node|nodeset,</span> <span class="pre">output-format)</span></tt></p>
+<p>Accepts an ISO 8601 date formatted element and returns a string
+formatted according to the pattern <tt class="docutils literal"><span class="pre">output-format</span></tt>, following
+the same rules as the _Python Datetime module:</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:dateformat(&#39;2012-12-21T00:00:00Z&#39;, &#39;%A %B %d, %Y&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: Friday December 21, 2012 --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.format_date">
+<tt class="descname">format_date</tt><big>(</big><em>_</em>, <em>elements</em>, <em>format</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.format_date" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:format-date(string|node|nodeset,</span> <span class="pre">output-format)</span></tt></p>
+<p>Alias of the <tt class="docutils literal"><span class="pre">fwrd:dateformat()</span></tt> function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.format_time">
+<tt class="descname">format_time</tt><big>(</big><em>_</em>, <em>elements</em>, <em>outformat</em>, <em>informat='%Y-%m-%dT%H:%M:%S'</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.format_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>fwrd:format-time(string|node|nodeset, output-format, input-format)</p>
+<p>Alias of the <cite>fwrd:timeformat()</cite> function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.isempty">
+<tt class="descname">isempty</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.isempty" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:empty(string|node|nodeset)</span></tt></p>
+<p>Returns <tt class="docutils literal"><span class="pre">true()</span></tt> if the element is an empty string, node, or nodeset, <tt class="docutils literal"><span class="pre">false()</span></tt> otherwise.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:empty(&#39;&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: true() --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.join">
+<tt class="descname">join</tt><big>(</big><em>_</em>, <em>sep</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.join" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:join(separator,</span> <span class="pre">seq&lt;string|node|noteset&gt;)</span></tt></p>
+<p>Return a string which is the concatenation of the elements in the sequence <tt class="docutils literal"><span class="pre">seq</span></tt>
+separated by the string <tt class="docutils literal"><span class="pre">separator</span></tt>.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:coalesce(&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;some text&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: some text --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.lower">
+<tt class="descname">lower</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.lower" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:lower(string|node|noteset)</span></tt></p>
+<p>Return a copy of the element converted to lowercase.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:lower(&#39;SOME TEXT&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: some text --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.range">
+<tt class="descname">range</tt><big>(</big><em>_</em>, <em>start</em>, <em>stop</em>, <em>step=1</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.range" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:range(start,</span> <span class="pre">stop[,</span> <span class="pre">step])</span></tt></p>
+<p>Returns a string of comma-separate integers starting from the integer <tt class="docutils literal"><span class="pre">start</span></tt>,
+ending on or before the integer <tt class="docutils literal"><span class="pre">stop</span></tt> incrementing by the integer <tt class="docutils literal"><span class="pre">step</span></tt> which
+by default is 1.</p>
+<p>This method operates in the same manner as Python&#8217;s <tt class="docutils literal"><span class="pre">range()</span></tt> method with the exception
+that a <tt class="docutils literal"><span class="pre">start</span></tt> argument is required:</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:range(1,10,2)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: 1,3,5,9 --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.range_as_nodes">
+<tt class="descname">range_as_nodes</tt><big>(</big><em>_</em>, <em>start</em>, <em>stop</em>, <em>step=1</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.range_as_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:range-as-nodes(start,</span> <span class="pre">stop[,</span> <span class="pre">step])</span></tt></p>
+<p>Returns a nodeset of integers starting from the integer <tt class="docutils literal"><span class="pre">start</span></tt>,
+ending on or before the integer <tt class="docutils literal"><span class="pre">stop</span></tt> incrementing by the integer <tt class="docutils literal"><span class="pre">step</span></tt> which
+by default is 1.</p>
+<p>This method operates in the same manner as Python&#8217;s <tt class="docutils literal"><span class="pre">range()</span></tt> method with the exception
+that a <cite>start</cite> argument is required:</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:range-as-nodes(1,10,2)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output --&gt;</span>
+<span class="nt">&lt;items&gt;&lt;item&gt;</span>0<span class="nt">&lt;/item&gt;&lt;item&gt;</span>1<span class="nt">&lt;/item&gt;&lt;item&gt;</span>3<span class="nt">&lt;/item&gt;&lt;item&gt;</span>5<span class="nt">&lt;/item&gt;&lt;item&gt;</span>9<span class="nt">&lt;/item&gt;&lt;/items&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.str_replace">
+<tt class="descname">str_replace</tt><big>(</big><em>_</em>, <em>elements</em>, <em>search_</em>, <em>replace_</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.str_replace" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:str-replace(string|node|nodeset,</span> <span class="pre">search,</span> <span class="pre">replace)</span></tt></p>
+<p>Returns a copy of the element with all occurrences of substring <tt class="docutils literal"><span class="pre">search</span></tt> replaced by <tt class="docutils literal"><span class="pre">replace</span></tt>.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:str-replace(&#39;foobar&#39;, &#39;ar&#39;, &#39;oz&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: fooboz --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.strip">
+<tt class="descname">strip</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.strip" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:strip(string|node|noteset)</span></tt></p>
+<p>Return a copy of the element with leading and trailing white-space characters removed.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:strip(&#39;    some text    &#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: some text --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.timeformat">
+<tt class="descname">timeformat</tt><big>(</big><em>_</em>, <em>elements</em>, <em>outformat</em>, <em>informat='%Y-%m-%dT%H:%M:%S'</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.timeformat" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:timeformat(string|node|nodeset,</span> <span class="pre">output-format,</span> <span class="pre">input-format)</span></tt></p>
+<p>Accepts a string which is parsed according to pattern <tt class="docutils literal"><span class="pre">input-format</span></tt> and
+returns a string formatted according to the pattern <tt class="docutils literal"><span class="pre">output-format</span></tt>.</p>
+<p>By default the pattern <cite>input-format</cite> is <cite>%Y-%m-%dT%H:%M:%S</cite>.</p>
+<p>Both <cite>input-format</cite> and <cite>output-format</cite> follow the same rules as the
+_Python Datetime module:</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:timeformat(&#39;2012-12-21T00:00:00Z&#39;,</span>
+<span class="s">                                      &#39;%Y-%m-%dT%H:%M:%SZ&#39;,</span>
+<span class="s">                                      &#39;%A %B %d %H:%M:%S %p %Y&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: Friday December 21 00:00:00 AM 2012 --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.title">
+<tt class="descname">title</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.title" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:title(string|node|noteset)</span></tt></p>
+<p>Return a titlecased version of the element; words start with uppercase
+characters, all remaining cased characters are lowercase.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:title(&#39;some text&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: Some Text --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.trim">
+<tt class="descname">trim</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.trim" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:trim()</span></tt></p>
+<p>Alias of fwrd:strip()</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.unescape">
+<tt class="descname">unescape</tt><big>(</big><em>_</em>, <em>elements</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.unescape" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:unescape(string|node|nodeset)</span></tt></p>
+<p>Returns a copy of the element with any escaped XML entities unescaped.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:unescape(&#39;&amp;amp; &amp;amp;amp;&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: &amp; &amp;amp; --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.upper">
+<tt class="descname">upper</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.upper" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:upper()</span></tt></p>
+<p>Return a copy of the element converted to uppercase.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:upper(&#39;some text&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: SOME TEXT --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.utcnow">
+<tt class="descname">utcnow</tt><big>(</big><em>_</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.utcnow" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:utcnow()</span></tt></p>
+<p>Return the current UTC date and time in the ISO 8601 combined date and
+time format (<tt class="docutils literal"><span class="pre">YYYYMMDDThhmmssZ</span></tt>).</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:utcnow()&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: 2012-12-21T00:00:00Z --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FWRD</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">FWRD v0.2.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Phillip B Oldham &lt;phillip.oldham@gmail.com&gt;.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.6.
+    </div>
+  </body>
+</html>

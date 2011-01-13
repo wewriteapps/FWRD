@@ -411,7 +411,7 @@ class TranslatedResponseSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs',
+            stylesheet_path='.',
             default_stylesheet='translated_response_spec.xsl'
             )
 
@@ -478,7 +478,7 @@ class TranslatedWithVarsResponseSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs',
+            stylesheet_path='.',
             default_stylesheet='translation_with_vars_spec.xsl'
             )
 
@@ -515,7 +515,7 @@ class TranslatedWithImportsResponseSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs',
+            stylesheet_path='.',
             default_stylesheet='translation_with_imports_spec.xsl'
             )
 

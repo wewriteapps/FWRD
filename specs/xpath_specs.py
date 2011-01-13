@@ -8,7 +8,7 @@ FWRD_PATH = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1]
 if FWRD_PATH not in sys.path:
     sys.path.insert(1, FWRD_PATH)
 
-from FWRD import ResponseFactory, XPathCallbacks
+from FWRD import ResponseFactory, XPathFunctions
 from response_specs import ResponseBaseSpec, PlainObject, ComplexObject
 
 class XpathSpec(ResponseBaseSpec):
@@ -23,7 +23,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs',
+            stylesheet_path='.',
             default_stylesheet='xpath_methods_spec.xsl'
             )
 
@@ -45,7 +45,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='title.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format Title</title></head><body>Format Title</body></html>')
@@ -55,7 +55,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='lower.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Lower-Case</title></head><body>lower-case</body></html>')
@@ -65,7 +65,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='upper.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Upper-Case</title></head><body>UPPER-CASE</body></html>')
@@ -75,7 +75,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='whitespace.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Strip Whitespace</title></head><body>"whitespace"</body></html>')
@@ -85,7 +85,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='coalesce.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Coalesce</title></head><body>true</body></html>')
@@ -95,7 +95,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='join.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Join</title></head><body>this-is-a-test</body></html>')
@@ -105,7 +105,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='date.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format a Date</title></head><body>Jan  1, 2010</body></html>')
@@ -115,7 +115,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='time.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format a Time</title></head><body>Jan  1, 2010</body></html>')
@@ -125,7 +125,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='empty.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Empty Tests</title></head><body><ul><li>true</li><li>true</li><li>true</li><li>true</li></ul></body></html>')
@@ -135,7 +135,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='range.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Range</title></head><body>0,1,2,3,4</body></html>')
@@ -145,7 +145,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='range_as_nodes.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Range of Nodes</title></head><body><items><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item></items></body></html>')
@@ -155,7 +155,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='xml_entities.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>XML Entities</title></head><body><input value="&gt;&amp;&lt;"/></body></html>')
@@ -165,7 +165,7 @@ class XpathSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='specs/xpath',
+            stylesheet_path='xpath',
             default_stylesheet='call_method.xsl'
             ).format()
 

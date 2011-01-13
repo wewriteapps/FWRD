@@ -38,7 +38,7 @@ Routes:
 
 
     def it_should_import_from_a_file(self):
-        self.assertTrue(application.setup('specs/setup_test.yaml') != False)
+        self.assertTrue(application.setup('setup_test.yaml') != False)
             
 
     def it_must_raise_for_malformed_config(self):

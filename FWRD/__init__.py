@@ -5,7 +5,7 @@
     FWRD is a Python microframework designed to keep
     things simple for the developer.
 
-    :copyright: (c) 2011 by Phillip B Oldham
+    :copyright: 2011 by Phillip B Oldham
     :licence: MIT, please see the licence file
 
 """
@@ -15,7 +15,6 @@ import collections
 import copy
 import functools
 import inspect
-import iso8601
 import os
 import sys
 import threading
@@ -1300,7 +1299,7 @@ class TranslatedResponse(Response):
             raise ResponseParameterError("the stylesheet path must be set")
 
         if not os.path.isdir(os.path.abspath(self.params['stylesheet_path'])):
-            raise ResponseParameterError("the stylesheet path is invalid")
+            raise ResponseParameterError("the stylesheet path (%s) is invalid" % os.path.abspath(self.params['stylesheet_path']))
 
         self.params['stylesheet_path'] = os.path.abspath(self.params['stylesheet_path'])
 
@@ -2159,12 +2158,12 @@ class XPathFunctions(object):
         """
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
-                return self.__unescape(unicode(iso8601.parse_date(elements).strftime(format)))
+                return self.__unescape(unicode(datetime.strptime(elements.strip()[:10], '%Y-%m-%d').strftime(format)))
             
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
-                newitem.text = self.__unescape(unicode(iso8601.parse_date(newitem.text).strftime(format)))
+                newitem.text = self.__unescape(unicode(datetime.strptime(newitem.text.strip()[:10], '%Y-%m-%d').strftime(format)))
                 returned.append(newitem)
             return returned
 

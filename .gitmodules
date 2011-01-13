@@ -1,3 +1,6 @@
 [submodule "docs/_build/html"]
 	path = docs/_build/html
 	url = git@github.com:digitala/FWRD.git
+[submodule "docs/build/html"]
+	path = docs/build/html
+	url = git@github.com:digitala/FWRD.git
