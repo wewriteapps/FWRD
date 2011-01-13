@@ -1,7 +1,7 @@
 To Do
 =====
 
-- v0.2:
+- v0.2.*:
 
   - Built-in Logging
 
@@ -9,17 +9,15 @@ To Do
 
   - Server-side browser "sniffing", based on `Modernizr`_, for use with the XSL formatter
 
-- Documentation
+- Other Features
 
-- Testing:
-
-  - Specs XPath callbacks
-
-- Features
-
-  - Decorator to "clean" data from return value: ``@clean_response(dotted-str or callback)``
-
-  - Enable `XPath Callbacks`_ to FWRD components with response formatting
+  - Decorator to "clean" data from return value::
+  
+      @response.trim(dotted-str)
+  
+  - Decorator to apply callbacks to response value::
+  
+      @response.apply(fn)
 
   - Auto-reloading of code on file modification
 
@@ -29,25 +27,38 @@ To Do
 
     - each browser tab can have/has it's own session
 
-    - forms can be secured with unique key in "action" url: ``<form action="{fwrd:register_form('/path/to/action')}">...</form>``
+    - forms can be secured with unique key in "action" url::
+    
+        <form action="{fwrd:register-form('/path/to/action')}" method="post">
+        ...
+        </form>
 
   - auto-creation of caching decorator when beaker-cache is available
 
-  - InternalRedirect exception to restart the request with new data but respond to original query:
+  - InternalRedirect exception to restart the request with new data but respond to original query::
 
-    - InteralRedirect(url, method='GET', params={}, replace_params=False)
+      InteralRedirect(url, method='GET', params={}, replace_params=False)
 
   - Parameter "type" for working with both string and native parameters
 
-  - base64 encoding of binary data in JSON output, using the data-uri format.
+  - base64 encoding of binary data in output, using the data-uri format.
 
-- Optional features:
-
-  - Add ``sendfile`` func which is compatible with Nginx X-Accel headers
+  - Add ``sendfile`` func which is compatible with Nginx X-Accel headers::
+  
+      response.sendfile(filename, data,
+                        content_type="application/octet-stream",
+                        force_download=True # Content-Disposition: attachment;
+                        ) 
 
   - XML
 
-    - allow creating of processing instructions using the following format: ``{"?xml-stylesheet": {'type':'', 'href':''}} ``
+    - allow creating of processing instructions using the following format:: 
+    
+        {"?xml-stylesheet": {'type':'', 'href':''}}
+        
+  - XSL
+  
+    - caching of "compiled" XSL files 
 
   - XPath function implementations:
 
@@ -65,7 +76,7 @@ To Do
 
     - round
 
-    - roundhalftoeven
+    - round-half-to-even
 
     - compare
 
@@ -79,17 +90,13 @@ To Do
 
     - in
 
-    - startswith
+    - starts-with
 
-    - endswith
+    - ends-with
 
     - matches
 
-    - replace
-
     - tokenize
-
-    - empty
 
     - exists?
 
@@ -103,8 +110,6 @@ To Do
 
     - ``@response.format('type', **params)`` to change default formatter for function
 
-  - ``define`` and ``defined``, from `tornado`_.
-
 TBC
 ---
 
@@ -112,7 +117,7 @@ Local fall-back for sessions when beaker isn't available?
 
 How should authentication be handled? `AuthKit`_? Custom? None (handled by developer)?
 
-Caching/Memoization of "compiled" XSL?
+``define`` and ``defined``, from `tornado`_?
 
 Keep a log of the last request's (or last few requests'?) information (request, params, session, etc) to be raised when an error/exception is thrown.
 
