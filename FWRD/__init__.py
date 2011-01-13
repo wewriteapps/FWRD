@@ -2158,12 +2158,12 @@ class XPathFunctions(object):
         """
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
-                return self.__unescape(unicode(datetime.strptime(elements.strip()[:10], '%Y-%m-%d').strftime(format)))
+                return self._unescape(unicode(datetime.strptime(elements.strip()[:10], '%Y-%m-%d').strftime(format)))
             
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
-                newitem.text = self.__unescape(unicode(datetime.strptime(newitem.text.strip()[:10], '%Y-%m-%d').strftime(format)))
+                newitem.text = self._unescape(unicode(datetime.strptime(newitem.text.strip()[:10], '%Y-%m-%d').strftime(format)))
                 returned.append(newitem)
             return returned
 
@@ -2202,13 +2202,13 @@ class XPathFunctions(object):
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
                 value = datetime.strptime(elements, informat)
-                return self.__unescape(unicode(value.strftime(outformat)))
+                return self._unescape(unicode(value.strftime(outformat)))
             
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
                 value = datetime.strptime(newitem.text, informat)
-                newitem.text = self.__unescape(unicode(value.strftime(outformat)))
+                newitem.text = self._unescape(unicode(value.strftime(outformat)))
                 returned.append(newitem)
             return returned
 
@@ -2390,23 +2390,26 @@ class XPathFunctions(object):
                 doc_el='result').to_xml()
 
         except ImportError as e:
-            return XMLEncoder(
-                str(e),
-                doc_el='ImportError').to_xml()
+            return self._encode_exception(e, name='ImportError')
 
         except AttributeError as e:
-            return XMLEncoder(
-                str(e),
-                doc_el='AttributeError').to_xml()
+            return self._encode_exception(e, name='AttributeError')
 
         except TypeError as e:
             if 'takes no arguments' in str(e):
-                return XMLEncoder(
-                    str(e),
-                    doc_el='MethodTakesNoArgsError').to_xml()
+                return self._encode_exception(e, name='MethodTakesNoArgsError')
+
+        except Exception as e:
+            return self._encode_exception(e)
+
+
+    def _encode_exception(self, e, name="Exception"):
+        return XMLEncoder({'message': str(e),
+                           'traceback': traceback.format_exc() },
+                          doc_el=name).to_xml()
           
 
-    def __unescape(self, s):
+    def _unescape(self, s):
         want_unicode = False
         if isinstance(s, unicode):
             s = s.encode("utf-8")

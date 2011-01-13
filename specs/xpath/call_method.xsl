@@ -57,13 +57,15 @@
       <dt>Object</dt>
         <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:object_test')" /></dd>
 	<dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:object_test')/PlainObject/spam" /></dd>
+      <dt>Exception</dt>
+        <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:raising_test')/message" /></dd>
     </dl>
     <h1>Advanced Calls</h1>
     <dl>
       <dt>Accepts Args</dt>
-        <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:arg_test', 'spam=eggs')/text()" /></dd>
+        <dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:arg_test', 'spam=eggs')" /></dd>
       <dt>No Args</dt>
-        <dd><xsl:copy-of select="fwrd:call-method('specs.xpath.call:noarg_test', 'spam=eggs')/text()" /></dd>
+        <dd><xsl:value-of select="fwrd:call-method('specs.xpath.call:noarg_test', 'spam=eggs')/message" /></dd>
     </dl>
   </body>
 </html>

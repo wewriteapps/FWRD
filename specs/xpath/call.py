@@ -21,6 +21,9 @@ def object_test(*args, **kwargs):
     o.spam = 'eggs'
     return o
 
+def raising_test():
+    raise Exception('this is an exception')
+
 def arg_test(spam):
     return spam
 

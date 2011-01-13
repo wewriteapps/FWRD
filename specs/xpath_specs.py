@@ -195,6 +195,8 @@ class XpathSpec(ResponseBaseSpec):
             """<dt>Object</dt>""",
             """<dd><result><PlainObject nodetype="container"><spam>eggs</spam></PlainObject></result></dd>""",
             """<dd>eggs</dd>""",
+            """<dt>Exception</dt>""",
+            """<dd><message>this is an exception</message></dd>""",
             """</dl>""",
             """<h1>Advanced Calls</h1>""",
             """<dl>""",
