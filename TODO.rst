@@ -11,13 +11,23 @@ To Do
 
 - Other Features
 
-  - Decorator to "clean" data from return value::
+  - Decorators:
+
+    - change/force formatter for function::
+        
+	@response.format(type, **params)
+
+    - "clean" data from return value::
   
-      @response.trim(dotted-str)
+        @response.trim(dotted-str)
   
-  - Decorator to apply callbacks to response value::
+    - apply callbacks to response value::
   
-      @response.apply(fn)
+        @response.apply(fn)
+
+    - stream ``generator``_ values as a response::
+
+        @response.stream
 
   - Auto-reloading of code on file modification
 
@@ -106,10 +116,6 @@ To Do
 
     - reverse
 
-  - Decorators:
-
-    - ``@response.format('type', **params)`` to change default formatter for function
-
 TBC
 ---
 
@@ -129,3 +135,4 @@ Keep a log of the last request's (or last few requests'?) information (request, 
 .. _XPath Callbacks: http://codespeak.net/lxml/extensions.html#xpath-extension-functions
 .. _XSRF: http://en.wikipedia.org/wiki/Cross-site_request_forgery
 .. _Modernizr: http://modernizr.com
+.. _generator: http://codedstructure.blogspot.com/2010/12/http-streaming-from-python-generators.html
