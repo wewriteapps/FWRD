@@ -2226,13 +2226,13 @@ class XPathFunctions(object):
 
 
     def isempty(self, _, items):
-        """``fwrd:empty(string|node|nodeset)``
+        """``fwrd:isempty(string|node|nodeset)``
 
         Returns ``true()`` if the element is an empty string, node, or nodeset, ``false()`` otherwise.
 
         ::
         
-            <xsl:value-of select="fwrd:empty('')" />
+            <xsl:value-of select="fwrd:isempty('')" />
             <!-- output: true() -->
 
         """
@@ -2257,6 +2257,14 @@ class XPathFunctions(object):
             return True
 
         return False
+
+
+    def empty(self, _, items):
+        """``fwrd:empty(string|node|nodeset)``
+        
+        Alias of the `isempty()` function.
+        """
+        return self.isempty(_, items)
 
 
     def range(self, _, start, stop, step=1):
