@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>FWRD &mdash; FWRD v0.2.1 documentation</title>
+    <title>FWRD – FrameWork, Re-Done &mdash; FWRD v0.2.1 documentation</title>
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript">
@@ -42,16 +42,90 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <dl class="docutils">
-<dt>Contents:</dt>
-<dd>FWRD</dd>
+  <div class="highlight-python"><pre> _______ ________ ______ _____
+|    ___|  |  |  |   __ \     \
+|    ___|  |  |  |      &lt;  --  |
+|___|   |________|___|__|_____/</pre>
+</div>
+<div class="section" id="fwrd-framework-re-done">
+<h1>FWRD &#8211; FrameWork, Re-Done<a class="headerlink" href="#fwrd-framework-re-done" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>FWRD is a microframework for Python designed to
+&#8220;get out of the way&#8221; and only provide what&#8217;s
+really needed.</p>
+<p>FWRD is still alpha software. Until it hits version
+1.0 the api is subject to massive change/overhaul.</p>
+</div>
+<div class="section" id="features">
+<h2>FEATURES<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>WSGI-compliant</li>
+<li>Simple routing with URL parameters</li>
+<li>HTTP Method support for the &#8220;useful&#8221; methods: GET/POST/PUT/DELETE/HEAD</li>
+<li>Redirect support</li>
+<li>Automatic Response formatting: XSL-Translated output, XML, JSON (more to follow)</li>
+</ul>
+</div>
+<div class="section" id="not-implemented">
+<h2>NOT IMPLEMENTED<a class="headerlink" href="#not-implemented" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>Templating</dt>
+<dd>We don&#8217;t support templating using any of the common Python templating
+libraries such as Jinja, Cheetah, Mako, etc. It&#8217;s XSL or nothing with FWRD.
+Which is the point &#8211; the default output format is XML passed through an
+XSL stylesheet. Helpful formatters are available so you can change
+the output to be JSON, YAML, etc. without any extra &#8220;work&#8221;, just let your
+method return it&#8217;s results and it will be converted to something useful.
+A templating language would just add extra work and &#8220;get in the way&#8221;.</dd>
+<dt>ORM</dt>
+<dd>We don&#8217;t feel that we should dictate what database you use, so we don&#8217;t
+supply an ORM. Feel free to use any of the popular ones, or an ODM, or
+a flat-file database, or an in-memory database, or whatever persistance
+you wish.</dd>
 </dl>
+</div>
+<div class="section" id="installation">
+<h2>INSTALLATION<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>Currently FWRD is alpha software. Until there are official releases please
+install from the master:</p>
+<blockquote>
+<div>pip install <a class="reference external" href="http://github.com/digitala/FWRD/tarball/master">http://github.com/digitala/FWRD/tarball/master</a></div></blockquote>
+</div>
+<div class="section" id="usage">
+<h2>USAGE<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">FWRD</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;World&#39;</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s">&#39;Hello </span><span class="si">%s</span><span class="s">!&#39;</span> <span class="o">%</span> <span class="n">name</span>
+
+<span class="n">router</span><span class="o">.</span><span class="n">urls</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="s">&#39;/[index]&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&#39;/hello[/:world]&#39;</span><span class="p">,</span> <span class="n">hello_world</span><span class="p">),</span>
+    <span class="p">)</span>
+
+<span class="n">application</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="planned-features-to-do">
+<h2>PLANNED FEATURES / TO DO<a class="headerlink" href="#planned-features-to-do" title="Permalink to this headline">¶</a></h2>
+<p>Please see the <a class="reference external" href="//github.com/digitala/FWRD/blob/master/TODO.rst">TODO</a> document.</p>
+</div>
+<div class="section" id="dependencies">
+<h2>DEPENDENCIES<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="//github.com/hugobr/specloud">specloud</a> (for running specs/tests)</li>
+</ul>
+</div>
+<div class="section" id="module-contents">
+<h2>Module Contents:<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul class="simple">
 </ul>
 </div>
 <span class="target" id="module-FWRD"></span><div class="section" id="fwrd">
-<h1>FWRD<a class="headerlink" href="#fwrd" title="Permalink to this headline">¶</a></h1>
+<h3>FWRD<a class="headerlink" href="#fwrd" title="Permalink to this headline">¶</a></h3>
 <p>FWRD is a Python microframework designed to keep
 things simple for the developer.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -264,6 +338,13 @@ the same rules as the _Python Datetime module:</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="FWRD.XPathFunctions.empty">
+<tt class="descname">empty</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.empty" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:empty(string|node|nodeset)</span></tt></p>
+<p>Alias of the <cite>isempty()</cite> function.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="FWRD.XPathFunctions.format_date">
 <tt class="descname">format_date</tt><big>(</big><em>_</em>, <em>elements</em>, <em>format</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.format_date" title="Permalink to this definition">¶</a></dt>
 <dd><p><tt class="docutils literal"><span class="pre">fwrd:format-date(string|node|nodeset,</span> <span class="pre">output-format)</span></tt></p>
@@ -280,9 +361,9 @@ the same rules as the _Python Datetime module:</p>
 <dl class="method">
 <dt id="FWRD.XPathFunctions.isempty">
 <tt class="descname">isempty</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.isempty" title="Permalink to this definition">¶</a></dt>
-<dd><p><tt class="docutils literal"><span class="pre">fwrd:empty(string|node|nodeset)</span></tt></p>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:isempty(string|node|nodeset)</span></tt></p>
 <p>Returns <tt class="docutils literal"><span class="pre">true()</span></tt> if the element is an empty string, node, or nodeset, <tt class="docutils literal"><span class="pre">false()</span></tt> otherwise.</p>
-<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:empty(&#39;&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:isempty(&#39;&#39;)&quot;</span> <span class="nt">/&gt;</span>
 <span class="c">&lt;!-- output: true() --&gt;</span>
 </pre></div>
 </div>
@@ -436,13 +517,7 @@ time format (<tt class="docutils literal"><span class="pre">YYYYMMDDThhmmssZ</sp
 
 </dd></dl>
 
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
-<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
-<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
-</ul>
+</div>
 </div>
 
 
@@ -453,8 +528,20 @@ time format (<tt class="docutils literal"><span class="pre">YYYYMMDDThhmmssZ</sp
         <div class="sphinxsidebarwrapper">
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">FWRD</a></li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+<li><a class="reference internal" href="#">FWRD &#8211; FrameWork, Re-Done</a><ul>
+<li><a class="reference internal" href="#description">DESCRIPTION</a></li>
+<li><a class="reference internal" href="#features">FEATURES</a></li>
+<li><a class="reference internal" href="#not-implemented">NOT IMPLEMENTED</a></li>
+<li><a class="reference internal" href="#installation">INSTALLATION</a></li>
+<li><a class="reference internal" href="#usage">USAGE</a></li>
+<li><a class="reference internal" href="#planned-features-to-do">PLANNED FEATURES / TO DO</a></li>
+<li><a class="reference internal" href="#dependencies">DEPENDENCIES</a></li>
+<li><a class="reference internal" href="#module-contents">Module Contents:</a><ul>
+<li><a class="reference internal" href="#fwrd">FWRD</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
   <h3>This Page</h3>
@@ -493,7 +580,7 @@ time format (<tt class="docutils literal"><span class="pre">YYYYMMDDThhmmssZ</sp
     </div>
     <div class="footer">
         &copy; Copyright 2011, Phillip B Oldham &lt;phillip.oldham@gmail.com&gt;.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.6.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
     </div>
   </body>
 </html>
