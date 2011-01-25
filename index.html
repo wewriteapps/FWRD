@@ -51,9 +51,9 @@
 <h1>FWRD &#8211; FrameWork, Re-Done<a class="headerlink" href="#fwrd-framework-re-done" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
 <h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>FWRD is a microframework for Python designed to
-&#8220;get out of the way&#8221; and only provide what&#8217;s
-really needed.</p>
+<p>FWRD is a microframework for Python which has been designed to
+&#8220;get out of the way&#8221; and only provide enough to make an app
+accessible from the web.</p>
 <p>FWRD is still alpha software. Until it hits version
 1.0 the api is subject to massive change/overhaul.</p>
 </div>
@@ -67,17 +67,19 @@ really needed.</p>
 <li>Automatic Response formatting: XSL-Translated output, XML, JSON (more to follow)</li>
 </ul>
 </div>
-<div class="section" id="not-implemented">
-<h2>NOT IMPLEMENTED<a class="headerlink" href="#not-implemented" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="things-we-haven-t-implemented">
+<h2>THINGS WE HAVEN&#8217;T IMPLEMENTED<a class="headerlink" href="#things-we-haven-t-implemented" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>Templating</dt>
-<dd>We don&#8217;t support templating using any of the common Python templating
-libraries such as Jinja, Cheetah, Mako, etc. It&#8217;s XSL or nothing with FWRD.
-Which is the point &#8211; the default output format is XML passed through an
-XSL stylesheet. Helpful formatters are available so you can change
-the output to be JSON, YAML, etc. without any extra &#8220;work&#8221;, just let your
-method return it&#8217;s results and it will be converted to something useful.
-A templating language would just add extra work and &#8220;get in the way&#8221;.</dd>
+<dd><p class="first">We don&#8217;t support templating using any of the common Python templating
+libraries such as Jinja, Cheetah, Mako, etc. The default output format
+is XML passed through an XSL stylesheet. Helpful formatters are available
+so you can change the output to be JSON, YAML, etc. without any extra
+&#8220;work&#8221;; just let your method return it&#8217;s results and it will be converted
+to something useful.</p>
+<p class="last">However, if you really need to use an alternative formatter you can do
+so by creating a &#8220;plugin&#8221; for the <tt class="docutils literal"><span class="pre">Response</span></tt>.</p>
+</dd>
 <dt>ORM</dt>
 <dd>We don&#8217;t feel that we should dictate what database you use, so we don&#8217;t
 supply an ORM. Feel free to use any of the popular ones, or an ODM, or
@@ -101,7 +103,7 @@ install from the master:</p>
 
 <span class="n">router</span><span class="o">.</span><span class="n">urls</span> <span class="o">=</span> <span class="p">(</span>
     <span class="p">(</span><span class="s">&#39;/[index]&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&#39;/hello[/:world]&#39;</span><span class="p">,</span> <span class="n">hello_world</span><span class="p">),</span>
+        <span class="p">(</span><span class="s">&#39;/hello[/:world]&#39;</span><span class="p">,</span> <span class="n">hello_world</span><span class="p">),</span>
     <span class="p">)</span>
 
 <span class="n">application</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
@@ -111,12 +113,6 @@ install from the master:</p>
 <div class="section" id="planned-features-to-do">
 <h2>PLANNED FEATURES / TO DO<a class="headerlink" href="#planned-features-to-do" title="Permalink to this headline">¶</a></h2>
 <p>Please see the <a class="reference external" href="//github.com/digitala/FWRD/blob/master/TODO.rst">TODO</a> document.</p>
-</div>
-<div class="section" id="dependencies">
-<h2>DEPENDENCIES<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><a class="reference external" href="//github.com/hugobr/specloud">specloud</a> (for running specs/tests)</li>
-</ul>
 </div>
 <div class="section" id="module-contents">
 <h2>Module Contents:<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
@@ -531,11 +527,10 @@ time format (<tt class="docutils literal"><span class="pre">YYYYMMDDThhmmssZ</sp
 <li><a class="reference internal" href="#">FWRD &#8211; FrameWork, Re-Done</a><ul>
 <li><a class="reference internal" href="#description">DESCRIPTION</a></li>
 <li><a class="reference internal" href="#features">FEATURES</a></li>
-<li><a class="reference internal" href="#not-implemented">NOT IMPLEMENTED</a></li>
+<li><a class="reference internal" href="#things-we-haven-t-implemented">THINGS WE HAVEN&#8217;T IMPLEMENTED</a></li>
 <li><a class="reference internal" href="#installation">INSTALLATION</a></li>
 <li><a class="reference internal" href="#usage">USAGE</a></li>
 <li><a class="reference internal" href="#planned-features-to-do">PLANNED FEATURES / TO DO</a></li>
-<li><a class="reference internal" href="#dependencies">DEPENDENCIES</a></li>
 <li><a class="reference internal" href="#module-contents">Module Contents:</a><ul>
 <li><a class="reference internal" href="#fwrd">FWRD</a></li>
 </ul>
