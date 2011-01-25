@@ -12,9 +12,9 @@ FWRD -- FrameWork, Re-Done
 DESCRIPTION
 -----------
 
-FWRD is a microframework for Python designed to 
-"get out of the way" and only provide what's 
-really needed.
+FWRD is a microframework for Python which has been designed to 
+"get out of the way" and only provide enough to make an app
+accessible from the web.
 
 FWRD is still alpha software. Until it hits version
 1.0 the api is subject to massive change/overhaul.
@@ -32,17 +32,19 @@ FEATURES
 
 - Automatic Response formatting: XSL-Translated output, XML, JSON (more to follow)
 
-NOT IMPLEMENTED
----------------
+THINGS WE HAVEN'T IMPLEMENTED
+-----------------------------
 
 Templating
     We don't support templating using any of the common Python templating 
-    libraries such as Jinja, Cheetah, Mako, etc. It's XSL or nothing with FWRD.
-    Which is the point -- the default output format is XML passed through an
-    XSL stylesheet. Helpful formatters are available so you can change
-    the output to be JSON, YAML, etc. without any extra "work", just let your
-    method return it's results and it will be converted to something useful. 
-    A templating language would just add extra work and "get in the way".
+    libraries such as Jinja, Cheetah, Mako, etc. The default output format 
+    is XML passed through an XSL stylesheet. Helpful formatters are available 
+    so you can change the output to be JSON, YAML, etc. without any extra 
+    "work"; just let your method return it's results and it will be converted 
+    to something useful. 
+
+    However, if you really need to use an alternative formatter you can do
+    so by creating a "plugin" for the ``Response``.
 
 ORM
     We don't feel that we should dictate what database you use, so we don't
@@ -79,10 +81,4 @@ PLANNED FEATURES / TO DO
 
 Please see the TODO_ document.
 
-DEPENDENCIES
-------------
-
-- specloud_ (for running specs/tests)
-
 .. _TODO: //github.com/digitala/FWRD/blob/master/TODO.rst
-.. _specloud: //github.com/hugobr/specloud
