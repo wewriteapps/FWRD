@@ -25,9 +25,11 @@ To Do
   
         @response.apply(fn)
 
-    - stream ``generator``_ values as a response::
+    - stream ``generator`` values as a response::
 
         @response.stream
+        def fn():
+            yield True
 
   - Auto-reloading of code on file modification
 
