@@ -38,6 +38,17 @@ class XpathSpec(ResponseBaseSpec):
 
     def it_should_get_environ(self):
         pass
+
+    def it_should_format_get_params(self):
+        '''it should format GET params'''
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet_path='xpath',
+            default_stylesheet='get_params.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format Title</title></head><body>Format Title</body></html>')
     """
 
     def it_should_format_a_title(self):
