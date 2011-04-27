@@ -1613,6 +1613,13 @@ class XMLEncoder(object):
                 child = etree.SubElement(node, u'i')
                 child = self._update_document(child, item)
 
+        elif hasattr(data, 'send'):
+            # generator
+            node.set('nodetype',u'generated-list')
+            for item in data:
+                child = etree.SubElement(node, u'i')
+                child = self._update_document(child, item)
+
         elif type(data) == set:
             node.set('nodetype',u'unique-list')
             for item in data:
