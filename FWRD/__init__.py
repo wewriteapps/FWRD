@@ -1582,7 +1582,7 @@ class XMLEncoder(object):
         elif self._is_scalar(data):
             node.text = self._to_unicode(data)
 
-        elif type(data) == dict:
+        elif hasattr(data, 'iteritems'):
             #node.set('nodetype',u'map')
             for name, items in data.iteritems():
                 if isinstance(name, basestring) and name != '' and str(name[0]) is '?':
@@ -2596,6 +2596,7 @@ class ParameterContainer(collections.Mapping):
 
 
     def to_qs(self):
+        """TODO"""
         pass
 
 

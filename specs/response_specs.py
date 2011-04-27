@@ -465,7 +465,7 @@ class TranslatedResponseSpec(ResponseBaseSpec):
     """
 
 class TranslatedWithVarsResponseSpec(ResponseBaseSpec):
-    """Translated (XSL, with vars/params) response spec"""
+    """Translated (XSL, with vars) response spec"""
 
     def setUp(self):
         self.request = ComplexObject()
@@ -538,3 +538,4 @@ class TranslatedWithImportsResponseSpec(ResponseBaseSpec):
 
         self._format_each_should_equal(tests, 'text/html')
         
+

@@ -10,6 +10,7 @@ if FWRD_PATH not in sys.path:
 
 from FWRD import ResponseFactory, XPathFunctions
 from response_specs import ResponseBaseSpec, PlainObject, ComplexObject
+from http_spec import WSGITestBase
 
 class XpathSpec(ResponseBaseSpec):
     """XPath Spec"""
@@ -28,28 +29,6 @@ class XpathSpec(ResponseBaseSpec):
             )
 
         #self.xpath = XPathCallbacks()
-
-    """
-    def it_should_get_parameters(self):
-        pass
-
-    def it_should_get_session(self):
-        pass
-
-    def it_should_get_environ(self):
-        pass
-
-    def it_should_format_get_params(self):
-        '''it should format GET params'''
-        response = ResponseFactory.new(
-            None,
-            None,
-            self.request,
-            stylesheet_path='xpath',
-            default_stylesheet='get_params.xsl'
-            ).format()
-        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format Title</title></head><body>Format Title</body></html>')
-    """
 
     def it_should_format_a_title(self):
         response = ResponseFactory.new(
@@ -219,3 +198,37 @@ class XpathSpec(ResponseBaseSpec):
             """</body></html>"""])
 
         self.assertEqual(response, expected)
+
+
+
+class XPathResponseSpec(WSGITestBase):
+    """XPath Spec (with complete request)"""
+
+    def it_should_format_get_params(self):
+        '''it should format GET params'''
+
+        self.app.reset()
+        self.app.config.format['xsl'] = {
+            'stylesheet_path': '.',
+            'default_stylesheet': 'xpath/get_params.xsl',
+            }
+        self.app.router.clear()
+
+        self.app.router.add('/', None)
+
+        result = self.make_request('/', qs='foo=bar')
+
+        self.assertEqual(result['body'], '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format GET Params</title></head><body><params><foo>bar</foo></params></body></html>')
+
+
+    """
+    def it_should_get_parameters(self):
+        pass
+
+    def it_should_get_session(self):
+        pass
+
+    def it_should_get_environ(self):
+        pass
+    """
+    
