@@ -344,6 +344,14 @@ paragraph
   <i nodetype="boolean">true</i>
 </response>
 '''),
+            ((i for i in [1,2,3]),
+             '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/" request="/" method="get" nodetype="generated-list">
+  <i>1</i>
+  <i>2</i>
+  <i>3</i>
+</response>
+'''),
             (nesteddict,
              '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/" request="/" method="get">
