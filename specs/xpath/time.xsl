@@ -32,7 +32,7 @@
     <title>Format a Time</title>
   </head>
   <body>
-    <xsl:value-of select="fwrd:timeformat('2010-01-01', '%b %_d, %Y', '%Y-%m-%d')" />
+    <xsl:value-of select="fwrd:timeformat('2010-01-01', '%b %d, %Y', '%Y-%m-%d')" />
   </body>
 </html>
 </xsl:template>
