@@ -62,7 +62,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 
-__all__ = [
+__all__ = (
     'application',
     'config',
     'router',
@@ -82,7 +82,7 @@ __all__ = [
     # Config exceptions
     'ConfigError',
     'RouteCompilationError',
-    ]
+    )
 
 # Global variables
 
@@ -248,6 +248,18 @@ class SeeOther(HTTPRedirection):
     code = 303
 
 
+class InternalRedirect(Exception):
+    """Raise this object to call another 
+    
+    """
+    def __init__(self, callable, args={}):
+        if isinstance(callable, basestring):
+            self.callable = resolve(callable)
+        elif hasattr(callable, '__call__'):
+            self.callable = callable
+        else:
+            raise Exception('`callable` is not a callable')
+        self.args = args
 
 # Main application objects
 
@@ -257,7 +269,7 @@ class ConfigError(Exception):
 
 
 class Config(threading.local):
-    __slots__ = [
+    __slots__ = (
         'debug',
         'host',
         'port',
@@ -265,7 +277,7 @@ class Config(threading.local):
         'format',
         'app_path',
         'default_format',
-        ]
+        )
 
 
     def __init__(self, **kwargs):
@@ -286,13 +298,13 @@ class Config(threading.local):
 
 
 class Application(threading.local):
-    __slots__ = [
+    __slots__ = (
         '_config',
         '_router',
         '_request',
         '_response',
         '_middleware',
-        ]
+        )
 
 
     def __init__(self, config, router, *args, **kwargs):
@@ -406,6 +418,9 @@ class Application(threading.local):
 
         except (KeyboardInterrupt, SystemExit) as e:
             print >>self._config.output, "Terminating."
+
+        except InternalRedirect as e:
+            raise NotImplementedError()
 
         except HTTPRedirection as e:
             code = e.code
@@ -526,7 +541,7 @@ class RouteCompilationError(Exception):
 
 
 class Route(object):
-    __slots__ = [
+    __slots__ = (
         '_callable',
         '_compiled_regex',
         '_compiled_callable',
@@ -542,11 +557,11 @@ class Route(object):
         'callable',
         'allowed_formats',
         'request_filters'
-        ]
+        )
 
-    _http_methods = ['HEAD', 'GET', 'POST', 'PUT', 'DELETE']
+    _http_methods = ('HEAD', 'GET', 'POST', 'PUT', 'DELETE')
 
-    _tuple_pattern = ['route', 'callable', 'methods', 'filters', 'formats']
+    _tuple_pattern = ('route', 'callable', 'methods', 'filters', 'formats')
 
     _compile_patterns = (
         # optional route items
@@ -790,7 +805,7 @@ class Route(object):
 
 class Router(object):
     """An object which contains the application's URL routing map."""
-    __slots__ = [
+    __slots__ = (
         '_global_filters',
         '_global_filters_imported',
         '_routes',
@@ -799,7 +814,7 @@ class Router(object):
         'POST',
         'PUT',
         'DELETE',
-        ]
+        )
 
 
     def __init__(self, urls=None):
@@ -897,9 +912,9 @@ class Router(object):
 
 
 class HeaderContainer(threading.local):
-    __slots__ = [
-        'headers'
-        ]
+    __slots__ = (
+        'headers',
+        )
 
 
     def __init__(self, *args, **kwargs):
@@ -998,8 +1013,7 @@ class HeaderContainer(threading.local):
 
 class Request(threading.local):
     # Should a factory be used to create a request/response obj per "request"?
-    __slots__ = [
-
+    __slots__ = (
         # HTTP param containers
         'GET',
         'PATH',
@@ -1017,8 +1031,7 @@ class Request(threading.local):
         # properties
         'params',
         'session',
-        
-        ]
+        )
 
     _get_ext = re.compile(r'^(.+)\.([a-z]+)$')
     _is_float = re.compile(r'^\-?\d+\.\d+$')
@@ -1406,9 +1419,9 @@ class JSONResponse(Response):
 
 
 class PropertyProxy(object):
-    __slots__ = [
-        '_property'
-        ]
+    __slots__ = (
+        '_property',
+        )
 
     def __init__(self, prop):
         object.__setattr__(self, '_property', prop)
@@ -1545,6 +1558,10 @@ class XMLEncoder(object):
             self.document = self._update_document(self.document, self.data)
         return self.document
 
+
+    def from_string(self, string):
+        self.data = etree.parse(StringIO(string))
+            
 
     def _update_document(self, node, data):
 
@@ -2370,6 +2387,22 @@ class XPathFunctions(object):
                 returned.append(item)
         return returned
 
+
+    def string_to_fragment(self, _, string):
+        """``fwrd:string-to-fragment(string)``
+
+        Provides a mechanism to convert a well-formed XML string to a
+        "real" XML nodeset, which can then be queried/traversed as standard
+        XML.
+
+        Example::
+
+            <xsl:value-of
+                select="fwrd:string-to-fragment('<foo><bar /><spam>eggs</spam></foo>')/foo/spam"
+                />
+            <!-- output: eggs -->
+        """
+        pass
 
     def call_method(self, _, name, qs=None):
         """``fwrd:call-method(name, querystring)``
