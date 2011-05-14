@@ -275,8 +275,8 @@ class Config(threading.local):
         'port',
         'output',
         'format',
-        'app_path',
         'default_format',
+        '_app_path',
         )
 
 
@@ -295,6 +295,15 @@ class Config(threading.local):
         for key, value in kwargs.iteritems():
             if key.lower() in self.__slots__:
                 setattr(self, key.lower(), value)
+
+    def _set_app_path(self, val):
+        self._app_path = val
+        sys.path.insert(0, self._app_path)
+
+    def _get_app_path(self):
+        return self._app_path
+
+    app_path = property(_set_app_path, _get_app_path)
 
 
 class Application(threading.local):
