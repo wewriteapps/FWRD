@@ -621,7 +621,13 @@ class Route(object):
                 self.callable = callable
                 self._callable = resolve(self.callable)
             except ImportError:
-                raise RouteCompilationError('unable to import callable "%s"' % self.callable)
+                raise RouteCompilationError(
+                    'unable to import callable "%s", searching %s with sys.path [%s]' % (
+                        self.callable,
+                        config.app_path,
+                        ", ".join(sys.path)
+                        )
+                    )
 
         elif hasattr(callable, '__call__'):
             self._callable = callable
@@ -1706,10 +1712,20 @@ class XMLEncoder(object):
         attrs = []
 
         if type(data) is dict:
-            attrs = self.__dict_to_attrs(dict( (name, value) for name, value in data.iteritems() if name[0].isalpha() and type(value) is not dict  ))
+            attrs = self.__dict_to_attrs(
+                dict( (name, value)
+                      for name, value
+                      in data.iteritems()
+                      if name[0].isalpha()
+                      and type(value) is not dict
+                      )
+                )
 
         #pi = etree.ProcessingInstruction(node[1:])#, ' '.join(attrs))
-        pi = etree.ProcessingInstruction('xml-stylesheet', 'type="text/xml" href="default.xsl"')
+        pi = etree.ProcessingInstruction(
+            'xml-stylesheet',
+            'type="text/xml" href="default.xsl"'
+            )
 
     
     def __dict_to_attrs(self, d):
