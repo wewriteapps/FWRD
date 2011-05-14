@@ -303,7 +303,7 @@ class Config(threading.local):
     def _get_app_path(self):
         return self._app_path
 
-    app_path = property(_set_app_path, _get_app_path)
+    app_path = property(_get_app_path, _set_app_path)
 
 
 class Application(threading.local):
