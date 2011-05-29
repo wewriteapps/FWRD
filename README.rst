@@ -107,6 +107,12 @@ However, we recommend that you use buildout for all your applications:
 
      </xsl:stylesheet>
 
+then from the command line::
+
+    # python bootstrap.py 
+    # ./bin/buildout
+    # ./bin/server
+
 
 PLANNED FEATURES / TO DO
 ------------------------
