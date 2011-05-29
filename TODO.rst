@@ -3,7 +3,7 @@ To Do
 
 - v0.2.*:
 
-  - Built-in Logging
+  - Add configurable output logging to start-up & request/response cycle
 
   - Per-Formatter options/config
 
@@ -15,13 +15,13 @@ To Do
 
     - change/force formatter for function::
         
-	@response.format(type, **params)
+        @response.format(type, **params)
 
     - "clean" data from return value::
   
         @response.trim(dotted-str)
   
-    - apply callbacks to response value::
+    - apply callbacks to response value (handled with standard decorators?)::
   
         @response.apply(fn)
 
@@ -31,7 +31,11 @@ To Do
         def fn():
             yield True
 
-  - Auto-reloading of code on file modification
+  - Auto-reloading of code on file modification (debugging option)
+
+  - Option to output basic config file::
+
+      # python -m FWRD --example_config > webapp.cfg
 
   - `XSRF`_ validation, similar to that from `tornado`_
 
@@ -55,22 +59,20 @@ To Do
 
   - base64 encoding of binary data in output, using the data-uri format.
 
-  - Add ``sendfile`` func which is compatible with Nginx X-Accel headers::
+  - Add ``sendfile`` func/decorator which is compatible with Nginx X-Accel headers::
   
       response.sendfile(filename, data,
                         content_type="application/octet-stream",
                         force_download=True # Content-Disposition: attachment;
                         ) 
 
-  - XML
+  - Add object to aid unittesting for devs (similar to Flask)
 
-    - allow creating of processing instructions using the following format:: 
-    
-        {"?xml-stylesheet": {'type':'', 'href':''}}
-        
+  - Flask Flashing?
+
   - XSL
   
-    - caching of "compiled" XSL files 
+    - toggle "caching" of "compiled" XSL files
 
   - XPath function implementations:
 
@@ -98,8 +100,6 @@ To Do
 
     - concat
 
-    - implode
-
     - in
 
     - starts-with
@@ -120,8 +120,6 @@ To Do
 
 TBC
 ---
-
-Local fall-back for sessions when beaker isn't available?
 
 How should authentication be handled? `AuthKit`_? Custom? None (handled by developer)?
 

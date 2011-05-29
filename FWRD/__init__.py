@@ -2018,6 +2018,99 @@ class XPathFunctions(object):
         return XMLEncoder(self._params['request'].environ, doc_el='environ').to_xml()
 
 
+    def abs(self, _, items):
+        """``fwrd:abs(string|node|nodeset)``
+
+        Return the absolute value of elements provided.
+
+        ::
+
+            <xsl:value-of select"fwrd:abs('-1')" />
+            <!-- output: 1 -->
+        
+        """
+
+        if isinstance(items, basestring):
+            return abs(items)
+
+        resp = []
+
+        for item in items:
+            if isinstance(item, basestring):
+                resp.append(abs(item))
+            else:
+                newitem = copy.deepcopy(item)
+                try:
+                    newitem.text = abs(newitem.text)
+                except:
+                    pass
+                resp.append(newitem)
+
+        return resp
+
+
+    def ceil(self, _, items):
+        """``fwrd:ceil(string|node|nodeset)``
+
+        Return the ceiling of elements provided.
+
+        ::
+
+            <xsl:value-of select"fwrd:ceil('2.65')" />
+            <!-- output: 3 -->
+        
+        """
+
+        if isinstance(items, basestring):
+            return ceil(items)
+
+        resp = []
+
+        for item in items:
+            if isinstance(item, basestring):
+                resp.append(ceil(item))
+            else:
+                newitem = copy.deepcopy(item)
+                try:
+                    newitem.text = ceil(newitem.text)
+                except:
+                    pass
+                resp.append(newitem)
+
+        return resp
+
+
+    def floor(self, _, items):
+        """``fwrd:floor(string|node|nodeset)``
+
+        Return the floor of elements provided.
+
+        ::
+
+            <xsl:value-of select"fwrd:floor('2.65')" />
+            <!-- output: 2 -->
+        
+        """
+
+        if isinstance(items, basestring):
+            return ceil(items)
+
+        resp = []
+
+        for item in items:
+            if isinstance(item, basestring):
+                resp.append(ceil(item))
+            else:
+                newitem = copy.deepcopy(item)
+                try:
+                    newitem.text = ceil(newitem.text)
+                except:
+                    pass
+                resp.append(newitem)
+
+        return resp
+
+
     def title(self, _, items):
         """``fwrd:title(string|node|noteset)``
 

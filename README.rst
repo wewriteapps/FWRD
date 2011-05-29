@@ -13,7 +13,7 @@ DESCRIPTION
 -----------
 
 FWRD is a microframework for Python which has been designed to 
-"get out of the way" and only provide enough to make an app
+"get out of the way" and simply provide enough to make an app
 accessible from the web.
 
 FWRD is still alpha software. Until it hits version
@@ -24,9 +24,9 @@ FEATURES
 
 - WSGI-compliant
 
-- Simple routing with URL parameters
+- Simple routing with URL parameters, with support for advanced routing using regular expressions
 
-- HTTP Method support for the "useful" methods: GET/POST/PUT/DELETE/HEAD
+- HTTP Method support for the "useful" (REST) methods: GET/POST/PUT/DELETE/HEAD
 
 - Redirect support
 
@@ -52,33 +52,65 @@ ORM
     a flat-file database, or an in-memory database, or whatever persistance 
     you wish.
 
-INSTALLATION
-------------
+INSTALLATION & USAGE
+--------------------
 
-Currently FWRD is alpha software. Until there are official releases please
-install from the master:
+The quickest installation route is as follows:
 
-    pip install http://github.com/digitala/FWRD/tarball/master
+    pip install http://github.com/unpluggd/FWRD/tarball/master
 
-USAGE
------
-::
+However, we recommend that you use buildout for all your applications:
+
+``buildout.cfg`` file::
+    
+    [buildout]
+    parts = server
+    ...
+
+    [server]
+    recipe = zc.recipe.egg
+    entry-points = server=server:main
+
+``server.py`` file::
 
     from FWRD import *
-    
-    def hello_world(name='World'):
-        return 'Hello %s!' % name
 
-    router.urls = (
-        ('/[index]', None),
-	('/hello[/:world]', hello_world),
-	)
+    # tell the xsl formatter where to find files
+    config.format['xsl'] = {
+    'stylesheet_path': 'xsl',
+    'default_stylesheet': 'default.xsl'
+    }
 
-    application.run()
+    application.setup('webapp.cfg')
+
+    def main():
+        application.run()
+
+``webapp.cfg`` file::
+
+    Routes:
+      - route: /[index]
+
+``xsl/default.xsl`` file::
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <xsl:stylesheet
+       version="1.0"
+       xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+       xmlns:fwrd="http://unplug.gd/FWRD"
+       extension-element-prefixes="fwrd"
+       exclude-result-prefixes="fwrd">
+
+       <xsl:template match="response[@route='/[index]']">
+         hello world
+       </xsl:template>
+
+     </xsl:stylesheet>
+
 
 PLANNED FEATURES / TO DO
 ------------------------
 
 Please see the TODO_ document.
 
-.. _TODO: //github.com/digitala/FWRD/blob/master/TODO.rst
+.. _TODO: //github.com/unpluggd/FWRD/blob/master/TODO.rst
