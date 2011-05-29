@@ -52,7 +52,7 @@
 <div class="section" id="description">
 <h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>FWRD is a microframework for Python which has been designed to
-&#8220;get out of the way&#8221; and only provide enough to make an app
+&#8220;get out of the way&#8221; and simply provide enough to make an app
 accessible from the web.</p>
 <p>FWRD is still alpha software. Until it hits version
 1.0 the api is subject to massive change/overhaul.</p>
@@ -61,8 +61,8 @@ accessible from the web.</p>
 <h2>FEATURES<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>WSGI-compliant</li>
-<li>Simple routing with URL parameters</li>
-<li>HTTP Method support for the &#8220;useful&#8221; methods: GET/POST/PUT/DELETE/HEAD</li>
+<li>Simple routing with URL parameters, with support for advanced routing using regular expressions</li>
+<li>HTTP Method support for the &#8220;useful&#8221; (REST) methods: GET/POST/PUT/DELETE/HEAD</li>
 <li>Redirect support</li>
 <li>Automatic Response formatting: XSL-Translated output, XML, JSON (more to follow)</li>
 </ul>
@@ -87,32 +87,59 @@ a flat-file database, or an in-memory database, or whatever persistance
 you wish.</dd>
 </dl>
 </div>
-<div class="section" id="installation">
-<h2>INSTALLATION<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>Currently FWRD is alpha software. Until there are official releases please
-install from the master:</p>
+<div class="section" id="installation-usage">
+<h2>INSTALLATION &amp; USAGE<a class="headerlink" href="#installation-usage" title="Permalink to this headline">¶</a></h2>
+<p>The quickest installation route is as follows:</p>
 <blockquote>
-<div>pip install <a class="reference external" href="http://github.com/digitala/FWRD/tarball/master">http://github.com/digitala/FWRD/tarball/master</a></div></blockquote>
+<div>pip install <a class="reference external" href="http://github.com/unpluggd/FWRD/tarball/master">http://github.com/unpluggd/FWRD/tarball/master</a></div></blockquote>
+<p>However, we recommend that you use buildout for all your applications:</p>
+<p><tt class="docutils literal"><span class="pre">buildout.cfg</span></tt> file:</p>
+<div class="highlight-python"><pre>[buildout]
+parts = server
+...
+
+[server]
+recipe = zc.recipe.egg
+entry-points = server=server:main</pre>
 </div>
-<div class="section" id="usage">
-<h2>USAGE<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p><tt class="docutils literal"><span class="pre">server.py</span></tt> file:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">FWRD</span> <span class="kn">import</span> <span class="o">*</span>
 
-<span class="k">def</span> <span class="nf">hello_world</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">&#39;World&#39;</span><span class="p">):</span>
-    <span class="k">return</span> <span class="s">&#39;Hello </span><span class="si">%s</span><span class="s">!&#39;</span> <span class="o">%</span> <span class="n">name</span>
+<span class="c"># tell the xsl formatter where to find files</span>
+<span class="n">config</span><span class="o">.</span><span class="n">format</span><span class="p">[</span><span class="s">&#39;xsl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<span class="s">&#39;stylesheet_path&#39;</span><span class="p">:</span> <span class="s">&#39;xsl&#39;</span><span class="p">,</span>
+<span class="s">&#39;default_stylesheet&#39;</span><span class="p">:</span> <span class="s">&#39;default.xsl&#39;</span>
+<span class="p">}</span>
 
-<span class="n">router</span><span class="o">.</span><span class="n">urls</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="p">(</span><span class="s">&#39;/[index]&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
-    <span class="p">(</span><span class="s">&#39;/hello[/:world]&#39;</span><span class="p">,</span> <span class="n">hello_world</span><span class="p">),</span>
-    <span class="p">)</span>
+<span class="n">application</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="s">&#39;webapp.cfg&#39;</span><span class="p">)</span>
 
-<span class="n">application</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">application</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
+</div>
+<p><tt class="docutils literal"><span class="pre">webapp.cfg</span></tt> file:</p>
+<div class="highlight-python"><pre>Routes:
+  - route: /[index]</pre>
+</div>
+<p><tt class="docutils literal"><span class="pre">xsl/default.xsl</span></tt> file:</p>
+<div class="highlight-python"><pre>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet
+   version="1.0"
+   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+   xmlns:fwrd="http://unplug.gd/FWRD"
+   extension-element-prefixes="fwrd"
+   exclude-result-prefixes="fwrd"&gt;
+
+   &lt;xsl:template match="response[@route='/[index]']"&gt;
+     hello world
+   &lt;/xsl:template&gt;
+
+ &lt;/xsl:stylesheet&gt;</pre>
 </div>
 </div>
 <div class="section" id="planned-features-to-do">
 <h2>PLANNED FEATURES / TO DO<a class="headerlink" href="#planned-features-to-do" title="Permalink to this headline">¶</a></h2>
-<p>Please see the <a class="reference external" href="//github.com/digitala/FWRD/blob/master/TODO.rst">TODO</a> document.</p>
+<p>Please see the <a class="reference external" href="//github.com/unpluggd/FWRD/blob/master/TODO.rst">TODO</a> document.</p>
 </div>
 <div class="section" id="module-contents">
 <h2>Module Contents:<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
@@ -290,6 +317,16 @@ stylesheet:</p>
 </pre></div>
 </div>
 <dl class="method">
+<dt id="FWRD.XPathFunctions.abs">
+<tt class="descname">abs</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.abs" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:abs(string|node|nodeset)</span></tt></p>
+<p>Return the absolute value of elements provided.</p>
+<div class="highlight-xslt"><pre>&lt;xsl:value-of select"fwrd:abs('-1')" /&gt;
+&lt;!-- output: 1 --&gt;</pre>
+</div>
+</dd></dl>
+
+<dl class="method">
 <dt id="FWRD.XPathFunctions.call_method">
 <tt class="descname">call_method</tt><big>(</big><em>_</em>, <em>name</em>, <em>qs=None</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.call_method" title="Permalink to this definition">¶</a></dt>
 <dd><p><tt class="docutils literal"><span class="pre">fwrd:call-method(name,</span> <span class="pre">querystring)</span></tt></p>
@@ -306,6 +343,16 @@ config file.</p>
     <span class="na">select=</span><span class="s">&quot;fwrd:call-method(&#39;packagename.modulename:ClassName().method_name()&#39;,</span>
 <span class="s">                             &#39;spam=eggs&amp;foo=bar&#39;&quot;</span> <span class="nt">/&gt;</span>
 </pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.ceil">
+<tt class="descname">ceil</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.ceil" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:ceil(string|node|nodeset)</span></tt></p>
+<p>Return the ceiling of elements provided.</p>
+<div class="highlight-xslt"><pre>&lt;xsl:value-of select"fwrd:ceil('2.65')" /&gt;
+&lt;!-- output: 3 --&gt;</pre>
 </div>
 </dd></dl>
 
@@ -338,6 +385,16 @@ the same rules as the _Python Datetime module:</p>
 <tt class="descname">empty</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.empty" title="Permalink to this definition">¶</a></dt>
 <dd><p><tt class="docutils literal"><span class="pre">fwrd:empty(string|node|nodeset)</span></tt></p>
 <p>Alias of the <cite>isempty()</cite> function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.floor">
+<tt class="descname">floor</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.floor" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:floor(string|node|nodeset)</span></tt></p>
+<p>Return the floor of elements provided.</p>
+<div class="highlight-xslt"><pre>&lt;xsl:value-of select"fwrd:floor('2.65')" /&gt;
+&lt;!-- output: 2 --&gt;</pre>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -426,6 +483,22 @@ that a <cite>start</cite> argument is required:</p>
 <p>Returns a copy of the element with all occurrences of substring <tt class="docutils literal"><span class="pre">search</span></tt> replaced by <tt class="docutils literal"><span class="pre">replace</span></tt>.</p>
 <div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:str-replace(&#39;foobar&#39;, &#39;ar&#39;, &#39;oz&#39;)&quot;</span> <span class="nt">/&gt;</span>
 <span class="c">&lt;!-- output: fooboz --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.string_to_fragment">
+<tt class="descname">string_to_fragment</tt><big>(</big><em>_</em>, <em>string</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.string_to_fragment" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:string-to-fragment(string)</span></tt></p>
+<p>Provides a mechanism to convert a well-formed XML string to a
+&#8220;real&#8221; XML nodeset, which can then be queried/traversed as standard
+XML.</p>
+<p>Example:</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span>
+    <span class="na">select=</span><span class="s">&quot;fwrd:string-to-fragment(&#39;&lt;foo&gt;&lt;bar /&gt;&lt;spam&gt;eggs&lt;/spam&gt;&lt;/foo&gt;&#39;)/foo/spam&quot;</span>
+    <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: eggs --&gt;</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -528,8 +601,7 @@ time format (<tt class="docutils literal"><span class="pre">YYYYMMDDThhmmssZ</sp
 <li><a class="reference internal" href="#description">DESCRIPTION</a></li>
 <li><a class="reference internal" href="#features">FEATURES</a></li>
 <li><a class="reference internal" href="#things-we-haven-t-implemented">THINGS WE HAVEN&#8217;T IMPLEMENTED</a></li>
-<li><a class="reference internal" href="#installation">INSTALLATION</a></li>
-<li><a class="reference internal" href="#usage">USAGE</a></li>
+<li><a class="reference internal" href="#installation-usage">INSTALLATION &amp; USAGE</a></li>
 <li><a class="reference internal" href="#planned-features-to-do">PLANNED FEATURES / TO DO</a></li>
 <li><a class="reference internal" href="#module-contents">Module Contents:</a><ul>
 <li><a class="reference internal" href="#fwrd">FWRD</a></li>
