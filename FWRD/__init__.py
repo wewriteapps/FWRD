@@ -1320,11 +1320,15 @@ class TranslatedResponse(Response):
 
     def __init__(self, start_response, request, config={}, **kwargs):
         super(self.__class__, self).__init__(start_response, request, config=config)
-        self.params['default_stylesheet'] = None
+        self.params['stylesheet'] = None
+        self.params['cache'] = True
         self._update_params(**kwargs)
 
 
     def format(self, data=None, **kwargs):
+
+        if self.params['cache']:
+            self._xsl = None
 
         xml = XMLEncoder(
             data,
@@ -1345,17 +1349,28 @@ class TranslatedResponse(Response):
         if hasattr(self, '_xsl') and self._xsl:
             return self._xsl
 
-        self.params['default_stylesheet'] = os.path.abspath(self.params['default_stylesheet'])
+        print self.params['stylesheet']
 
-        if 'default_stylesheet' not in self.params or not self.params['default_stylesheet']:
-            raise ResponseParameterError("the default stylesheet filename must be set")
+        self.params['stylesheet'] = os.path.abspath(self.params['stylesheet'])
 
-        self.params['stylesheet_path'] = os.path.basename(self.params['default_stylesheet'])
+        print self.params['stylesheet']
 
-        if not os.path.isfile(os.path.join(self.params['stylesheet_path'], self.params['default_stylesheet'])):
-            raise ResponseParameterError('the default stylesheet could not be found')
+        if 'stylesheet' not in self.params or \
+            not self.params['stylesheet']:
+            raise ResponseParameterError("the stylesheet filename must be set")
 
-        xslfile = os.path.join(self.params['stylesheet_path'], self.params['default_stylesheet'])
+        self.params['stylesheet_path'] = os.path.basename(self.params['stylesheet'])
+
+        if not os.path.isfile(os.path.join(
+            self.params['stylesheet_path'],
+            self.params['stylesheet']
+            )):
+            raise ResponseParameterError('the stylesheet could not be found')
+
+        xslfile = os.path.join(
+            self.params['stylesheet_path'],
+            self.params['stylesheet']
+            )
 
         self._xsl = XSLTranslator(None,
                             xslfile,

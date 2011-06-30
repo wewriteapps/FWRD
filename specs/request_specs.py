@@ -25,8 +25,7 @@ class GetRequestSpec(WSGITestBase):
         super(self.__class__, self).setUp()
         self.app.reset()
         self.app.config.format['xsl'] = {
-            'stylesheet_path': '.',
-            'default_stylesheet': 'translated_response_spec.xsl',
+            'stylesheet': 'translated_response_spec.xsl',
             }
         self.app.router.clear()
 
@@ -287,8 +286,7 @@ class PostRequestSpec(WSGITestBase):
     def setUp(self):
         super(self.__class__, self).setUp()
         self.app.config.format['xsl'] = {
-            'stylesheet_path': '.',
-            'default_stylesheet': 'translated_response_spec.xsl',
+            'stylesheet': 'translated_response_spec.xsl',
             }
 
 

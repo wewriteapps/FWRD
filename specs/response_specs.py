@@ -419,8 +419,7 @@ class TranslatedResponseSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='.',
-            default_stylesheet='translated_response_spec.xsl'
+            stylesheet='translated_response_spec.xsl'
             )
 
     def it_should_raise_when_stylesheet_cannot_be_found(self):
@@ -428,8 +427,7 @@ class TranslatedResponseSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='.',
-            default_stylesheet='non-existant-stylesheet.xsl'
+            stylesheet='non-existant-stylesheet.xsl'
             )
 
         self.assertRaises(ResponseParameterError,
@@ -440,8 +438,7 @@ class TranslatedResponseSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='non-existant-path',
-            default_stylesheet='default.xsl'
+            stylesheet='non-existant-path/default.xsl'
             )
 
         self.assertRaises(ResponseParameterError,
@@ -486,8 +483,7 @@ class TranslatedWithVarsResponseSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='.',
-            default_stylesheet='translation_with_vars_spec.xsl'
+            stylesheet='translation_with_vars_spec.xsl'
             )
 
     def it_should_format_simple_objects(self):
@@ -523,8 +519,7 @@ class TranslatedWithImportsResponseSpec(ResponseBaseSpec):
             None,
             None,
             self.request,
-            stylesheet_path='.',
-            default_stylesheet='translation_with_imports_spec.xsl'
+            stylesheet='translation_with_imports_spec.xsl'
             )
 
     def it_should_format_simple_objects(self):
