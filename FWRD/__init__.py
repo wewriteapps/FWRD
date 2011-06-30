@@ -2430,6 +2430,13 @@ class XPathFunctions(object):
         return self.isempty(_, items)
 
 
+    def _range(self, start, stop, step=1):
+        r = start
+        while r < stop:
+            yield r
+            r += step
+
+
     def range(self, _, start, stop, step=1):
         """``fwrd:range(start, stop[, step])``
 
@@ -2446,10 +2453,16 @@ class XPathFunctions(object):
         .. _Python's ``range()`` method: http://docs.python.org/library/functions.html#range
 
         """
+
+        if not isinstance(start, (int, float)) or \
+           not isinstance(stop, (int, float)) or \
+           not isinstance(step, (int, float)):
+            return False
+
         try:
-            return u','.join((unicode(i) for i in xrange(int(start), int(stop), int(step))))
+            return u','.join((unicode(i) for i in self._range(start, stop, step)))
         except:
-            return u','.join((unicode(i) for i in xrange(int(start), int(stop))))
+            return u','.join((unicode(i) for i in self._range(start, stop)))
 
 
     def range_as_nodes(self, _, start, stop, step=1):
@@ -2468,10 +2481,27 @@ class XPathFunctions(object):
 
         .. _Python's ``range()`` method: http://docs.python.org/library/functions.html#range
         """
+
+        if not isinstance(start, (int, float)) or \
+           not isinstance(stop, (int, float)) or \
+           not isinstance(step, (int, float)):
+            return False
+
         try:
-            return etree.XML('<items>'+''.join('<item>%d</item>' % i for i in xrange(int(start), int(stop), int(step)))+'</items>')
+            return etree.XML(
+                '<items>' +
+                ''.join('<item>%d</item>' %
+                        i for i in
+                        self._range(start, stop, step)) +
+                '</items>')
+        
         except:
-            return etree.XML('<items>'+''.join('<item>%d</item>' % i for i in xrange(int(start), int(stop)))+'</items>')
+            return etree.XML(
+                '<items>' +
+                ''.join('<item>%d</item>' %
+                        i for i in
+                        self._range(start, stop)) +
+                '</items>')
 
 
     def str_replace(self, _, elements, search_, replace_):
