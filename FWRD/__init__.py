@@ -1467,11 +1467,12 @@ class PropertyProxy(object):
 
 local = threading.local()
 
-application = Application(
+local.application = Application(
     Config(),
     Router(()),
     )
 
+application = local.application
 config = PropertyProxy(application._get_config)
 router = PropertyProxy(application._get_router)
 request = PropertyProxy(application._get_request)
