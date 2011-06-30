@@ -301,7 +301,10 @@ class Config(threading.local):
         sys.path.insert(0, self._app_path)
 
     def _get_app_path(self):
-        return self._app_path
+        if hasattr(self, '_app_path') and self._app_path:
+            return self._app_path
+        else:
+            return os.getcwd()
 
     app_path = property(_get_app_path, _set_app_path)
 
@@ -1317,27 +1320,11 @@ class TranslatedResponse(Response):
 
     def __init__(self, start_response, request, config={}, **kwargs):
         super(self.__class__, self).__init__(start_response, request, config=config)
-        self.params['stylesheet_path'] = None
         self.params['default_stylesheet'] = None
         self._update_params(**kwargs)
 
 
     def format(self, data=None, **kwargs):
-        if 'stylesheet_path' not in self.params or not self.params['stylesheet_path']:
-            raise ResponseParameterError("the stylesheet path must be set")
-
-        if not os.path.isdir(os.path.abspath(self.params['stylesheet_path'])):
-            raise ResponseParameterError("the stylesheet path (%s) is invalid" % os.path.abspath(self.params['stylesheet_path']))
-
-        self.params['stylesheet_path'] = os.path.abspath(self.params['stylesheet_path'])
-
-        if 'default_stylesheet' not in self.params or not self.params['default_stylesheet']:
-            raise ResponseParameterError("the default stylesheet filename must be set")
-
-        if not os.path.isfile(os.path.join(self.params['stylesheet_path'], self.params['default_stylesheet'])):
-            raise ResponseParameterError('the default stylesheet could not be found')
-
-        xslfile = os.path.join(self.params['stylesheet_path'], self.params['default_stylesheet'])
 
         xml = XMLEncoder(
             data,
@@ -1347,8 +1334,30 @@ class TranslatedResponse(Response):
             route=self.request.route,
             method=self.request.method.lower()
             ).to_string()
-     
-        xsl = XSLTranslator(None,
+
+        self.headers.replace('Content-Type', self.xsl.contenttype)
+
+        return self.xsl.to_string(xml=xml)
+
+
+    @property
+    def xsl(self):
+        if hasattr(self, '_xsl') and self._xsl:
+            return self._xsl
+
+        self.params['default_stylesheet'] = os.path.abspath(self.params['default_stylesheet'])
+
+        if 'default_stylesheet' not in self.params or not self.params['default_stylesheet']:
+            raise ResponseParameterError("the default stylesheet filename must be set")
+
+        self.params['stylesheet_path'] = os.path.basename(self.params['default_stylesheet'])
+
+        if not os.path.isfile(os.path.join(self.params['stylesheet_path'], self.params['default_stylesheet'])):
+            raise ResponseParameterError('the default stylesheet could not be found')
+
+        xslfile = os.path.join(self.params['stylesheet_path'], self.params['default_stylesheet'])
+
+        self._xsl = XSLTranslator(None,
                             xslfile,
                             path=self.params['stylesheet_path'],
                             extensions=[XPathFunctions],
@@ -1356,13 +1365,9 @@ class TranslatedResponse(Response):
                                 'request': self.request,
                                 },
                             resolvers=[LocalFileResolver(self.params['stylesheet_path'])]
-                            )
+                            )        
 
-        self.headers.replace('Content-Type', xsl.contenttype)
-
-        return xsl.to_string(xml=xml)
-
-
+        return self._xsl
 
 class TextResponse(Response):
     """Takes the response data and formats it into
