@@ -1349,11 +1349,7 @@ class TranslatedResponse(Response):
         if hasattr(self, '_xsl') and self._xsl:
             return self._xsl
 
-        print self.params['stylesheet']
-
         self.params['stylesheet'] = os.path.abspath(self.params['stylesheet'])
-
-        print self.params['stylesheet']
 
         if 'stylesheet' not in self.params or \
             not self.params['stylesheet']:
@@ -2459,10 +2455,12 @@ class XPathFunctions(object):
            not isinstance(step, (int, float)):
             return False
 
+        type_ = type(step)
+
         try:
-            return u','.join((unicode(i) for i in self._range(start, stop, step)))
+            return u','.join((unicode(type_(i)) for i in self._range(start, stop, step)))
         except:
-            return u','.join((unicode(i) for i in self._range(start, stop)))
+            return u','.join((unicode(type_(i)) for i in self._range(start, stop)))
 
 
     def range_as_nodes(self, _, start, stop, step=1):
@@ -2487,19 +2485,21 @@ class XPathFunctions(object):
            not isinstance(step, (int, float)):
             return False
 
+        type_ = type(step)
+
         try:
             return etree.XML(
                 '<items>' +
-                ''.join('<item>%d</item>' %
-                        i for i in
+                ''.join('<item>%s</item>' %
+                        unicode(type_(i)) for i in
                         self._range(start, stop, step)) +
                 '</items>')
         
         except:
             return etree.XML(
                 '<items>' +
-                ''.join('<item>%d</item>' %
-                        i for i in
+                ''.join('<item>%s</item>' %
+                        unicode(type_(i)) for i in
                         self._range(start, stop)) +
                 '</items>')
 

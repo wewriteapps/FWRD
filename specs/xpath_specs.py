@@ -119,6 +119,15 @@ class XpathSpec(ResponseBaseSpec):
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Range</title></head><body>0,1,2,3,4</body></html>')
 
+    def it_should_return_a_float_range(self):
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet='xpath/float_range.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Float Range</title></head><body>0.0,1.0,2.0,3.0,4.0</body></html>')
+
     def it_should_return_a_range_as_nodes(self):
         response = ResponseFactory.new(
             None,
@@ -127,6 +136,15 @@ class XpathSpec(ResponseBaseSpec):
             stylesheet='xpath/range_as_nodes.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Range of Nodes</title></head><body><items><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item></items></body></html>')
+
+    def it_should_return_a_float_range_as_nodes(self):
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet='xpath/float_range_as_nodes.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Float Range of Nodes</title></head><body><items><item>0.0</item><item>1.0</item><item>2.0</item><item>3.0</item><item>4.0</item></items></body></html>')
 
     def it_should_unescape_xml_entities(self):
         response = ResponseFactory.new(
