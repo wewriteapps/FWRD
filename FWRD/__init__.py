@@ -554,6 +554,7 @@ class RouteCompilationError(Exception):
 
 class Route(object):
     __slots__ = (
+        '__none__',
         '_callable',
         '_compiled_regex',
         '_compiled_callable',
@@ -606,6 +607,9 @@ class Route(object):
 
 
     def __init__(self, route, callable, methods='GET', filters=[], formats=[], prefix=None):
+        def __none__(*args, **kwargs): pass
+        self.__none__ = __none__
+        
         self.route = route
         self.request_filters = filters
         self._set_allowed_methods(methods)
@@ -669,12 +673,11 @@ class Route(object):
                 
 
     def _compile_filters(self):
-        def __none__(*args, **kwargs): pass
 
         _callable = self._callable
         
         if not _callable:
-            _callable = __none__
+            _callable = self.__none__
 
         filters = router._global_filters_imported + self._request_filters
 
@@ -739,23 +742,30 @@ class Route(object):
 
 
     def _validate_route_args_match_callable(self):
+        if not self._callable or self._callable is self.__none__:
+            return
+        
         if self.route[0] is '^':
             return
         
-        if self._route_params and len(self._route_params) < len(self._expected_args) and not self.accepts_kwargs:
-            raise RouteCompilationError('Route param list (%s) does not match callable args (%s) for route "%s" -> (%s)' %
-                                        (', '.join(set(self._route_params)),
-                                         ', '.join(set(self._expected_args)),
-                                         self.route,
-                                         self.callable))
+        if self._route_params and \
+            len(self._route_params) < len(self._expected_args) \
+            and not self.accepts_kwargs:
+            raise RouteCompilationError(
+                'Route param list (%s) does not match callable args (%s) for route "%s" -> (%s)' %
+                (', '.join(set(self._route_params)),
+                 ', '.join(set(self._expected_args)),
+                 self.route,
+                 self.callable))
 
         difference = set(self._route_params) - set(self._expected_args) 
         if difference and not self.accepts_kwargs:
-            raise RouteCompilationError('Route param list (%s) does not match arg list for "%s" -> (%s)' %
-                                        (', '.join(set(self._route_params)),
-                                         self.callable,
-                                         ', '.join(difference)))
-
+            raise RouteCompilationError(
+                'Route param list (%s) does not match arg list for "%s" -> (%s)' %
+                (', '.join(set(self._route_params)),
+                 self.callable,
+                 ', '.join(difference)))
+        
 
     @classmethod
     def _compile_regex(cls, pattern, prefix=''):
@@ -876,7 +886,7 @@ class Router(object):
         # Prefix structure: (prefix, (tuple_of_basic_structure_tuples, ...))
 
         for item in urls:
-            if not  isinstance(item, (tuple, dict, CaseInsensitiveDict)):
+            if not isinstance(item, (tuple, dict, CaseInsensitiveDict)):
                 continue
 
             rule = dict((key, None) for key in Route._tuple_pattern)
@@ -886,7 +896,10 @@ class Router(object):
                 self.add(**dict(zip(Route._tuple_pattern, item)))
 
             elif isinstance(item, CaseInsensitiveDict):
-                self.add(**dict(item))
+                try:
+                    self.add(**dict(item))
+                except TypeError:
+                    raise RouteCompilationError('specified route is empty')
 
             else:
                 self.add(**item)
@@ -894,7 +907,7 @@ class Router(object):
 
     def add(self, route, callable=None, methods='GET', prefix='', filters=[], formats=[]):
         """Add a route to the routing map"""
-
+        
         item = Route(route, callable, methods, filters, formats, prefix)
         for method in item.methods:
             self[method][item.regex] = item

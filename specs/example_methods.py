@@ -4,6 +4,9 @@ def foo():
 def bar(*args, **kwargs):
     return args, kwargs
 
+def spam(eggs):
+    pass
+
 def basic_filter(message):
     def wrapper(func):
         def wrapped(*args, **kwargs):

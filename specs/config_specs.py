@@ -82,6 +82,35 @@ Routes:
             self.assertEqual(len(router.urls['GET']), 3)
             self.assertEqual(len(router.urls['POST']), 1)
 
+            
+    def it_should_parse_parametered_routes_with_no_callable(self):
+        config = '''
+Routes:
+  - route: /:foo
+        '''
+        application.setup(StringIO(config))
+        self.assertEqual(len(router.urls['GET']), 1)
+
+
+    def it_should_parse_a_parametered_index_route_with_callable(self):
+        config = '''
+Routes:
+  - route: /:eggs
+    callable: specs.example_methods:spam
+        '''
+        application.setup(StringIO(config))
+        self.assertEqual(len(router.urls['GET']), 1)
+
+
+    def it_should_not_parse_a_route_without_a_callable(self):
+        config = StringIO('''
+Routes:
+  - callable: specs.example_methods:foo
+        ''')
+        self.assertRaises(RouteCompilationError,
+                          application.setup,
+                          config)
+
 
     def it_should_add_filters_successfully(self):
         configs = ('''
@@ -100,6 +129,7 @@ Routes:
             filter_ = [dict(x) for x in route.request_filters][0]
             self.assertEqual(filter_['callable'], 'specs.example_methods:basic_filter')
             self.assertTrue('args' in filter_)
+
 
     def it_should_fail_on_incorrect_filters(self):
         config = StringIO('''
@@ -121,8 +151,8 @@ Routes:
   - route: /[index]
 '''
 
-        print 'setting config'
         application.setup(StringIO(config))
-        print 'running tests'
-        self.assertEqual(application.router._global_filters, [{'callable': 'specs.example_methods:basic_filter'}])
-            
+        self.assertEqual(
+            application.router._global_filters,
+            [{'callable': 'specs.example_methods:basic_filter'}]
+            )
