@@ -249,9 +249,7 @@ class SeeOther(HTTPRedirection):
 
 
 class InternalRedirect(Exception):
-    """Raise this object to call another 
-    
-    """
+    """Raise this object to call another"""
     def __init__(self, callable, args={}):
         if isinstance(callable, basestring):
             self.callable = resolve(callable)
@@ -1323,8 +1321,7 @@ class ResponseFactory(threading.local):
 
 
 class TranslatedResponse(Response):
-    """Takes the response data and formats it first
-    into XML then passes it through an XSL translator"""
+    """Takes the response data and formats it first into XML then passes it through an XSL translator"""
 
     responsetype = 'xsl'
     extensions = (None, '', 'htm', 'html')
@@ -1394,8 +1391,7 @@ class TranslatedResponse(Response):
         return self._xsl
 
 class TextResponse(Response):
-    """Takes the response data and formats it into
-    a text representation"""
+    """Takes the response data and formats it into a text representation"""
 
     extensions = ('txt', 'text')
     contenttype = 'text/plain'
@@ -1415,8 +1411,7 @@ class TextResponse(Response):
     
 
 class XMLResponse(Response):
-    """Takes the response data and converts it into
-    a "generic" XML representation"""
+    """Takes the response data and converts it into a "generic" XML representation"""
 
     extensions = ('xml',)
     contenttype = 'application/xml'
@@ -1435,8 +1430,7 @@ class XMLResponse(Response):
 
 
 class JSONResponse(Response):
-    """Takes the response data and converts it into
-    a "generic" JSON representation"""
+    """Takes the response data and converts it into a "generic" JSON representation"""
 
     extensions = ('json',)
     contenttype = 'application/json'
@@ -1879,7 +1873,12 @@ class XSLTranslator(object):
             raise FormatterError('no stylesheet available for transformation')
         
         transform = etree.XSLT(self.xsl)
-        return transform.apply(self.xml)
+        
+        try:
+            return transform.apply(self.xml)
+        except XSLTApplyError as e:
+            print e.error_log.filter_from_level(etree.ErrorLevels.FATAL)
+            raise e
 
 
     def to_xml(self, xml=None, xsl=None):
