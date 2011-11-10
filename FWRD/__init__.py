@@ -24,7 +24,7 @@ import xml.parsers.expat
 import yaml
 
 from datetime import datetime
-from lxml import etree
+from lxml import etree, XSLTApplyError
 from resolver import resolve as resolve_import
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
