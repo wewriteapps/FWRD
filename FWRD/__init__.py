@@ -24,7 +24,7 @@ import xml.parsers.expat
 import yaml
 
 from datetime import datetime
-from lxml import etree, XSLTApplyError
+from lxml import etree
 from resolver import resolve as resolve_import
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
@@ -1876,7 +1876,7 @@ class XSLTranslator(object):
         
         try:
             return transform.apply(self.xml)
-        except XSLTApplyError as e:
+        except etree.XSLTApplyError as e:
             print e.error_log.filter_from_level(etree.ErrorLevels.FATAL)
             raise e
 
