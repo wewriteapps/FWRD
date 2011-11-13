@@ -2389,7 +2389,7 @@ class XPathFunctions(object):
 
 
     def format_time(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
-        """fwrd:format-time(string|node|nodeset, output-format, input-format)
+        """``fwrd:format-time(string|node|nodeset, output-format, input-format)``
 
         Alias of the `fwrd:timeformat()` function.
         """
@@ -2533,9 +2533,12 @@ class XPathFunctions(object):
             
             returned = []
             for item in elements:
-                newitem = copy.deepcopy(item)
-                newitem.text = newitem.text.replace(search_, replace_)
-                returned.append(newitem)
+                try:
+                    newitem = copy.deepcopy(item)
+                    newitem.text = newitem.text.replace(search_, replace_)
+                    returned.append(newitem)
+                except AttributeError:
+                    returned.append(item.replace(search_, replace_))
             return returned
 
         except:

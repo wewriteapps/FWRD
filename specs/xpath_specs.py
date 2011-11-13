@@ -83,6 +83,15 @@ class XpathSpec(ResponseBaseSpec):
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Join</title></head><body>this-is-a-test</body></html>')
 
+    def it_should_replace_elements_in_a_string(self):
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet='xpath/replace.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Replace</title></head><body><p>this-is-a-test</p><p>-</p></body></html>')
+
     def it_should_format_a_date(self):
         response = ResponseFactory.new(
             None,
