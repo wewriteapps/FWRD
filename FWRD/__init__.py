@@ -23,6 +23,7 @@ import urllib
 import xml.parsers.expat
 import yaml
 
+from Cookie import SimpleCookie
 from datetime import datetime
 from lxml import etree
 from resolver import resolve as resolve_import
@@ -1048,6 +1049,7 @@ class Request(threading.local):
         'PATH',
         'POST',
         'PUT',
+        'COOKIE',
         'SESSION',
 
         # general parameters
@@ -1080,7 +1082,7 @@ class Request(threading.local):
         if 'param_order' in kwargs:
             self.param_order = tuple(param_order.split(','))
         else:
-            self.param_order = ('PATH','GET','POST')
+            self.param_order = ('COOKIE','PATH','GET','POST')
 
         if environ:
             self.environ = environ
@@ -1109,6 +1111,7 @@ class Request(threading.local):
         if self.method in ('POST', 'PUT'):
             self.parse_body()
 
+        self.parse_cookies()
 
     def __getitem__(self, name):
         return getattr(self, name, None)
@@ -1133,6 +1136,11 @@ class Request(threading.local):
         self.POST = ParameterContainer().parse_qs(cgi.FieldStorage(fp=fp,
                                                                    environ=self.environ,
                                                                    keep_blank_values=True))
+
+
+    def parse_cookies(self):
+        cookies = SimpleCookie(self.environ.get('HTTP_COOKIE', ''))
+        self.COOKIE = dict((c.key, c.value) for c in cookies.itervalues())
 
 
     def build_get_string(self):
@@ -1195,12 +1203,20 @@ class Request(threading.local):
             return {}
 
 
+    def get_cookies(self):
+        try:
+            return self.COOKIES
+        except:
+            return {}
+
+
     def _has_params(self):
         return self.get_params() != {}
 
 
     params = property(get_params, doc="A dict of parameters parsed from the request")
     session = property(get_session, doc="An interface to the ``session`` object (Beaker) if available")
+    cookies = property(get_cookies, doc="A dict of cookie values")
     querystring = property(build_get_string, doc="The current request's GET querystring")
     poststring = property(build_post_string, doc="The current request's POST querystring")
     has_params = property(_has_params, doc="``True`` if the current request has parameters, ``False`` otherwise")
