@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import threading
 import unittest
 import wsgiref
 import wsgiref.util
@@ -18,7 +19,7 @@ if FWRD_PATH not in sys.path:
 
 from FWRD import *
 
-class WSGITestBase(unittest.TestCase):
+class WSGITestBase(unittest.TestCase, threading.local):
 
     _status = re.compile(r'(\d+) (\w+)')
 
@@ -65,6 +66,9 @@ class WSGITestBase(unittest.TestCase):
             del response
 
         result['code'] = int(result['code'])
+
+        #print path, result
+        
         return result
 
     def make_multipart_request(self, path, method='POST', qs='', env={}, body=''):

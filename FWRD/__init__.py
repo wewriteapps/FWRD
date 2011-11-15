@@ -1260,6 +1260,7 @@ class Response(threading.local):
     request = None
     config = None
     headers = None
+    cookies = None
     responsebody = None
     responsetype = None
     params = None
@@ -1271,6 +1272,7 @@ class Response(threading.local):
         self.request = request
         self.config = config
 
+        self.cookies = SimpleCookie()
         self.headers = HeaderContainer(content_type=self.contenttype)
         self.params = {}
         self.errors = {}
@@ -1293,6 +1295,7 @@ class Response(threading.local):
         self.code = code
         self.responsebody = responsebody
         self.headers.update(additional_headers)
+        self.headers.update(dict(('Set-Cookie', c.OutputString()) for c in self.cookies.values()))
         output = self.format(self.responsebody, **kwargs)
         self.start_response(self.code, self.headers.list())
         return [output]
@@ -1315,6 +1318,10 @@ class Response(threading.local):
     def set_error(self, name, value):
         """Set an error message to be applied to the formatted response."""
         self.errors[name] = value
+
+
+    def set_cookie(self, name, value):
+        self.cookies[name] = value
 
 
     def format(self, *args, **kwargs):
