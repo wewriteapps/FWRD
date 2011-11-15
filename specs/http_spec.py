@@ -43,9 +43,9 @@ class WSGITestBase(unittest.TestCase, threading.local):
             for name, value in header:
                 name = name.title()
                 if name in result['headers']:
-                    result['headers'][name] += ', '+value
+                    result['headers'][name].append(value)
                 else:
-                    result['headers'][name] = value
+                    result['headers'][name] = [value]
 
         env = self.make_env(env, path=path, method=method, qs=qs)
 
@@ -107,10 +107,13 @@ class WSGITestBase(unittest.TestCase, threading.local):
         self.assertEqual(body, self.get_callable(multipart)(route, **kwargs)['body'])
 
     def assertHeader(self, name, value, route='/', multipart=False, **kwargs):
-        self.assertEqual(value, self.get_callable(multipart)(route, **kwargs)['headers'].get(name))
+        headers = self.get_callable(multipart)(route, **kwargs)['headers']
+        self.assertTrue(len(headers.get(name)) is 1, "multiple headers set for %s" % name)
+        self.assertEqual(value, headers.get(name)[0])
 
     def assertInHeader(self, name, value, route='/', multipart=False, **kwargs):
-        self.assert_(value in self.get_callable(multipart)(route, **kwargs)['headers'].get_all(name))
+        headers = self.get_callable(multipart)(route, **kwargs)['headers']
+        self.assert_(value in headers.get(name))
 
 
 
