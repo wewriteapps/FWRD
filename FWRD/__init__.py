@@ -1049,7 +1049,7 @@ class Request(threading.local):
         'PATH',
         'POST',
         'PUT',
-        'COOKIE',
+        'COOKIES',
         'SESSION',
 
         # general parameters
@@ -1113,6 +1113,7 @@ class Request(threading.local):
 
         self.parse_cookies()
 
+
     def __getitem__(self, name):
         return getattr(self, name, None)
 
@@ -1140,7 +1141,7 @@ class Request(threading.local):
 
     def parse_cookies(self):
         cookies = SimpleCookie(self.environ.get('HTTP_COOKIE', ''))
-        self.COOKIE = dict((c.key, c.value) for c in cookies.itervalues())
+        self.COOKIES = dict((c.key, c.value) for c in cookies.itervalues())
 
 
     def build_get_string(self):
@@ -1203,12 +1204,16 @@ class Request(threading.local):
             return {}
 
 
-    def get_cookies(self):
+    def get_cookie(self, name, default=None, secure=False):
         try:
-            return self.COOKIES
-        except:
-            return {}
+            return self.COOKIES[name]
+        except KeyError:
+            return default
 
+
+    def get_cookies(self):
+        return self.COOKIES
+    
 
     def _has_params(self):
         return self.get_params() != {}
