@@ -332,15 +332,14 @@ class PostRequestSpec(WSGITestBase):
         self.assertEqual(self.app.request['POST'], params)
 
 
-    """
     def it_should_parse_multipart_posts_correctly(self):
-        self.fail('Not yet implemented)
+        self.skipTest('Not yet implemented')
+
 
     def ensure_get_does_not_clobber_post_params(self):
-        self.fail('Not yet implemented)
+        """ensure GET does not clobber POST params"""
+        self.skipTest('Not yet implemented')
+
 
     def it_should_not_allow_incorrect_content_length(self):
-        self.fail('Not yet implemented)
-
-    """
-
+        self.skipTest('Not yet implemented')
