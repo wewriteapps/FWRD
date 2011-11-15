@@ -115,5 +115,3 @@ class WSGITestBase(unittest.TestCase, threading.local):
         headers = self.get_callable(multipart)(route, **kwargs)['headers']
         self.assert_(value in headers.get(name))
 
-
-

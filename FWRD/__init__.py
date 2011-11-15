@@ -17,6 +17,7 @@ import functools
 import inspect
 import os
 import sys
+import time
 import threading
 import traceback
 import urllib
@@ -24,7 +25,7 @@ import xml.parsers.expat
 import yaml
 
 from Cookie import SimpleCookie
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from lxml import etree
 from resolver import resolve as resolve_import
 from uuid import UUID
@@ -129,6 +130,13 @@ HTTP_STATUS_CODES = {
     504: "Gateway Time-out", 
     505: "HTTP Version not supported",
     }
+
+# Common Constants
+
+SECONDS_IN_HOUR = 3600
+SECONDS_IN_DAY = 86400
+SECONDS_IN_YEAR = 31556926
+DAYS_IN_YEAR = 365
 
 
 # Utility Exceptions for error codes
@@ -1295,9 +1303,9 @@ class Response(threading.local):
         self.code = code
         self.responsebody = responsebody
         self.headers.update(additional_headers)
-        self.headers.update(dict(('Set-Cookie', c.OutputString()) for c in self.cookies.values()))
+        cookies = [('Set-Cookie', c.OutputString()) for c in self.cookies.values()]
         output = self.format(self.responsebody, **kwargs)
-        self.start_response(self.code, self.headers.list())
+        self.start_response(self.code, self.headers.list() + cookies)
         return [output]
 
 
@@ -1320,11 +1328,73 @@ class Response(threading.local):
         self.errors[name] = value
 
 
-    def set_cookie(self, name, value):
+    def set_cookie(self, name, value, #signed=False,
+                   **options):
+        """Add a cookie to be returned to the client"""
+
+        allowed_types = (
+            basestring,
+            bool,
+            int,
+            float,
+            long,
+            )
+
+        if value is not None and not isinstance(value, allowed_types):
+            raise ValueError('Cookie value is not a valid type, ' +
+                             'should be one of basestring/' +
+                             'None/True/False/int/float/long'
+                             )
+
+        value = str(value)
+
+        if len(value) > 4096:
+            raise ValueError('Cookie value is too long (%sb), max length is 4096' %
+                             len(value))
+        
         self.cookies[name] = value
 
+        for opt, value in options.iteritems():
+            opt = opt.lower()
+            
+            if opt == 'expires':
+                if isinstance(value, (int, float)):
+                    value = time.gmtime(value)
+                elif isinstance(value, (date, datetime)):
+                    value = value.timetuple()
+                else:
+                    raise TypeError('expires value for cookie is invalid, '+
+                                    'should be one of datetime.date/datetime.datetime/'+
+                                    'int/float')
+                value = time.strftime("%a, %d %b %Y %H:%M:%S GMT", value)
+
+            if opt == 'max_age':
+                if isinstance(value, int):
+                    pass
+                elif isinstance(value, timedelta):
+                    value = (value.days * SECONDS_IN_DAY) + value.seconds
+                else:
+                    raise TypeError('max_age value for cookie is invalid, '+
+                                    'should be one of datetime.timedelta/int')
+
+            if opt == 'path':
+                value = value.strip()
+                if value and value[0] is not '/':
+                    raise TypeError('path value for cookie is invalid')
+
+            self._cookies[name][opt.replace('_', '-')] = value
+                            
+
+
+    def delete_cookie(self, name, **options):
+        options.update({
+            'max_age': -1,
+            'expres': 0
+            })
+        self.set_cookie(name, None, **options)
 
     def format(self, *args, **kwargs):
+        """Abstract method; subclasses use this to format the response"""
         raise NotImplementedError()
 
 
