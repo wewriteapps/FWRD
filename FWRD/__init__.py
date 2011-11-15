@@ -1332,15 +1332,8 @@ class Response(threading.local):
                    **options):
         """Add a cookie to be returned to the client"""
 
-        allowed_types = (
-            basestring,
-            bool,
-            int,
-            float,
-            long,
-            )
-
-        if value is not None and not isinstance(value, allowed_types):
+        if value is not None and \
+               not isinstance(value, (basestring, bool, int, float, long)):
             raise ValueError('Cookie value is not a valid type, ' +
                              'should be one of basestring/' +
                              'None/True/False/int/float/long'
