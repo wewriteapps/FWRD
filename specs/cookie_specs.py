@@ -1,7 +1,10 @@
 import os
 import re
 import sys
+import time
 import unittest
+
+from datetime import datetime, timedelta
 
 try:
     from cStringIO import StringIO
@@ -56,17 +59,81 @@ class ResponseCookieSpec(WSGITestBase):
             response.set_cookie('eggs', 2)
         self.app.router.add('/response_multi_cookie', request_multiple_cookie_test)
 
-        self.make_request('/response_multi_cookie')
-        print self.app.response.cookies
-        
         self.assertInHeader('Set-Cookie', 'spam=1', route='/response_multi_cookie')
         self.assertInHeader('Set-Cookie', 'eggs=2', route='/response_multi_cookie')
 
-    def it_should_set_cookie_expiry(self):
-        self.skipTest('')
+    def it_should_set_cookie_expiry_from_int(self):
+        expires = 3600
+        expires_dt = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(expires))
+        def request_cookie_expires():
+            response.set_cookie('a', 1, expires=expires)
+        self.app.router.add('/response_cookie_expires_int', request_cookie_expires)
 
-    def it_should_fail_for_invalid_expiry(self):
-        self.skipTest('')
+        self.assertHeader('Set-Cookie',
+                          'a=1; expires=%s' % expires_dt,
+                          route='/response_cookie_expires_int')
+
+    def it_should_set_cookie_expiry_from_float(self):
+        expires = 3600.01 * 2
+        expires_dt = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(expires))
+        def request_cookie_expires():
+            response.set_cookie('a', 1, expires=expires)
+        self.app.router.add('/response_cookie_expires_float', request_cookie_expires)
+
+        self.assertHeader('Set-Cookie',
+                          'a=1; expires=%s' % expires_dt,
+                          route='/response_cookie_expires_float')
+
+    def it_should_set_cookie_expiry_from_datetime(self):
+        expires = datetime.utcnow() + timedelta(hours=3)
+        expires_dt = expires.strftime("%a, %d %b %Y %H:%M:%S GMT")
+        def request_cookie_expires():
+            response.set_cookie('a', 1, expires=expires)
+        self.app.router.add('/response_cookie_expires_dt', request_cookie_expires)
+
+        self.assertHeader('Set-Cookie',
+                          'a=1; expires=%s' % expires_dt,
+                          route='/response_cookie_expires_dt')
+
+    def it_should_fail_for_string_as_expiry(self):
+        def response_cookie_invalid_value_str():
+            response.set_cookie('a', 1, expires='tomorrow')
+
+        self.app.router.add('/response_cookie_expires_invalid',
+                            response_cookie_invalid_value_str)
+        self.assertRaises(TypeError,
+                          self.make_request,
+                          '/response_cookie_expires_invalid')
+
+    def it_should_fail_for_none_as_expiry(self):
+        def response_cookie_invalid_value_none():
+            response.set_cookie('a', 1, expires=None)
+
+        self.app.router.add('/response_cookie_expires_invalid',
+                            response_cookie_invalid_value_none)
+        self.assertRaises(TypeError,
+                          self.make_request,
+                          '/response_cookie_expires_invalid')
+
+    def it_should_fail_for_true_as_expiry(self):
+        def response_cookie_invalid_value_true():
+            response.set_cookie('a', 1, expires=True)
+
+        self.app.router.add('/response_cookie_expires_invalid',
+                            response_cookie_invalid_value_true)
+        self.assertRaises(TypeError,
+                          self.make_request,
+                          '/response_cookie_expires_invalid')
+
+    def it_should_fail_for_false_as_expiry(self):
+        def response_cookie_invalid_value_false():
+            response.set_cookie('a', 1, expires=False)
+
+        self.app.router.add('/response_cookie_expires_invalid',
+                            response_cookie_invalid_value_false)
+        self.assertRaises(TypeError,
+                          self.make_request,
+                          '/response_cookie_expires_invalid')
 
     def it_should_set_cookie_max_age(self):
         """it should set cookie max-age"""

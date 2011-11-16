@@ -1354,14 +1354,18 @@ class Response(threading.local):
                 opt = 'expires'
             
             if opt == 'expires':
+                print type(value)
+                if isinstance(value, bool) or \
+                    not isinstance(value, (int, float, date, datetime)):
+                    raise TypeError('expires value for cookie is invalid, '+
+                                    'should be one of datetime.date/datetime.datetime/'+
+                                    'int/float')
+
                 if isinstance(value, (int, float)):
                     value = time.gmtime(value)
                 elif isinstance(value, (date, datetime)):
                     value = value.timetuple()
-                else:
-                    raise TypeError('expires value for cookie is invalid, '+
-                                    'should be one of datetime.date/datetime.datetime/'+
-                                    'int/float')
+                    
                 value = time.strftime("%a, %d %b %Y %H:%M:%S GMT", value)
 
             if opt == 'max_age':
