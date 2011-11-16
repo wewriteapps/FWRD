@@ -1354,7 +1354,6 @@ class Response(threading.local):
                 opt = 'expires'
             
             if opt == 'expires':
-                print type(value)
                 if isinstance(value, bool) or \
                     not isinstance(value, (int, float, date, datetime)):
                     raise TypeError('expires value for cookie is invalid, '+
@@ -1389,9 +1388,9 @@ class Response(threading.local):
     def delete_cookie(self, name, **options):
         options.update({
             'max_age': -1,
-            'expres': 0
+            'expires': 0
             })
-        self.set_cookie(name, None, **options)
+        self.set_cookie(name, '', **options)
 
     def format(self, *args, **kwargs):
         """Abstract method; subclasses use this to format the response"""

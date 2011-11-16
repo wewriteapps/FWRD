@@ -108,6 +108,7 @@ class WSGITestBase(unittest.TestCase, threading.local):
 
     def assertHeader(self, name, value, route='/', multipart=False, **kwargs):
         headers = self.get_callable(multipart)(route, **kwargs)['headers']
+        self.assertTrue(headers.get(name) is not None, msg="No headers with name '%s'" % name)
         self.assertTrue(len(headers.get(name)) is 1, "multiple headers set for %s" % name)
         self.assertEqual(value, headers.get(name)[0])
 
