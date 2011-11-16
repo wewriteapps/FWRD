@@ -1349,6 +1349,9 @@ class Response(threading.local):
 
         for opt, value in options.iteritems():
             opt = opt.lower()
+
+            if opt == 'expiry':
+                opt = 'expires'
             
             if opt == 'expires':
                 if isinstance(value, (int, float)):
@@ -1375,7 +1378,7 @@ class Response(threading.local):
                 if value and value[0] is not '/':
                     raise TypeError('path value for cookie is invalid')
 
-            self._cookies[name][opt.replace('_', '-')] = value
+            self.cookies[name][opt.replace('_', '-')] = value
                             
 
 
