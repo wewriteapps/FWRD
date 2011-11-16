@@ -135,33 +135,128 @@ class ResponseCookieSpec(WSGITestBase):
                           self.make_request,
                           '/response_cookie_expires_invalid')
 
-    def it_should_set_cookie_max_age(self):
-        """it should set cookie max-age"""
-        self.skipTest('')
+    def it_should_set_cookie_max_age_from_int(self):
+        """it should set cookie max-age from int"""
+        max_age = 3600
+        def request_cookie_max_age():
+            response.set_cookie('b', 2, max_age=max_age)
+        self.app.router.add('/response_cookie_max_age_int', request_cookie_max_age)
 
-    def it_should_fail_for_invalid_max_age(self):
-        """it should faile for invalid max-age"""
-        self.skipTest('')
+        self.assertHeader('Set-Cookie',
+                          'b=2; Max-Age=%s' % max_age,
+                          route='/response_cookie_max_age_int')
+
+    def it_should_set_cookie_max_age_from_delta(self):
+        """it should set cookie max-age from delta"""
+        max_age = timedelta(days=1)
+        def request_cookie_max_age():
+            response.set_cookie('b', 2, max_age=max_age)
+        self.app.router.add('/response_cookie_max_age_delta', request_cookie_max_age)
+
+        self.assertHeader('Set-Cookie',
+                          'b=2; Max-Age=%d' % max_age.total_seconds(),
+                          route='/response_cookie_max_age_delta')
+
+    def it_should_fail_for_none_as_max_age(self):
+        """it should fail for none as max-age"""
+        def response_cookie_invalid_value_none():
+            response.set_cookie('a', 1, max_age=None)
+
+        self.app.router.add('/response_cookie_max_age_invalid',
+                            response_cookie_invalid_value_none)
+        self.assertRaises(TypeError,
+                          self.make_request,
+                          '/response_cookie_max_age_invalid')
+
+    def it_should_fail_for_string_as_max_age(self):
+        """it should fail for string as max-age"""
+        def response_cookie_invalid_value_none():
+            response.set_cookie('a', 1, max_age='3600')
+
+        self.app.router.add('/response_cookie_max_age_invalid',
+                            response_cookie_invalid_value_none)
+        self.assertRaises(TypeError,
+                          self.make_request,
+                          '/response_cookie_max_age_invalid')
 
     def it_should_set_cookie_path(self):
-        self.skipTest('')
+        path = '/foobar'
+        def request_cookie_path():
+            response.set_cookie('c', 3, path=path)
+        self.app.router.add('/response_cookie_path', request_cookie_path)
+
+        self.assertHeader('Set-Cookie',
+                          'c=3; Path=%s' % path,
+                          route='/response_cookie_path')
 
     def it_should_fail_for_invalid_path(self):
-        self.skipTest('')
+        def response_cookie_invalid_path():
+            response.set_cookie('a', 1, path='foobar')
+
+        self.app.router.add('/response_cookie_path_invalid',
+                            response_cookie_invalid_path)
+        self.assertRaises(TypeError,
+                          self.make_request,
+                          '/response_cookie_path_invalid')
 
     def it_should_set_cookie_domain(self):
-        self.skipTest('')
+        domain = '.domain.tld'
+        def request_cookie_domain():
+            response.set_cookie('d', 4, domain=domain)
+        self.app.router.add('/response_cookie_domain', request_cookie_domain)
+
+        self.assertHeader('Set-Cookie',
+                          'd=4; Domain=%s' % domain,
+                          route='/response_cookie_domain')
 
     def it_should_set_secure_flag(self):
-        self.skipTest('')
+        def request_cookie_secure():
+            response.set_cookie('e', 5, secure=True)
+        self.app.router.add('/response_cookie_secure', request_cookie_secure)
+
+        self.assertHeader('Set-Cookie',
+                          'e=5; secure',
+                          route='/response_cookie_secure')
 
     def it_should_set_httponly_flag(self):
-        self.skipTest('')
+        def request_cookie_httponly():
+            response.set_cookie('f', 6, httponly=True)
+        self.app.router.add('/response_cookie_httponly', request_cookie_httponly)
+
+        self.assertHeader('Set-Cookie',
+                          'f=6; httponly',
+                          route='/response_cookie_httponly')
 
     def it_should_fail_for_invalid_values(self):
-        self.skipTest('')
+        class Foo(object):
+            pass
+        
+        def response_cookie_invalid_value():
+            response.set_cookie('x', Foo())
+
+        self.app.router.add('/response_cookie_invalid_value',
+                            response_cookie_invalid_value)
+        self.assertRaises(ValueError,
+                          self.make_request,
+                          '/response_cookie_invalid_value')
 
     def it_should_fail_when_setting_a_large_value(self):
-        self.skipTest('')
+        def response_cookie_large_value():
+            response.set_cookie('z', 'xoxo' * 2048)
 
-    
+        self.app.router.add('/response_cookie_large_value',
+                            response_cookie_large_value)
+        self.assertRaises(ValueError,
+                          self.make_request,
+                          '/response_cookie_large_value')
+
+    def it_should_delete_a_cookie(self):
+        def response_cookie():
+            response.set_cookie('spam', 'eggs')
+            response.delete_cookie('spam')
+
+        self.app.router.add('/response_delete_cookie', response_cookie)
+
+        self.assertHeader('Set-Cookie',
+                          'spam=; expires=%s; Max-Age=-1' % time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(0)),
+                          route='/response_delete_cookie')
