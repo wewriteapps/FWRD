@@ -56,7 +56,7 @@ The quickest installation route is as follows:
 
     pip install http://github.com/unpluggd/FWRD/tarball/master
 
-However, we recommend that you use buildout for all your applications:
+However, we recommend that you use buildout_ for all your applications:
 
 ``buildout.cfg`` file::
     
@@ -123,3 +123,4 @@ PLANNED FEATURES / TO DO
 Please see the TODO_ document.
 
 .. _TODO: //github.com/unpluggd/FWRD/blob/master/TODO.rst
+.. _buildout: //www.buildout.org/
