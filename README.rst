@@ -1,11 +1,3 @@
-::
-
-   _______ ________ ______ _____  
-  |    ___|  |  |  |   __ \     \ 
-  |    ___|  |  |  |      <  --  |
-  |___|   |________|___|__|_____/ 
-  
-
 FWRD -- FrameWork, Re-Done
 ==========================
 
@@ -16,8 +8,9 @@ FWRD is a microframework for Python which has been designed to
 "get out of the way" and simply provide enough to make an app
 accessible from the web.
 
-FWRD is still alpha software. Until it hits version
-1.0 the api is subject to massive change/overhaul.
+While FWRD has been used for production systems is still alpha 
+software. Until it hits version 1.0 the api is subject to massive 
+change/overhaul.
 
 FEATURES
 --------
@@ -30,7 +23,9 @@ FEATURES
 
 - Redirect support
 
-- Automatic Response formatting: XSL-Translated output, XML, JSON (more to follow)
+- Automatic Response formatting: XSL-Translated output, XML, JSON, with more to follow. 
+
+- Pluggable architecture: add your own response formatters, global and route-specific filters, WSGI modules
 
 THINGS WE HAVEN'T IMPLEMENTED
 -----------------------------
@@ -40,11 +35,11 @@ Templating
     libraries such as Jinja, Cheetah, Mako, etc. The default output format 
     is XML passed through an XSL stylesheet. Helpful formatters are available 
     so you can change the output to be JSON, YAML, etc. without any extra 
-    "work"; just let your method return it's results and it will be converted 
-    to something useful. 
+    "work"; just let your method return a standard Python type (dict, list, etc) 
+    and it will be converted to something the browser can use. 
 
     However, if you really need to use an alternative formatter you can do
-    so by creating a "plugin" for the ``Response``.
+    so by creating a plugin for the ``Response``.
 
 ORM
     We don't feel that we should dictate what database you use, so we don't
