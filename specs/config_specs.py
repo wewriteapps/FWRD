@@ -154,7 +154,7 @@ Routes:
         self.assertRaises(RouteCompilationError,
                           application.setup,
                           config)
-                          
+
 
     def it_should_add_global_filters(self):
 
