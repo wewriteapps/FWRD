@@ -123,4 +123,4 @@ PLANNED FEATURES / TO DO
 Please see the TODO_ document.
 
 .. _TODO: //github.com/unpluggd/FWRD/blob/master/TODO.rst
-.. _buildout: //www.buildout.org/
+.. _buildout: http://www.buildout.org/
