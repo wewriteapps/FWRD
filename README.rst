@@ -58,7 +58,7 @@ The quickest installation route is as follows:
 
 However, we recommend that you use buildout_ for all your applications:
 
-``buildout.cfg`` file::
+``./buildout.cfg`` file::
     
     [buildout]
     parts = server
@@ -68,7 +68,7 @@ However, we recommend that you use buildout_ for all your applications:
     recipe = zc.recipe.egg
     entry-points = server=server:main
 
-``server.py`` file::
+``./server.py`` file::
 
     from FWRD import *
 
@@ -77,7 +77,7 @@ However, we recommend that you use buildout_ for all your applications:
     def main():
         application.run()
 
-``webapp.cfg`` file::
+``./webapp.cfg`` file::
 
     Config:
       port: 8080
@@ -94,7 +94,7 @@ However, we recommend that you use buildout_ for all your applications:
     Routes:
       - route: /[index]
 
-``xsl/default.xsl`` file::
+``./xsl/default.xsl`` file::
 
     <?xml version="1.0" encoding="UTF-8"?>
     <xsl:stylesheet
