@@ -10,7 +10,9 @@ accessible from the web.
 
 While FWRD has been used for production systems is still alpha 
 software. Until it hits version 1.0 the api is subject to massive 
-change/overhaul.
+change/overhaul. Because of this we recommend that you use a
+recent stable tag for production use, only using the ``HEAD`` for
+evaluation and testing.
 
 FEATURES
 --------
