@@ -26,7 +26,7 @@ class RequestCookieSpec(WSGITestBase):
     def setUp(self):
         super(self.__class__, self).setUp()
         self.app.reset()
-        self.app.config.format['xsl'] = {
+        self.app.config.formats['xsl'] = {
             'stylesheet': 'request_cookie_spec.xsl',
             }
         self.app.router.clear()
@@ -42,7 +42,7 @@ class ResponseCookieSpec(WSGITestBase):
     def setUp(self):
         super(self.__class__, self).setUp()
         self.app.reset()
-        self.app.config.format['xsl'] = {
+        self.app.config.formats['xsl'] = {
             'stylesheet': 'request_cookie_spec.xsl',
             }
         self.app.router.clear()

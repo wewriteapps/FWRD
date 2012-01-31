@@ -24,7 +24,7 @@ class GetRequestSpec(WSGITestBase):
     def setUp(self):
         super(self.__class__, self).setUp()
         self.app.reset()
-        self.app.config.format['xsl'] = {
+        self.app.config.formats['xsl'] = {
             'stylesheet': 'translated_response_spec.xsl',
             }
         self.app.router.clear()
@@ -83,7 +83,7 @@ class GetRequestSpec(WSGITestBase):
 
         def bar(dept, name=None):
             pass
-        
+
         routes = {
             ('/:foo', foo): {
                 '/meh': {
@@ -188,7 +188,7 @@ With lots of whitespace
 
         for route, ext, func, body in routes:
             self.assertBody(body, route+ext)
-        
+
 
     def it_should_ignore_additional_qs_args(self):
 
@@ -206,13 +206,15 @@ With lots of whitespace
 
     def it_should_process_filters_successfully(self):
         config = StringIO('''
+Config:
+  app_path: %s
 Routes:
   - route: /[index]
     filters:
       - callable: specs.example_methods:basic_filter
         args:
           message: hello world
-        ''')
+        ''' % os.path.dirname(os.path.abspath(__file__)))
 
         self.assertTrue(self.app.setup(config) != False)
         self.assertStatus(200, '/index.xml')
@@ -229,12 +231,14 @@ Routes:
 
     def it_should_process_multiple_filters_successfully(self):
         config = StringIO('''
+Config:
+  app_path: %s
 Routes:
   - route: /[index]
     filters:
       - callable: specs.example_methods:hello_filter
       - callable: specs.example_methods:world_filter
-        ''')
+        ''' % os.path.dirname(os.path.abspath(__file__)))
 
         self.assertTrue(self.app.setup(config) != False)
         self.assertStatus(200, '/index.xml')
@@ -254,13 +258,15 @@ Routes:
 
     def it_should_process_global_filters_correctly(self):
         config = StringIO('''
+Config:
+  app_path: %s
 Global Filters:
   - callable: specs.example_methods:hello_filter
 Routes:
   - route: /[index]
     filters:
       - callable: specs.example_methods:world_filter
-        ''')
+        ''' % os.path.dirname(os.path.abspath(__file__)))
 
         self.assertTrue(self.app.setup(config) != False)
         self.assertStatus(200, '/index.xml')
@@ -285,7 +291,7 @@ class PostRequestSpec(WSGITestBase):
 
     def setUp(self):
         super(self.__class__, self).setUp()
-        self.app.config.format['xsl'] = {
+        self.app.config.formats['xsl'] = {
             'stylesheet': 'translated_response_spec.xsl',
             }
 
@@ -302,7 +308,7 @@ class PostRequestSpec(WSGITestBase):
             }
 
         self.assertEqual(self.app.request['POST'], params)
-        
+
     def it_should_parse_grouped_params_correctly(self):
         self.app.router.add('/', None, methods='POST')
         self.make_request('/', method='POST', qs="a[x]=1&a[y]=2&a[z][]=3&a[z][]=4&a[z][]=5&b[foo][0]=foo&b[foo][1]=bar")

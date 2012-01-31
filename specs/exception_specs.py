@@ -36,7 +36,7 @@ class RedirectSpec(WSGITestBase):
 
     def setUp(self):
         super(self.__class__, self).setUp()
-        self.app.config.format['xsl'] = {
+        self.app.config.formats['xsl'] = {
             'stylesheet_path': '.',
             'default_stylesheet': 'translated_response_spec.xsl',
             }
@@ -67,7 +67,7 @@ class MethodArgsErrorSpec(WSGITestBase):
     '''Method-arguments error spec'''
     def setUp(self):
         super(self.__class__, self).setUp()
-        self.app.config.format['xsl'] = {
+        self.app.config.formats['xsl'] = {
             'stylesheet_path': '.',
             'default_stylesheet': 'translated_response_spec.xsl',
             }

@@ -221,7 +221,7 @@ class XPathResponseSpec(WSGITestBase):
         '''it should format GET params'''
 
         self.app.reset()
-        self.app.config.format['xsl'] = {
+        self.app.config.formats['xsl'] = {
             'stylesheet': 'xpath/get_params.xsl',
             }
         self.app.router.clear()

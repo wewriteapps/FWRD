@@ -70,18 +70,24 @@ However, we recommend that you use buildout for all your applications:
 
     from FWRD import *
 
-    # tell the xsl formatter where to find files
-    config.format['xsl'] = {
-    'stylesheet_path': 'xsl',
-    'default_stylesheet': 'default.xsl'
-    }
-
     application.setup('webapp.cfg')
 
     def main():
         application.run()
 
 ``webapp.cfg`` file::
+
+    Config:
+      port: 8080
+      formats:
+        default: 'xsl'
+        xsl:
+          enabled: true
+          stylesheet: 'xsl/default.xsl'
+        xml:
+          enabled: true
+        json:
+          enabled: true
 
     Routes:
       - route: /[index]

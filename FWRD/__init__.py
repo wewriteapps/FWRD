@@ -89,45 +89,45 @@ __all__ = (
 # Global variables
 
 HTTP_STATUS_CODES = {
-    100: "Continue", 
-    101: "Switching Protocols", 
-    200: "OK", 
-    201: "Created", 
-    202: "Accepted", 
-    203: "Non-Authoritative Information", 
-    204: "No Content", 
-    205: "Reset Content", 
-    206: "Partial Content", 
-    300: "Multiple Choices", 
-    301: "Moved Permanently", 
-    302: "Found", 
-    303: "See Other", 
-    304: "Not Modified", 
-    305: "Use Proxy", 
-    307: "Temporary Redirect", 
-    400: "Bad Request", 
-    401: "Unauthorized", 
-    402: "Payment Required", 
-    403: "Forbidden", 
-    404: "Not Found", 
-    405: "Method Not Allowed", 
+    100: "Continue",
+    101: "Switching Protocols",
+    200: "OK",
+    201: "Created",
+    202: "Accepted",
+    203: "Non-Authoritative Information",
+    204: "No Content",
+    205: "Reset Content",
+    206: "Partial Content",
+    300: "Multiple Choices",
+    301: "Moved Permanently",
+    302: "Found",
+    303: "See Other",
+    304: "Not Modified",
+    305: "Use Proxy",
+    307: "Temporary Redirect",
+    400: "Bad Request",
+    401: "Unauthorized",
+    402: "Payment Required",
+    403: "Forbidden",
+    404: "Not Found",
+    405: "Method Not Allowed",
     406: "Not Acceptable",
-    407: "Proxy Authentication Required", 
-    408: "Request Time-out", 
-    409: "Conflict", 
-    410: "Gone", 
-    411: "Length Required", 
-    412: "Precondition Failed", 
-    413: "Request Entity Too Large", 
-    414: "Request-URI Too Large", 
-    415: "Unsupported Media Type", 
-    416: "Requested range not satisfiable", 
-    417: "Expectation Failed", 
-    500: "Internal Server Error", 
-    501: "Not Implemented", 
-    502: "Bad Gateway", 
-    503: "Service Unavailable", 
-    504: "Gateway Time-out", 
+    407: "Proxy Authentication Required",
+    408: "Request Time-out",
+    409: "Conflict",
+    410: "Gone",
+    411: "Length Required",
+    412: "Precondition Failed",
+    413: "Request Entity Too Large",
+    414: "Request-URI Too Large",
+    415: "Unsupported Media Type",
+    416: "Requested range not satisfiable",
+    417: "Expectation Failed",
+    500: "Internal Server Error",
+    501: "Not Implemented",
+    502: "Bad Gateway",
+    503: "Service Unavailable",
+    504: "Gateway Time-out",
     505: "HTTP Version not supported",
     }
 
@@ -154,7 +154,7 @@ class HTTPError(Exception):
 
     def __repr__(self):
         return '<HTTPException "%s">' % self.__str__()
-    
+
     def __str__(self):
         return '%d %s: %s' % (self.code, HTTP_STATUS_CODES[self.code], self._message)
 
@@ -165,12 +165,8 @@ class HTTPError(Exception):
 class HTTPServerError(HTTPError):
     pass
 
-
-
 class InternalError(HTTPServerError):
     pass
-
-
 
 class HTTPClientError(HTTPError):
     code = 400
@@ -179,11 +175,11 @@ class HTTPClientError(HTTPError):
 
 class NotFound(HTTPClientError):
     """Raise this object to return a ``404 Not Found`` HTTP error response to the client."""
-    
+
     code = 404
     def __init__(self, url=None, method='GET'):
         if url:
-            self.url = url 
+            self.url = url
         if method:
             self.method = method
 
@@ -257,6 +253,7 @@ class SeeOther(HTTPRedirection):
     code = 303
 
 
+
 class InternalRedirect(Exception):
     """Raise this object to call another"""
     def __init__(self, callable, args={}):
@@ -268,12 +265,13 @@ class InternalRedirect(Exception):
             raise Exception('`callable` is not a callable')
         self.args = args
 
+
+
+
 # Main application objects
 
 class ConfigError(Exception):
     pass
-
-
 
 class Config(threading.local):
     __slots__ = (
@@ -293,7 +291,19 @@ class Config(threading.local):
         self.port = 8000
         self.default_format = None
         self.output = sys.stdout
-        self.format = {}
+        self.formats = {
+            'default': 'xsl',
+            'xsl': {
+                'enabled': True,
+                'stylesheet': 'xsl/default.xsl',
+                },
+            'xml': {
+                'enabled': True,
+                },
+            'json': {
+                'enabled': True,
+                },
+            }
 
         self.update(**kwargs)
 
@@ -316,6 +326,7 @@ class Config(threading.local):
     app_path = property(_get_app_path, _set_app_path)
 
 
+
 class Application(threading.local):
     __slots__ = (
         '_config',
@@ -334,10 +345,27 @@ class Application(threading.local):
 
     def __call__(self, environ, start_response):
         self._request = Request(environ)
+        format_ = self._request.path[1]
+
+        if not format_:
+            format_ = self._config.formats['default']
+
         try:
-            self._response = ResponseFactory.new(self._request.path[1], start_response, self._request, self._config.format)
-        except InvalidResponseTypeError:
-            self._response = ResponseFactory.new(self._config.default_format, start_response, self._request, self._config.format)
+            self._response = ResponseFactory.new(
+                format_,
+                start_response,
+                self._request,
+                self._config.formats[format_]
+                )
+
+        except (KeyError, InvalidResponseTypeError):
+            format_ = self._config.formats['default']
+            self._response = ResponseFactory.new(
+                format_,
+                start_response,
+                self._request,
+                self._config.formats[format_]
+                )
 
         return self.process_request()
 
@@ -351,16 +379,28 @@ class Application(threading.local):
 
     def setup(self, config):
         """Parse a config file and apply the settings."""
+        config_location = None
         try:
             try:
                 stream = config.read()
+                if hasattr(config, 'name'):
+                    config_location = config.name
             except (AttributeError, TypeError):
-                stream = file(config).read()
+                f = file(config)
+                stream = f.read()
+                config_location = f.name
         except (AttributeError, TypeError):
             stream = config
 
         try:
             config = CaseInsensitiveDictMapper(yaml.load(stream))
+
+            if config_location:
+                self._config.app_path = os.path.abspath(config_location)
+
+            elif not 'config' in config or \
+                not 'app_path' in config['config']:
+                raise ConfigError('app_path could not be calculated and is not set in config')
 
         except yaml.YAMLError as e:
             error = 'Import failed with malformed config'
@@ -380,6 +420,8 @@ class Application(threading.local):
 
         if 'routes' in config:
             self._update_routes_from_import(config['routes'])
+
+        return True
 
 
     def _validate_imported_config(self, config):
@@ -403,10 +445,10 @@ class Application(threading.local):
                     'callable': resolve(filter_['callable']),
                     'args': filter_.get('args', None)
                     })
-                
+
             except ImportError:
                 raise RouteCompilationError('unable to import global filter "%s"' % filter_['callable'])
-            
+
 
     def _execute_callable(self):
 
@@ -422,7 +464,7 @@ class Application(threading.local):
             accepted_params = set(item._expected_args) & set(self._request.params.keys())
             return item(**dict( (k,v) for k, v in self._request.params.iteritems() if k in accepted_params ))
 
-            
+
     def process_request(self):
 
         headers = {}
@@ -524,7 +566,7 @@ class Application(threading.local):
 
     def _get_config(self):
         return self._config
-        
+
 
     def _get_router(self):
         return self._router
@@ -553,10 +595,9 @@ class Application(threading.local):
 
 # Routing
 
-
 class RouteCompilationError(Exception):
+    """Raised when routes cannot be compiled into a usable representation"""
     pass
-
 
 
 class Route(object):
@@ -600,7 +641,7 @@ class Route(object):
         (r'([$!])', r'\\\1'),
 
         # fix parameters which contain underscores
-        (r'(\(\?P\<\w*)\[\\s_\](\w*\>)', r'\1_\2'), 
+        (r'(\(\?P\<\w*)\[\\s_\](\w*\>)', r'\1_\2'),
         )
 
     _route_tests = (
@@ -616,7 +657,7 @@ class Route(object):
     def __init__(self, route, callable, methods='GET', filters=[], formats=[], prefix=None):
         def __none__(*args, **kwargs): pass
         self.__none__ = __none__
-        
+
         self.route = route
         self.request_filters = filters
         self._set_allowed_methods(methods)
@@ -677,12 +718,12 @@ class Route(object):
                 raise RouteCompilationError('incorrect syntax used for filter; should be a list')
             except ImportError:
                 raise RouteCompilationError('unable to import callable for filter "%s"' % filter_['callable'])
-                
+
 
     def _compile_filters(self):
 
         _callable = self._callable
-        
+
         if not _callable:
             _callable = self.__none__
 
@@ -751,10 +792,10 @@ class Route(object):
     def _validate_route_args_match_callable(self):
         if not self._callable or self._callable is self.__none__:
             return
-        
+
         if self.route[0] is '^':
             return
-        
+
         if self._route_params and \
             len(self._route_params) < len(self._expected_args) \
             and not self.accepts_kwargs:
@@ -765,14 +806,14 @@ class Route(object):
                  self.route,
                  self.callable))
 
-        difference = set(self._route_params) - set(self._expected_args) 
+        difference = set(self._route_params) - set(self._expected_args)
         if difference and not self.accepts_kwargs:
             raise RouteCompilationError(
                 'Route param list (%s) does not match arg list for "%s" -> (%s)' %
                 (', '.join(set(self._route_params)),
                  self.callable,
                  ', '.join(difference)))
-        
+
 
     @classmethod
     def _compile_regex(cls, pattern, prefix=''):
@@ -789,7 +830,7 @@ class Route(object):
 
             for search, replace in cls._compile_patterns:
                 regex = re.sub(search, replace, regex)
-                
+
             if pattern[-1] is '|':
                 regex = r'^' + regex[:-1]
             else:
@@ -797,7 +838,7 @@ class Route(object):
 
         try:
             return re.compile(regex), regex
-            
+
         except Exception as e:
             raise RouteCompilationError(e.message+' while testing: %s' % regex)
 
@@ -857,7 +898,7 @@ class Router(object):
         self._global_filters_imported = []
 
         self.clear()
-        
+
         if urls:
             self._set_urls(urls)
 
@@ -880,7 +921,7 @@ class Router(object):
 
     def _set_urls(self, urls=None):
         self.clear()
-        
+
         if urls and isinstance(urls, (list, tuple, dict, CaseInsensitiveDict)):
             self._define_routes(urls)
 
@@ -914,7 +955,7 @@ class Router(object):
 
     def add(self, route, callable=None, methods='GET', prefix='', filters=[], formats=[]):
         """Add a route to the routing map"""
-        
+
         item = Route(route, callable, methods, filters, formats, prefix)
         for method in item.methods:
             self[method][item.regex] = item
@@ -1096,7 +1137,7 @@ class Request(threading.local):
             self.environ = environ
         else:
             self.environ = self._default_env
-            
+
         self.method = self.environ['REQUEST_METHOD'].upper()
         self.route = '__not_found__'
         self.path = (self.environ['PATH_INFO'], '', self.environ['PATH_INFO'])
@@ -1137,7 +1178,7 @@ class Request(threading.local):
     def parse_body(self):
         if self.environ.get('CONTENT_TYPE', '').lower()[:10] == 'multipart/':
             fp = self.environ['wsgi.input']
-            
+
         else:
             length = int(self.environ.get('CONTENT_LENGTH', 0) or 0)
             fp = StringIO(self.environ['wsgi.input'].read(length))
@@ -1155,18 +1196,18 @@ class Request(threading.local):
     def build_get_string(self):
         return self.build_qs(self.GET)
 
-    
+
     def build_post_string(self):
         return self.build_qs(self.POST)
 
-        
+
     def build_qs(self, params, key=None):
         """Return a HTTP querystring from the ``params`` passed."""
         parts = []
-        
+
         if params and hasattr(params, 'items'):
             for name, value in params.items():
-                
+
                 if hasattr(value, 'values'):
                     # Encode a dict
                     parts.extend(self.build_qs(params=value.values(),
@@ -1176,17 +1217,17 @@ class Request(threading.local):
                     # Encode an iterable (list, tuple, etc)
                     parts.extend(self.build_qs(params=dict(zip(xrange(0, len(value)), value)),
                                                key=self.build_qs_key(key, cgi.escape(name))))
-                    
+
                 else:
                     parts.extend('%s=%s' % (self.build_qs_key(key, cgi.escape(name)), cgi.escape(str(value))))
-                    
+
         return '&'.join(parts)
 
-                        
+
     def build_qs_key(self, key, addition):
         if not key:
             return addition
-        
+
         return '%s[%s]' % (key, addition)
 
 
@@ -1195,13 +1236,13 @@ class Request(threading.local):
             return urllib.unquote(value)
         return value
 
-    
+
     def get_params(self):
         params = {}
-        
+
         for item in self.param_order:
             params.update(getattr(self, item, {}))
-            
+
         return params
 
 
@@ -1221,7 +1262,7 @@ class Request(threading.local):
 
     def get_cookies(self):
         return self.COOKIES
-    
+
 
     def _has_params(self):
         return self.get_params() != {}
@@ -1237,21 +1278,23 @@ class Request(threading.local):
 
 
 class InvalidResponseTypeError(Exception):
+    """Raised when a request invokes an invalid response,
+    or when a formatter for the request doesn't exist"""
     pass
-
-
 
 class ResponseTranslationError(Exception):
+    """Raised when there is an error while attempting to format
+    the response"""
     pass
 
-
-
 class ResponseParameterError(Exception):
+    """Raised when the formatter is missing a required parameter"""
     pass
 
 
 
 class PluginMount(type):
+    """Metaclass to aid in loading and managing formatter classes"""
     def __init__(cls, name, bases, attrs):
         if not hasattr(cls, 'plugins'):
             cls.plugins = []
@@ -1262,6 +1305,11 @@ class PluginMount(type):
 
 
 class Response(threading.local):
+    """The base response/formatter class.
+
+    This class contains all information required to format and return the
+    HTTP response to the client. Formatter classes should extend this
+    class"""
     __metaclass__ = PluginMount
 
     start_response = None
@@ -1285,18 +1333,10 @@ class Response(threading.local):
         self.params = {}
         self.errors = {}
 
+        self.params.update(config)
+
         if kwargs:
-            self._update_params(**kwargs)
-
-
-    def _update_params(self, **kwargs):
-        
-        try:
-            self.params.update(self.config[self.responsetype])
-        except KeyError:
-            pass
-
-        self.params.update(kwargs)
+            self.params.update(**kwargs)
 
 
     def __call__(self, responsebody, code=200, additional_headers=None, **kwargs):
@@ -1344,7 +1384,7 @@ class Response(threading.local):
         if len(value) > 4096:
             raise ValueError('Cookie value is too long (%sb), max length is 4096' %
                              len(value))
-        
+
         self.cookies[name] = value
 
         for opt, value in options.iteritems():
@@ -1352,7 +1392,7 @@ class Response(threading.local):
 
             if opt == 'expiry':
                 opt = 'expires'
-            
+
             if opt == 'expires':
                 if isinstance(value, bool) or \
                     not isinstance(value, (int, float, date, datetime)):
@@ -1364,7 +1404,7 @@ class Response(threading.local):
                     value = time.gmtime(value)
                 elif isinstance(value, (date, datetime)):
                     value = value.timetuple()
-                    
+
                 value = time.strftime("%a, %d %b %Y %H:%M:%S GMT", value)
 
             if opt == 'max_age':
@@ -1382,7 +1422,7 @@ class Response(threading.local):
                     raise TypeError('path value for cookie is invalid')
 
             self.cookies[name][opt.replace('_', '-')] = value
-                            
+
 
 
     def delete_cookie(self, name, **options):
@@ -1408,7 +1448,8 @@ class ResponseFactory(threading.local):
             response_type = response_type.lower()
 
         for response_class in Response.plugins:
-            if hasattr(response_class, 'extensions') and response_type in tuple(response_class.extensions):
+            if hasattr(response_class, 'extensions') and \
+                   response_type in tuple(response_class.extensions):
                 return response_class(*args, **kwargs)
 
         raise InvalidResponseTypeError()
@@ -1421,16 +1462,15 @@ class TranslatedResponse(Response):
     """Takes the response data and formats it first into XML then passes it through an XSL translator"""
 
     responsetype = 'xsl'
-    extensions = (None, '', 'htm', 'html')
+    extensions = (None, '', 'htm', 'html', 'xsl')
     contenttype = ''
 
 
     def __init__(self, start_response, request, config={}, **kwargs):
-        super(self.__class__, self).__init__(start_response, request, config=config)
-        self.params['stylesheet'] = None
-        self.params['cache'] = True
-        self._update_params(**kwargs)
+        super(self.__class__, self).__init__(start_response, request, config=config, **kwargs)
 
+        if 'cache' not in self.params:
+            self.params['cache'] = True
 
     def format(self, data=None, **kwargs):
 
@@ -1455,7 +1495,7 @@ class TranslatedResponse(Response):
     def xsl(self):
         if hasattr(self, '_xsl') and self._xsl:
             return self._xsl
-
+        print self.params
         self.params['stylesheet'] = os.path.abspath(self.params['stylesheet'])
 
         if 'stylesheet' not in self.params or \
@@ -1483,7 +1523,7 @@ class TranslatedResponse(Response):
                                 'request': self.request,
                                 },
                             resolvers=[LocalFileResolver(self.params['stylesheet_path'])]
-                            )        
+                            )
 
         return self._xsl
 
@@ -1505,7 +1545,7 @@ class TextResponse(Response):
 
         raise ResponseTranslationError
 
-    
+
 
 class XMLResponse(Response):
     """Takes the response data and converts it into a "generic" XML representation"""
@@ -1514,7 +1554,7 @@ class XMLResponse(Response):
     contenttype = 'application/xml'
 
     def format(self, data=None):
-            
+
         return XMLEncoder(
             data,
             doc_el='response',
@@ -1624,7 +1664,7 @@ class ComplexJSONEncoder(json.JSONEncoder):
 
     def _encode_std_object(self, obj):
         newobj = {}
-        
+
         # class attributes
         # causing problems with thrift class attrs (thrift_spec, instancemethods, etc)
         #newobj.update(dict(
@@ -1633,7 +1673,7 @@ class ComplexJSONEncoder(json.JSONEncoder):
         #    in dict(obj.__class__.__dict__).iteritems()
         #    if name[0] != '_'
         #    ))
-        
+
         # object attributes
         newobj.update(dict(
             (name, value)
@@ -1641,12 +1681,12 @@ class ComplexJSONEncoder(json.JSONEncoder):
             in obj.__dict__.iteritems()
             if ord(name[0].lower()) in xrange(97,123)
             ))
-        
+
         newobj['__name__'] = obj.__class__.__name__
-        
+
         return newobj
 
-    
+
     def _encode_lite_object(self, obj):
         newobj = {}
 
@@ -1656,13 +1696,13 @@ class ComplexJSONEncoder(json.JSONEncoder):
                     newobj[slot] = getattr(obj, slot)
                 except AttributeError:
                     newobj[slot] = None
-                    
+
         newobj['__name__'] = obj.__class__.__name__
-        
+
         return newobj
 
 
-    
+
 # Utility XML/XSL classes
 
 class XMLEncoder(object):
@@ -1680,7 +1720,7 @@ class XMLEncoder(object):
         self.document = etree.Element(doc_el, **params)
         self.encoding = encoding
 
-    
+
     def to_string(self, indent=True, declaration=True):
         xml = self.to_xml()
         if indent:
@@ -1697,7 +1737,7 @@ class XMLEncoder(object):
 
     def from_string(self, string):
         self.data = etree.parse(StringIO(string))
-            
+
 
     def _update_document(self, node, data):
 
@@ -1708,7 +1748,7 @@ class XMLEncoder(object):
         elif type(data) == bool:
             node.set('nodetype', u'boolean')
             node.text = u"false"
-        
+
         elif isinstance(data, basestring) and \
              len(data) in (36, 38) and \
              self._is_uuid.match(data):
@@ -1739,19 +1779,19 @@ class XMLEncoder(object):
             #node.set('nodetype',u'map')
             for name, items in data.iteritems():
                 if isinstance(name, basestring) and name != '' and str(name[0]) is '?':
-                    #  processing instruction 
+                    #  processing instruction
                     #self._add_processing_instruction(node, items)
                     pass
 
                 elif isinstance(name, basestring) and name != '' and str(name[0]) is '!':
-                    # doctype 
+                    # doctype
                     #self._add_docype(node, items)
                     pass
-                
-                    
+
+
                 elif isinstance(name, basestring) and name != '' and not name[0].isalpha():
                     child = etree.SubElement(node, u'node', name=unicode(name))
-                    
+
                 elif isinstance(name, basestring) and name != '':
                     child = etree.SubElement(node, unicode(name))
 
@@ -1759,7 +1799,7 @@ class XMLEncoder(object):
                     child = etree.SubElement(node, u"node", name=unicode(name))
 
                 child = self._update_document(child, items)
-        
+
         elif type(data) == list:
             node.set('nodetype',u'list')
             for item in data:
@@ -1787,10 +1827,10 @@ class XMLEncoder(object):
 
         elif isinstance(data, object):
             children = []
-            
+
             if hasattr(data, '__dict__'):
                 children = ((n, v) for n, v in data.__dict__.iteritems() if n[0] is not '_' and not hasattr(n, '__call__'))
-                
+
             if hasattr(data, '__slots__'):
                 children = ((n, getattr(data, n)) for n in data.__slots__ if n[0] is not '_' and not hasattr(n, '__call__'))
 
@@ -1811,7 +1851,7 @@ class XMLEncoder(object):
 
     def _is_scalar(self, value):
         return isinstance(value, (basestring, float, int, long))
-    
+
 
     def _indent(self, elem, level=0):
         i = "\n" + "  "*level
@@ -1838,7 +1878,7 @@ class XMLEncoder(object):
     def _add_processing_instruction(self, node, data):
 
         self.document = etree.ElementTree(self.document)
-        
+
         attrs = []
 
         if type(data) is dict:
@@ -1857,7 +1897,7 @@ class XMLEncoder(object):
             'type="text/xml" href="default.xsl"'
             )
 
-    
+
     def __dict_to_attrs(self, d):
         return (str(name) + '="' + str(value) + '"' for name, value in d.iteritems())
 
@@ -1893,7 +1933,7 @@ class XMLEncoder(object):
 class LocalFileResolver(etree.Resolver):
     def __init__(self, path):
         self.path = path
-        
+
 
     def resolve(self, url, id, context):
         if url.startswith('local:'):
@@ -1935,7 +1975,7 @@ class XSLTranslator(object):
     def _find_processing_instructions(self):
         """
         Not Implemented
-        
+
         processing_instructions = self.xml.xpath('/processing-instruction("xml-stylesheet")[not(@alternate)]')
         if processing_instructions:
             href = str(processing_instructions[0].get('type'))
@@ -1955,11 +1995,11 @@ class XSLTranslator(object):
             for key in (n for n in dir(module) if n[0] != '_' and hasattr(getattr(module, n), '__call__')):
                 ns[re.sub('_', '-', key)] = getattr(module, key)
 
-     
+
     def _transform(self, xml=None, xsl=None):
         if xml is not None:
             self._load_xml(xml)
-        
+
         if xsl is not None:
             self._load_stylesheet(xsl)
 
@@ -1968,9 +2008,9 @@ class XSLTranslator(object):
 
         if self.xsl is None:
             raise FormatterError('no stylesheet available for transformation')
-        
+
         transform = etree.XSLT(self.xsl)
-        
+
         try:
             return transform.apply(self.xml)
         except etree.XSLTApplyError as e:
@@ -2098,9 +2138,9 @@ class XPathFunctions(object):
             xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
             xmlns:fwrd="http://fwrd.org/fwrd.extensions"
             extension-element-prefixes="fwrd">
-    
+
             ...
-    
+
         </xsl:stylesheet>
 
     """
@@ -2135,7 +2175,7 @@ class XPathFunctions(object):
     #def config(self, _):
     #    return list(XMLEncoder(dict((key, value) for key, value in fwrd.config.iteritems()), doc_el='config').to_xml())
 
-    
+
     def session(self, _):
         return XMLEncoder(dict(self._params['request'].session), doc_el='session').to_xml()
 
@@ -2153,7 +2193,7 @@ class XPathFunctions(object):
 
             <xsl:value-of select"fwrd:abs('-1')" />
             <!-- output: 1 -->
-        
+
         """
 
         if isinstance(items, basestring):
@@ -2184,7 +2224,7 @@ class XPathFunctions(object):
 
             <xsl:value-of select"fwrd:ceil('2.65')" />
             <!-- output: 3 -->
-        
+
         """
 
         if isinstance(items, basestring):
@@ -2215,7 +2255,7 @@ class XPathFunctions(object):
 
             <xsl:value-of select"fwrd:floor('2.65')" />
             <!-- output: 2 -->
-        
+
         """
 
         if isinstance(items, basestring):
@@ -2248,7 +2288,7 @@ class XPathFunctions(object):
             <xsl:value-of select="fwrd:title('some text')" />
             <!-- output: Some Text -->
         """
-        
+
         if isinstance(items, basestring):
             return items.title()
 
@@ -2290,7 +2330,7 @@ class XPathFunctions(object):
                 newitem = copy.deepcopy(item)
                 newitem.text = newitem.text.lower()
                 resp.append(newitem)
-                
+
         return resp
 
 
@@ -2306,7 +2346,7 @@ class XPathFunctions(object):
         """
         if isinstance(items, basestring):
             return items.upper()
-        
+
         resp = []
 
         for item in list(items):
@@ -2332,7 +2372,7 @@ class XPathFunctions(object):
         """
         if isinstance(items, basestring):
             return items.strip()
-        
+
         resp = []
 
         for item in list(items):
@@ -2393,7 +2433,7 @@ class XPathFunctions(object):
                 resp.append(item)
             else:
                 resp.append(unicode(item))
-        
+
         return sep.join(resp)
 
 
@@ -2409,7 +2449,7 @@ class XPathFunctions(object):
             <!-- output: 2012-12-21T00:00:00Z -->
         """
         return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-                
+
 
     def dateformat(self, _, elements, format):
         """``fwrd:dateformat(string|node|nodeset, output-format)``
@@ -2427,7 +2467,7 @@ class XPathFunctions(object):
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
                 return self._unescape(unicode(datetime.strptime(elements.strip()[:10], '%Y-%m-%d').strftime(format)))
-            
+
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
@@ -2444,7 +2484,7 @@ class XPathFunctions(object):
         """``fwrd:format-date(string|node|nodeset, output-format)``
 
         Alias of the ``fwrd:dateformat()`` function.
-        """        
+        """
         return self.dateformat(_, elements, format)
 
 
@@ -2455,7 +2495,7 @@ class XPathFunctions(object):
         returns a string formatted according to the pattern ``output-format``.
 
         By default the pattern `input-format` is `%Y-%m-%dT%H:%M:%S`.
-        
+
         Both `input-format` and `output-format` follow the same rules as the
         _Python Datetime module::
 
@@ -2471,7 +2511,7 @@ class XPathFunctions(object):
             if isinstance(elements, basestring) and elements.strip() != '':
                 value = datetime.strptime(elements, informat)
                 return self._unescape(unicode(value.strftime(outformat)))
-            
+
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
@@ -2499,7 +2539,7 @@ class XPathFunctions(object):
         Returns ``true()`` if the element is an empty string, node, or nodeset, ``false()`` otherwise.
 
         ::
-        
+
             <xsl:value-of select="fwrd:isempty('')" />
             <!-- output: true() -->
 
@@ -2517,10 +2557,10 @@ class XPathFunctions(object):
 
         if hasattr(item, 'text') and item.text is None:
             return True
-            
+
         if hasattr(item, 'text') and str(item.text).strip() == '':
             return True
-            
+
         if isinstance(item, basestring) and str(item).strip() == '':
             return True
 
@@ -2529,7 +2569,7 @@ class XPathFunctions(object):
 
     def empty(self, _, items):
         """``fwrd:empty(string|node|nodeset)``
-        
+
         Alias of the `isempty()` function.
         """
         return self.isempty(_, items)
@@ -2551,7 +2591,7 @@ class XPathFunctions(object):
 
         This method operates in the same manner as Python's ``range()`` method with the exception
         that a ``start`` argument is required::
-        
+
             <xsl:value-of select="fwrd:range(1,10,2)" />
             <!-- output: 1,3,5,9 -->
 
@@ -2581,7 +2621,7 @@ class XPathFunctions(object):
 
         This method operates in the same manner as Python's ``range()`` method with the exception
         that a `start` argument is required::
-        
+
             <xsl:value-of select="fwrd:range-as-nodes(1,10,2)" />
             <!-- output -->
             <items><item>0</item><item>1</item><item>3</item><item>5</item><item>9</item></items>
@@ -2603,7 +2643,7 @@ class XPathFunctions(object):
                         unicode(type_(i)) for i in
                         self._range(start, stop, step)) +
                 '</items>')
-        
+
         except:
             return etree.XML(
                 '<items>' +
@@ -2627,7 +2667,7 @@ class XPathFunctions(object):
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
                 return elements.replace(search_, replace_)
-            
+
             returned = []
             for item in elements:
                 try:
@@ -2649,7 +2689,7 @@ class XPathFunctions(object):
         Returns a copy of the element with any escaped XML entities unescaped.
 
         ::
-        
+
             <xsl:value-of select="fwrd:unescape('&amp; &amp;amp;')" />
             <!-- output: & &amp; -->
 
@@ -2658,7 +2698,7 @@ class XPathFunctions(object):
 
         if isinstance(elements, basestring) and elements.strip() != '':
             return xml_unescape(elements)
-        
+
         for item in elements:
             try:
                 newitem = copy.deepcopy(item)
@@ -2736,29 +2776,29 @@ class XPathFunctions(object):
         return XMLEncoder({'message': str(e),
                            'traceback': traceback.format_exc() },
                           doc_el=name).to_xml()
-          
+
 
     def _unescape(self, s):
         want_unicode = False
         if isinstance(s, unicode):
             s = s.encode("utf-8")
             want_unicode = True
-        
+
         # the rest of this assumes that `s` is UTF-8
         list = []
-        
+
         # create and initialize a parser object
         p = xml.parsers.expat.ParserCreate("utf-8")
         p.buffer_text = True
         p.returns_unicode = want_unicode
         p.CharacterDataHandler = list.append
-        
+
         # parse the data wrapped in a dummy element
         # (needed so the "document" is well-formed)
         p.Parse("<e>", 0)
         p.Parse(s, 0)
         p.Parse("</e>", 1)
-        
+
         # join the extracted strings and return
         es = ""
         if want_unicode:
@@ -2770,6 +2810,7 @@ class XPathFunctions(object):
 # General Utility Objects
 
 class CaseInsensitiveDict(collections.Mapping):
+    """A case-insensitive dictionary-like object"""
     def __init__(self, d):
         self._d = d
         self._s = dict((k.lower(), k) for k in d)
@@ -2797,6 +2838,10 @@ class CaseInsensitiveDict(collections.Mapping):
 
 
 def CaseInsensitiveDictMapper(d):
+    """This method will recurse through standard Python types,
+    converting dicts to CaseInsensitiveDict objects where
+    appropriate
+    """
     if type(d) is dict:
         _d = {}
         for k, v in d.iteritems():
@@ -2818,9 +2863,12 @@ def CaseInsensitiveDictMapper(d):
 
 
 def resolve(callable):
+    """Resolves a string to an importable callable, otherwise
+    raising an ImportError"""
     func = resolve_import(callable)
 
     if not func:
+        # Raise an import error as "resolver" doesn't do this by default
         raise ImportError()
 
     return func
@@ -2867,7 +2915,7 @@ class ParameterContainer(collections.Mapping):
 
     _is_float = re.compile(r'^\-?\d+\.\d+$')
     _split_names = re.compile(r'\[([-\.\w]+)?\]')
-    
+
     def __init__(self, params=None):
         self._params = params or {}
 
@@ -2927,7 +2975,7 @@ class ParameterContainer(collections.Mapping):
 
     def _parse_fieldstorage(self, params):
         return self._parse_string("&".join('%s=%s' % (item.name, urllib.quote_plus(item.value)) for item in params.list))
-        
+
 
     def _nest_params(self, keys, value, level):
         key = keys.pop(0) or '_'
@@ -2940,7 +2988,7 @@ class ParameterContainer(collections.Mapping):
                 level[key] = {}
             # recursivly add the next level
             self._nest_params(keys, value, level[key])
-            
+
         else:
             if not isinstance(level[key], (dict, list)):
                 # wrap scalar values in a list
@@ -2949,7 +2997,7 @@ class ParameterContainer(collections.Mapping):
             if isinstance(level[key], list):
                 # append scalar values to the list
                 level[key].append(value)
-                
+
             else:
                 # store the scalar value
                 level[key] = value
@@ -2969,10 +3017,10 @@ class ParameterContainer(collections.Mapping):
             except ValueError:
                 print parsed
                 raise
-            
+
 
         return "&".join("%s=%s" % (k, v) for k, v in cleaned)
-                
+
 
     def _clean_key(self, key):
         return [i for i in self._split_names.split(key) if i is not '']
@@ -2998,19 +3046,19 @@ class ParameterContainer(collections.Mapping):
     def _update_type(self, param):
         if isinstance(param, cgi.MiniFieldStorage):
             return param.value
-        
+
         if type(param) is list and len(param) == 1:
             return self._update_type(param[0])
-        
+
         if type(param) is list:
             return list(self._update_type(item) for item in param)
-        
+
         if param.strip() == '':
             return None
-        
+
         if self._is_float.match(param):
             return float(param)
-        
+
         if len(param) > 1 and \
             param[0] is not '0' and \
             param.isdigit():
@@ -3019,11 +3067,11 @@ class ParameterContainer(collections.Mapping):
         if len(param) == 1 and \
             param.isdigit():
             return int(param)
-        
+
         if param.lower() == 'true':
             return True
-        
+
         if param.lower() == 'false':
             return False
-        
+
         return param
