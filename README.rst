@@ -112,7 +112,8 @@ However, we recommend that you use buildout_ for all your applications:
 
 then from the command line::
 
-    # python bootstrap.py 
+    # wget http://svn.zope.org/repos/main/zc.buildout/trunk/bootstrap/bootstrap.py
+    # python ./bootstrap.py 
     # ./bin/buildout
     # ./bin/server
 
