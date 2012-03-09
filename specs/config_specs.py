@@ -174,7 +174,7 @@ Routes:
             )
 
     def it_should_configure_formatters(self):
-
+        self.skipTest('Not yet implemented')
         config = '''
 Config:
   port: 8080
@@ -193,8 +193,6 @@ Routes:
 '''
 
         application.setup(StringIO(config % os.path.dirname(os.path.abspath(__file__))))
-        '''
-        self.assertEqual(
-            application.
-            )
-        '''
+
+    def it_should_print_the_config_for_debugging_correctly(self):
+        self.skipTest('Not yet implemented')

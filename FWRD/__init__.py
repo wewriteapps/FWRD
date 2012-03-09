@@ -15,18 +15,20 @@ import collections
 import copy
 import functools
 import inspect
+import logging
 import os
+import re
 import sys
 import time
 import threading
 import traceback
 import urllib
 import xml.parsers.expat
-import yaml
 
 from Cookie import SimpleCookie
 from datetime import date, datetime, timedelta
 from lxml import etree
+from optparse import OptionParser
 from resolver import resolve as resolve_import
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
@@ -34,10 +36,12 @@ from xml.sax.saxutils import unescape as xml_unescape
 
 from __version__ import *
 
+from yaml import load as yaml_load, dump as yaml_dump, YAMLError
+
 try:
-    import re2 as re
+    from yaml import CLoader as yaml_loader, CDumper as yaml_dumper
 except ImportError:
-    import re
+    from yaml import Loader as yaml_loader, Dumper as yaml_dumper
 
 try:
     from cStringIO import StringIO
@@ -62,6 +66,28 @@ try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
+
+# Configure logging
+logging.basicConfig(format="[%(asctime)s - %(levelname)s]: %(message)s")
+log = logging.getLogger(__name__)
+
+parser = OptionParser()
+parser.add_option('-l', '--loglevel', dest='loglevel')
+(options, args) = parser.parse_args()
+
+if options.loglevel:
+    try:
+        numeric_level = getattr(logging, options.loglevel.upper(), None)
+        if not isinstance(numeric_level, int):
+            raise ValueError('Invalid log level: %s' % options.loglevel)
+        log.setLevel(numeric_level)
+    except ValueError as e:
+        raise e
+    except:
+        raise
+
+log.info('Logging level currently set to %s' % logging.getLevelName(log.getEffectiveLevel()))
+
 
 
 __all__ = (
@@ -275,13 +301,12 @@ class ConfigError(Exception):
 
 class Config(threading.local):
     __slots__ = (
-        'debug',
         'host',
         'port',
         'output',
-        'format',
-        'default_format',
+        'formats',
         '_app_path',
+        '_debug'
         )
 
 
@@ -289,7 +314,6 @@ class Config(threading.local):
         self.debug = False
         self.host = ''
         self.port = 8000
-        self.default_format = None
         self.output = sys.stdout
         self.formats = {
             'default': 'xsl',
@@ -308,20 +332,42 @@ class Config(threading.local):
         self.update(**kwargs)
 
 
+    def __str__(self):
+        return yaml_dump(dict(
+            (name, getattr(self, name))
+            for name
+            in self.__slots__
+            if name[0] is not '_'
+            ))
+
+
     def update(self, **kwargs):
         for key, value in kwargs.iteritems():
             if key.lower() in self.__slots__:
                 setattr(self, key.lower(), value)
 
+
     def _set_app_path(self, val):
         self._app_path = val
         sys.path.insert(0, self._app_path)
+
 
     def _get_app_path(self):
         if hasattr(self, '_app_path') and self._app_path:
             return self._app_path
         else:
             return os.getcwd()
+
+
+    def _set_debug(self, debug):
+        self._debug = bool(debug)
+        if self._debug is True:
+            log.setLevel(logger.DEBUG)
+
+
+    def _get_debug(self):
+        return bool(self._debug)
+
 
     app_path = property(_get_app_path, _set_app_path)
 
@@ -393,7 +439,7 @@ class Application(threading.local):
             stream = config
 
         try:
-            config = CaseInsensitiveDictMapper(yaml.load(stream))
+            config = CaseInsensitiveDictMapper(yaml_load(stream, Loader=yaml_loader))
 
             if config_location:
                 self._config.app_path = os.path.abspath(config_location)
@@ -402,7 +448,7 @@ class Application(threading.local):
                 not 'app_path' in config['config']:
                 raise ConfigError('app_path could not be calculated and is not set in config')
 
-        except yaml.YAMLError as e:
+        except YAMLError as e:
             error = 'Import failed with malformed config'
             if hasattr(e, 'problem_mark'):
                 mark = e.problem_mark
@@ -421,6 +467,8 @@ class Application(threading.local):
         if 'routes' in config:
             self._update_routes_from_import(config['routes'])
 
+        log.debug(self._router)
+
         return True
 
 
@@ -430,6 +478,7 @@ class Application(threading.local):
 
     def _update_config_from_import(self, config):
         self._config.update(**config)
+        log.debug("Current config:\n\n%s\n" % self._config)
 
 
     def _update_routes_from_import(self, routes):
@@ -437,17 +486,7 @@ class Application(threading.local):
 
 
     def _update_global_filters_from_import(self, filters):
-        self._router._global_filters = [dict(filter_) for filter_ in filters]
-
-        for filter_ in filters:
-            try:
-                self._router._global_filters_imported.append({
-                    'callable': resolve(filter_['callable']),
-                    'args': filter_.get('args', None)
-                    })
-
-            except ImportError:
-                raise RouteCompilationError('unable to import global filter "%s"' % filter_['callable'])
+        self._router.filters = filters
 
 
     def _execute_callable(self):
@@ -504,17 +543,23 @@ class Application(threading.local):
             body = self._format_error(code, e)
             raise e
 
-        #finally:
-        return self._response(body, code=code, additional_headers=headers)
+        response = self._response(body, code=code, additional_headers=headers)
 
+        log.info("%s => %s" % (self._request, self._response))
+
+        return response
+    
 
     def register_middleware(self, middleware, opts={}):
         """Register a middleware component"""
         self._middleware.append((middleware, opts))
 
 
-    def run(self, server_func=None, host=None, port=None, debug=False, **kwargs):
+    def run(self, server_func=None, host=None, port=None, debug=False, config=None, **kwargs):
         """Start the WSGI server"""
+
+        if config is not None:
+            self.setup(config)
 
         if server_func is None and debug:
             server_func = self._serve_once
@@ -669,6 +714,22 @@ class Route(object):
 
     def __call__(self, **kwargs):
         return self._compiled_callable(**kwargs)
+
+
+    def __str__(self):
+        if self.request_filters:
+            return "Route('%s', methods=[%s], filters=%s) => %s" % (
+                self.route,
+                '/'.join(self.methods),
+                self.request_filters,
+                self.callable
+                )
+
+        return "Route('%s', methods=[%s]) => %s" % (
+            self.route,
+            '/'.join(self.methods),
+            self.callable
+            )
 
 
     def _compile_callable(self, callable):
@@ -907,6 +968,31 @@ class Router(object):
         return self.find(*args, **kwargs)
 
 
+    def __str__(self):
+        output = 'Routing Config:'
+
+        output += "\nConfigured Routes:\n"
+
+        for method in self.__slots__:
+            if method[0] != '_':
+                output += "  %s:\n" % method
+                for regex, item in self[method].iteritems():
+                    output += "    %s\n" % item
+
+                if not self[method]:
+                    output += "    None\n"
+
+        output += "\nGlobal Filters:\n"
+
+        for item in self._global_filters:
+            output += "  %s\n" % item
+
+        if not self._global_filters:
+            output += "  None\n"
+
+        return output
+
+
     def __getitem__(self, name):
         return getattr(self, name)
 
@@ -929,12 +1015,31 @@ class Router(object):
             raise RouteCompilationError('unable to define routes')
 
 
+    def _get_filters(self):
+        return self._global_filters
+
+
+    def _set_filters(self, filters):
+        self._global_filters = [dict(filter_) for filter_ in filters]
+
+        for filter_ in filters:
+            try:
+                self._global_filters_imported.append({
+                    'callable': resolve(filter_['callable']),
+                    'args': filter_.get('args', None)
+                    })
+
+            except ImportError:
+                raise RouteCompilationError('unable to import global filter "%s"' % filter_['callable'])
+
+
     def _define_routes(self, urls, prefix=''):
         # Basic structure: (route, callable [, http_method_list [, filter_list [, allowed_formats]]])
         # Prefix structure: (prefix, (tuple_of_basic_structure_tuples, ...))
 
         for item in urls:
             if not isinstance(item, (tuple, dict, CaseInsensitiveDict)):
+                log.debug('skipping url %s' % item)
                 continue
 
             rule = dict((key, None) for key in Route._tuple_pattern)
@@ -947,7 +1052,7 @@ class Router(object):
                 try:
                     self.add(**dict(item))
                 except TypeError:
-                    raise RouteCompilationError('specified route is empty')
+                    raise RouteCompilationError('specified route is empty: %s' % item)
 
             else:
                 self.add(**item)
@@ -957,6 +1062,7 @@ class Router(object):
         """Add a route to the routing map"""
 
         item = Route(route, callable, methods, filters, formats, prefix)
+        #log.debug("Adding route: %s" % item)
         for method in item.methods:
             self[method][item.regex] = item
 
@@ -985,8 +1091,18 @@ class Router(object):
                 self[method] = OrderedDict()
 
 
+    def has_routes(self):
+        return any(
+            bool(len(self[method]))
+            for method in self.__slots__
+            if method[0] != '_'
+            and len(self[method]) > 0
+            )
+
+
     # Properties
     urls = property(_get_urls, _set_urls)
+    filters = property(_get_filters, _set_filters)
 
 
 
@@ -1163,6 +1279,13 @@ class Request(threading.local):
         self.parse_cookies()
 
 
+    def __str__(self):
+        return 'Request(%s, %s)' % (
+            self.method,
+            self.path[2]
+            )
+
+
     def __getitem__(self, name):
         return getattr(self, name, None)
 
@@ -1321,6 +1444,7 @@ class Response(threading.local):
     responsetype = None
     params = None
     errors = None
+    output = ''
 
 
     def __init__(self, start_response, request, config={}, **kwargs):
@@ -1344,17 +1468,24 @@ class Response(threading.local):
         self.responsebody = responsebody
         self.headers.update(additional_headers)
         cookies = [('Set-Cookie', c.OutputString()) for c in self.cookies.values()]
-        output = self.format(self.responsebody, **kwargs)
+        self.output = self.format(self.responsebody, **kwargs)
         self.start_response(self.code, self.headers.list() + cookies)
-        return [output]
+        return [self.output]
 
+
+    def __len__(self):
+        return len(self.output)
+
+
+    def __str__(self):
+        return "Response(%s, %s)" % (self.code, len(self))
 
     def _set_code(self, code):
         self._code = code
 
 
     def _get_code(self):
-        if not self._code:
+        if not hasattr(self, '_code'):
             self._code = 200
 
         if not self._code in HTTP_STATUS_CODES:
@@ -1495,7 +1626,7 @@ class TranslatedResponse(Response):
     def xsl(self):
         if hasattr(self, '_xsl') and self._xsl:
             return self._xsl
-        print self.params
+
         self.params['stylesheet'] = os.path.abspath(self.params['stylesheet'])
 
         if 'stylesheet' not in self.params or \
@@ -2814,6 +2945,10 @@ class CaseInsensitiveDict(collections.Mapping):
     def __init__(self, d):
         self._d = d
         self._s = dict((k.lower(), k) for k in d)
+
+
+    def __str__(self):
+        return str(self._s)
 
 
     def __contains__(self, k):
