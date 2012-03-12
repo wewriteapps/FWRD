@@ -2977,19 +2977,19 @@ def CaseInsensitiveDictMapper(d):
     converting dicts to CaseInsensitiveDict objects where
     appropriate
     """
-    if type(d) is dict:
+    if isinstance(d, dict):
         _d = {}
         for k, v in d.iteritems():
             _d[k] = CaseInsensitiveDictMapper(v)
         return CaseInsensitiveDict(_d)
 
-    elif type(d) is list:
+    elif isinstance(d, list):
         return [CaseInsensitiveDictMapper(x) for x in d]
 
-    elif type(d) is tuple:
+    elif isinstance(d, tuple):
         return tuple([CaseInsensitiveDictMapper(x) for x in d])
 
-    elif type(d) is set:
+    elif isinstance(d, set):
         return set([CaseInsensitiveDictMapper(x) for x in d])
 
     else:
