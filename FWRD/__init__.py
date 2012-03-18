@@ -11,6 +11,7 @@
 """
 
 import cgi
+import cgitb
 import collections
 import copy
 import functools
@@ -66,6 +67,9 @@ try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
+
+# Enable cgi exceptions
+cgitb.enable()
 
 # Configure logging
 logging.basicConfig(format="[%(asctime)s - %(levelname)s]: %(message)s")
@@ -548,7 +552,7 @@ class Application(threading.local):
         log.info("%s => %s" % (self._request, self._response))
 
         return response
-    
+
 
     def register_middleware(self, middleware, opts={}):
         """Register a middleware component"""
