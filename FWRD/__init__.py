@@ -20,6 +20,7 @@ import logging
 import os
 import re
 import sys
+import tempfile
 import time
 import threading
 import traceback
@@ -1220,6 +1221,7 @@ class Request(threading.local):
         'PUT',
         'COOKIES',
         'SESSION',
+        'FILES',
 
         # general parameters
         'environ',
@@ -1274,6 +1276,8 @@ class Request(threading.local):
         except:
             pass
 
+        self.parse_files()
+
         if len(self.environ['QUERY_STRING']):
             self.parse_qs()
 
@@ -1296,6 +1300,31 @@ class Request(threading.local):
 
     def set_path_params(self, params):
         self.PATH = dict((k, self.unquote(v)) for k, v in params.iteritems())
+
+
+    def parse_files(self):
+        self.FILES = {}
+        if self.environ.get('CONTENT_TYPE', '').lower()[:10] == 'multipart/':
+            fp = self.environ['wsgi.input']
+
+            params = cgi.FieldStorage(fp=fp,
+                                      environ=self.environ,
+                                      keep_blank_values=True)
+
+            for item in params.keys():
+                if params[item].filename:
+                    _, fn = tempfile.mkstemp()
+                    f = open(fn, 'wb', 10000)
+                    for chunk in filebuffer(params[item].file):
+                        f.write(chunk)
+                    f.close()
+
+                    self.FILES[item] = {
+                        'filename': params[item].filename,
+                        'type': params[item].type,
+                        'tmpfile': fn,
+                        'size': os.path.getsize(fn),
+                        }
 
 
     def parse_qs(self):
@@ -3103,17 +3132,17 @@ class ParameterContainer(collections.Mapping):
         return self
 
 
-    def to_qs(self):
-        """TODO"""
-        pass
-
-
     def _parse_string(self, qs):
         return parse_qsl(self._clean_qs(qs), True)
 
 
     def _parse_fieldstorage(self, params):
-        return self._parse_string("&".join('%s=%s' % (item.name, urllib.quote_plus(item.value)) for item in params.list))
+        return self._parse_string(
+            "&".join('%s=%s' % (item.name,
+                                urllib.quote_plus(item.value))
+                     for item
+                     in params.list)
+            )
 
 
     def _nest_params(self, keys, value, level):
@@ -3148,15 +3177,13 @@ class ParameterContainer(collections.Mapping):
 
         for i in range(len(parsed)):
             try:
-
                 k, v = parsed.pop(0)
                 if k[-2:] == '[]':
                     k = k[:-2]
                 cleaned.append((k, v))
             except ValueError:
-                print parsed
-                raise
-
+                log.debug('Could not parse QS parameter %s' % parsed)
+                pass
 
         return "&".join("%s=%s" % (k, v) for k, v in cleaned)
 
@@ -3214,3 +3241,13 @@ class ParameterContainer(collections.Mapping):
             return False
 
         return param
+
+
+
+def filebuffer(file_, chunk_size=10000):
+    while 1:
+        chunk = file_.read(chunk_size)
+        if not chunk:
+            break
+        yield chunk
+
