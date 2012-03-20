@@ -439,7 +439,8 @@ class Application(threading.local):
             stream = config
 
         try:
-            config = CaseInsensitiveDictMapper(yaml_load(stream, Loader=yaml_loader))
+            config = yaml_load(stream, Loader=yaml_loader)
+            config = CaseInsensitiveDictMapper(config)
 
             if config_location:
                 self._config.app_path = os.path.abspath(config_location)
@@ -461,6 +462,9 @@ class Application(threading.local):
         if 'config' in config:
             self._update_config_from_import(config['config'])
 
+        if 'filters' in config:
+            self._update_global_filters_from_import(config['filters'])
+
         if 'global filters' in config:
             self._update_global_filters_from_import(config['global filters'])
 
@@ -473,7 +477,9 @@ class Application(threading.local):
 
 
     def _validate_imported_config(self, config):
-        return any([x in config for x in ['config', 'routes', 'formats']])
+        return any([x in config
+                    for x
+                    in ['config', 'routes', 'filters', 'global filters']])
 
 
     def _update_config_from_import(self, config):
@@ -1052,7 +1058,7 @@ class Router(object):
                 try:
                     self.add(**dict(item))
                 except TypeError:
-                    raise RouteCompilationError('specified route is empty: %s' % item)
+                    raise #RouteCompilationError('specified route is empty: %s' % item)
 
             else:
                 self.add(**item)
@@ -2948,7 +2954,7 @@ class CaseInsensitiveDict(collections.Mapping):
 
 
     def __str__(self):
-        return str(self._s)
+        return str(self._d)
 
 
     def __contains__(self, k):
