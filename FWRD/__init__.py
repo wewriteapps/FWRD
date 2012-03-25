@@ -391,10 +391,13 @@ class Application(threading.local):
 
     def __call__(self, environ, start_response):
         self._request = Request(environ)
+        log.debug('Received request object: %s' % self._request)
         format_ = self._request.path[1]
 
         if not format_:
             format_ = self._config.formats['default']
+
+        log.debug('Formatting as %s' % format_)
 
         try:
             self._response = ResponseFactory.new(
@@ -412,6 +415,8 @@ class Application(threading.local):
                 self._request,
                 self._config.formats[format_]
                 )
+
+        log.debug('Response type: %s' % self._response.__class__.__name__)
 
         return self.process_request()
 
@@ -501,13 +506,16 @@ class Application(threading.local):
         self._request.set_path_params(path_params)
         self._request.route = item.route
 
-        try:
+        if len(self._request.params.keys()) <= len(item._all_args) or item.accepts_kwargs:
             return item(**self._request.params)
 
-        except TypeError as e:
-            "Additional request params were found. Attempt to re-run the request without those params"
-            accepted_params = set(item._expected_args) & set(self._request.params.keys())
-            return item(**dict( (k,v) for k, v in self._request.params.iteritems() if k in accepted_params ))
+        else:
+            "Additional request params were found. Attempt to run the request without those params"
+            accepted_params = set(item._all_args) & set(self._request.params.keys())
+            return item(**dict( (k,v)
+                                for k, v
+                                in self._request.params.iteritems()
+                                if k in accepted_params ))
 
 
     def process_request(self):
@@ -554,7 +562,7 @@ class Application(threading.local):
         log.info("%s => %s" % (self._request, self._response))
 
         return response
-    
+
 
     def register_middleware(self, middleware, opts={}):
         """Register a middleware component"""
@@ -660,7 +668,6 @@ class Route(object):
         '_route_params',
         '_all_args',
         '_expected_args',
-        '_preset_args',
         '_accepts_kwargs',
         '_allowed_methods',
         '_request_filters',
@@ -820,7 +827,6 @@ class Route(object):
         self._accepts_kwargs = False
         self._all_args = []
         self._expected_args = []
-        self._preset_args = []
 
         try:
             argspec = inspect.getargspec(self._callable)
@@ -829,21 +835,16 @@ class Route(object):
 
         self._accepts_kwargs = argspec.keywords != None
 
+        self._all_args = argspec.args
+
         # skip the "self" arg for class methods
         if inspect.ismethod(self._callable):
             self._all_args = argspec.args[1:]
-        else:
-            self._all_args = argspec.args
 
         try:
             self._expected_args = self._all_args[:-len(argspec.defaults)]
         except TypeError:
             self._expected_args = self._all_args
-
-        try:
-            self._preset_args = self._all_args[-len(argspec.defaults):]
-        except TypeError:
-            self._preset_args = self._all_args
 
 
     def _validate(self):
@@ -1044,6 +1045,9 @@ class Router(object):
         # Prefix structure: (prefix, (tuple_of_basic_structure_tuples, ...))
 
         for item in urls:
+            if 'route' not in item:
+                raise RouteCompilationError('item does not have a route')
+
             if not isinstance(item, (tuple, dict, CaseInsensitiveDict)):
                 log.debug('skipping url %s' % item)
                 continue
@@ -1055,10 +1059,7 @@ class Router(object):
                 self.add(**dict(zip(Route._tuple_pattern, item)))
 
             elif isinstance(item, CaseInsensitiveDict):
-                try:
-                    self.add(**dict(item))
-                except TypeError:
-                    raise #RouteCompilationError('specified route is empty: %s' % item)
+                self.add(**dict(item))
 
             else:
                 self.add(**item)

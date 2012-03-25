@@ -110,7 +110,7 @@ Routes:
         self.assertEqual(len(router.urls['GET']), 1)
 
 
-    def it_should_not_parse_a_route_without_a_callable(self):
+    def it_should_not_parse_a_route_with_a_callable_but_no_route(self):
         config = StringIO('''
 Config:
   app_path: %s
