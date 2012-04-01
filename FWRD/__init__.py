@@ -1283,12 +1283,11 @@ class Request(threading.local):
         except:
             pass
 
-        self.parse_files()
-
         if len(self.environ['QUERY_STRING']):
             self.parse_qs()
 
         if self.method in ('POST', 'PUT'):
+            self.parse_files()
             self.parse_body()
 
         self.parse_cookies()
@@ -1310,6 +1309,7 @@ class Request(threading.local):
 
 
     def parse_files(self):
+        self.environ['wsgi.input'].seek(0)
         self.FILES = {}
         if self.environ.get('CONTENT_TYPE', '').lower()[:10] == 'multipart/':
             fp = self.environ['wsgi.input']
@@ -1339,6 +1339,7 @@ class Request(threading.local):
 
 
     def parse_body(self):
+        self.environ['wsgi.input'].seek(0)
         if self.environ.get('CONTENT_TYPE', '').lower()[:10] == 'multipart/':
             fp = self.environ['wsgi.input']
 
@@ -3148,7 +3149,8 @@ class ParameterContainer(collections.Mapping):
             "&".join('%s=%s' % (item.name,
                                 urllib.quote_plus(item.value))
                      for item
-                     in params.list)
+                     in params.list
+                     if not item.filename)
             )
 
 
