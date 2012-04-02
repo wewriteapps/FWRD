@@ -2024,7 +2024,8 @@ class XMLEncoder(object):
                     pass
 
 
-                elif isinstance(name, basestring) and name != '' and not name[0].isalpha():
+                elif isinstance(name, basestring) and name != '' and \
+                         (not name[0].isalpha() or ' ' in name):
                     child = etree.SubElement(node, u'node', name=unicode(name))
 
                 elif isinstance(name, basestring) and name != '':
