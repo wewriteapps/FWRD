@@ -285,6 +285,16 @@ class SeeOther(HTTPRedirection):
 
 
 
+class DirectResponseException(HTTPError):
+    """Jump-out of the usual flow and return the response from the callable as-is"""
+    code = 200
+    response = None
+
+    def __init__(self, response=None):
+        self.response = response
+
+
+
 class InternalRedirect(Exception):
     """Raise this object to call another"""
     def __init__(self, callable, args={}):
@@ -385,6 +395,7 @@ class Application(threading.local):
         '_request',
         '_response',
         '_middleware',
+        '_start_response'
         )
 
 
@@ -395,6 +406,7 @@ class Application(threading.local):
 
 
     def __call__(self, environ, start_response):
+        self._start_response = start_response
         self._request = Request(environ)
         log.debug('Received request object: %s' % self._request)
         format_ = self._request.path[1]
@@ -431,6 +443,7 @@ class Application(threading.local):
         self._config = Config()
         self._router = Router(())
         self._middleware = []
+        self._start_response = None
 
 
     def setup(self, config):
@@ -556,6 +569,15 @@ class Application(threading.local):
             headers = e.headers
             body = self._format_error(code, e)
 
+        except DirectResponseException as e:
+            headers = self._response.headers
+            self._response = ResponseFactory.new(
+                'passthru',
+                self._start_response,
+                self._request,
+                )
+            return self._response(e.response, code=code, additional_headers=headers)
+
         except Exception as e:
             traceback.print_exc(file=config.output)
             code = 500
@@ -567,6 +589,14 @@ class Application(threading.local):
         log.info("%s => %s" % (self._request, self._response))
 
         return response
+
+
+    @staticmethod
+    def passthru(func):
+        def wrapper(*args, **kwargs):
+            response = func(*args, **kwargs)
+            raise DirectResponseException(response)
+        return wrapper
 
 
     def register_middleware(self, middleware, opts={}):
@@ -1309,7 +1339,11 @@ class Request(threading.local):
 
 
     def parse_files(self):
-        self.environ['wsgi.input'].seek(0)
+        try:
+            self.environ['wsgi.input'].seek(0)
+        except:
+            pass
+
         self.FILES = {}
         if self.environ.get('CONTENT_TYPE', '').lower()[:10] == 'multipart/':
             fp = self.environ['wsgi.input']
@@ -1339,7 +1373,11 @@ class Request(threading.local):
 
 
     def parse_body(self):
-        self.environ['wsgi.input'].seek(0)
+        try:
+            self.environ['wsgi.input'].seek(0)
+        except:
+            pass
+
         if self.environ.get('CONTENT_TYPE', '').lower()[:10] == 'multipart/':
             fp = self.environ['wsgi.input']
 
@@ -1347,9 +1385,10 @@ class Request(threading.local):
             length = int(self.environ.get('CONTENT_LENGTH', 0) or 0)
             fp = StringIO(self.environ['wsgi.input'].read(length))
 
-        self.POST = ParameterContainer().parse_qs(cgi.FieldStorage(fp=fp,
-                                                                   environ=self.environ,
-                                                                   keep_blank_values=True))
+        self.POST = ParameterContainer().parse_qs(
+            cgi.FieldStorage(fp=fp,
+                             environ=self.environ,
+                             keep_blank_values=True))
 
 
     def parse_cookies(self):
@@ -1446,10 +1485,14 @@ class InvalidResponseTypeError(Exception):
     or when a formatter for the request doesn't exist"""
     pass
 
+
+
 class ResponseTranslationError(Exception):
     """Raised when there is an error while attempting to format
     the response"""
     pass
+
+
 
 class ResponseParameterError(Exception):
     """Raised when the formatter is missing a required parameter"""
@@ -1630,6 +1673,43 @@ class ResponseFactory(threading.local):
 # Default response formatters
 
 
+class DirectResponse(Response):
+    """Returns the response data exactly as-is"""
+
+    extensions = ('passthru',)
+    contenttype = 'application/octet-stream'
+
+    def format(self, data=None):
+        if not data and not self.responsebody:
+            return ''
+
+        if not data and self.responsebody:
+            return self.responsebody
+
+        return data
+
+
+
+class TextResponse(Response):
+    """Takes the response data and formats it into a text representation"""
+
+    extensions = ('txt', 'text')
+    contenttype = 'text/plain'
+
+    def format(self, data=None):
+        if not data and not self.responsebody:
+            return ''
+
+        if not data and self.responsebody:
+            data = self.responsebody
+
+        if isinstance(data, basestring):
+            return str(data)
+
+        raise ResponseTranslationError
+
+
+
 class TranslatedResponse(Response):
     """Takes the response data and formats it first into XML then passes it through an XSL translator"""
 
@@ -1699,23 +1779,6 @@ class TranslatedResponse(Response):
 
         return self._xsl
 
-class TextResponse(Response):
-    """Takes the response data and formats it into a text representation"""
-
-    extensions = ('txt', 'text')
-    contenttype = 'text/plain'
-
-    def format(self, data=None):
-        if not data and not self.responsebody:
-            return ''
-
-        if not data and self.responsebody:
-            data = self.responsebody
-
-        if isinstance(data, basestring):
-            return str(data)
-
-        raise ResponseTranslationError
 
 
 
