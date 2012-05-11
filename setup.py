@@ -12,4 +12,4 @@ setup(name="FWRD",
       packages=find_packages(exclude="specs"),
       install_requires=['lxml', 'simplejson', 'Beaker', 'PyYAML', 'resolver', 'ordereddict'],
       )
-      
+

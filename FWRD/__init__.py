@@ -5,7 +5,7 @@
     FWRD is a Python microframework designed to keep
     things simple for the developer.
 
-    :copyright: 2011 by Phillip B Oldham
+    :copyright: 2012 by Phillip B Oldham
     :licence: MIT, please see the licence file
 
 """
@@ -14,7 +14,6 @@ import cgi
 import cgitb
 import collections
 import copy
-import functools
 import inspect
 import logging
 import os
@@ -35,8 +34,6 @@ from resolver import resolve as resolve_import
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
 from xml.sax.saxutils import unescape as xml_unescape
-
-from __version__ import *
 
 from yaml import load as yaml_load, dump as yaml_dump, YAMLError
 
@@ -69,8 +66,11 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
-# Enable cgi exceptions
-cgitb.enable()
+# Import version info
+from __version__ import *
+
+# Enable better exceptions
+cgitb.enable(format='text', context=10)
 
 # Configure logging
 logging.basicConfig(format="[%(asctime)s - %(levelname)s]: %(message)s")
@@ -208,21 +208,30 @@ class NotFound(HTTPClientError):
     """Raise this object to return a ``404 Not Found`` HTTP error response to the client."""
 
     code = 404
-    def __init__(self, url=None, method='GET'):
+    url = None
+    method = None
+
+    def __init__(self, url=None, method=None):
         if url:
             self.url = url
         if method:
             self.method = method
 
-        self.message = str(self)
+        self.message = self.__repr__()
 
 
     def __repr__(self):
         if self.url:
-            message = 'routing failed when searching for "%s"' % self.url
-            if self.method:
-                message += ' using method %s' % self.method
-            return message
+            url = self.url
+        else:
+            url = request.path[0]
+
+        if self.method:
+            method = self.method
+        else:
+            method = request.method
+
+        return 'routing failed for "%s" using method %s' % (url, method)
 
 
     def __str__(self):

@@ -19,16 +19,29 @@ class NotFoundRequestSpec(WSGITestBase):
     def setUp(self):
         super(self.__class__, self).setUp()
 
-    def it_should_format_errors_correctly(self):
+    def it_should_format_routing_errors_correctly(self):
         self.assertStatus(404, '/unknown_path.xml')
         self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="__not_found__" request="/unknown_path" method="get">
-  <node name="__message__">routing failed when searching for "/unknown_path" using method GET</node>
+  <node name="__message__">routing failed for "/unknown_path" using method GET</node>
   <node name="__error__">404</node>
   <node name="__request_path__">/unknown_path.xml</node>
   <node name="__http_method__">GET</node>
 </response>
 ''', '/unknown_path.xml')
+
+    def it_should_format_raised_errors_correctly(self):
+        def raises(): raise NotFound()
+        self.app.router.add('/raises', raises)
+        self.assertStatus(404, '/raises.xml')
+        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/raises" request="/raises" method="get">
+  <node name="__message__">routing failed for "/raises" using method GET</node>
+  <node name="__error__">404</node>
+  <node name="__request_path__">/raises.xml</node>
+  <node name="__http_method__">GET</node>
+</response>
+''', '/raises.xml')
 
 
 
