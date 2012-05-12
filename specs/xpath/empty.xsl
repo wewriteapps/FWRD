@@ -27,18 +27,25 @@
 
 <xsl:variable name="a" />
 <xsl:variable name="b" select="''" />
+<xsl:variable name="c" select="'foo-bar-baz'" />
+<xsl:variable name="d" select="fwrd:string-to-fragment('&lt;foo&gt;&lt;bar /&gt;&lt;spam&gt;eggs&lt;/spam&gt;&lt;/foo&gt;')" />
 
 <xsl:template match="/">
+<xsl:variable name="e" select="." />
 <html lang="en">
+  <xsl:copy-of select="response/foo/i" />
   <head>
     <meta charset="utf-8" />
     <title>Empty Tests</title>
   </head>
   <body>
     <ul>
-      <li><xsl:if test="fwrd:isempty(.)">true</xsl:if></li>
+      <li><xsl:if test="fwrd:isempty(response)">true</xsl:if></li>
       <li><xsl:if test="fwrd:isempty($a)">true</xsl:if></li>
       <li><xsl:if test="fwrd:isempty($b)">true</xsl:if></li>
+      <li><xsl:if test="fwrd:isempty($c)">true</xsl:if></li>
+      <li><xsl:if test="fwrd:isempty($d)">true</xsl:if></li>
+      <li><xsl:if test="fwrd:isempty($e)">true</xsl:if></li>
       <li><xsl:if test="fwrd:isempty('')">true</xsl:if></li>
     </ul>
   </body>

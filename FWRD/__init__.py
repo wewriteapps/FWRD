@@ -2200,7 +2200,8 @@ class XSLTranslator(object):
     resolvers = []
 
 
-    def __init__(self, xml=None, stylesheet=None, path=None, extensions=[], params={}, resolvers=[]):
+    def __init__(self, xml=None, stylesheet=None, path=None,
+                 extensions=[], params={}, resolvers=[]):
         if path:
             self.path = path
 
@@ -2795,7 +2796,7 @@ class XPathFunctions(object):
         return self.timeformat(_, elements, outformat, informat)
 
 
-    def isempty(self, _, items):
+    def isempty(self, _, *args, **kwargs):
         """``fwrd:isempty(string|node|nodeset)``
 
         Returns ``true()`` if the element is an empty string, node, or nodeset, ``false()`` otherwise.
@@ -2806,6 +2807,8 @@ class XPathFunctions(object):
             <!-- output: true() -->
 
         """
+        print args#, items, args, kwargs
+        '''
         if not items:
             return True
 
@@ -2825,7 +2828,7 @@ class XPathFunctions(object):
 
         if isinstance(item, basestring) and str(item).strip() == '':
             return True
-
+        '''
         return False
 
 

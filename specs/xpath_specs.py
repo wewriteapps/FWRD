@@ -116,8 +116,9 @@ class XpathSpec(ResponseBaseSpec):
             None,
             self.request,
             stylesheet='xpath/empty.xsl'
-            ).format()
+            ).format({'foo':[{'a': '1', 'b': True, 'c': None}]})
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Empty Tests</title></head><body><ul><li>true</li><li>true</li><li>true</li><li>true</li></ul></body></html>')
+        self.fail()
 
     def it_should_return_a_range(self):
         response = ResponseFactory.new(
