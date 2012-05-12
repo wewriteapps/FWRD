@@ -2185,6 +2185,12 @@ class LocalFileResolver(etree.Resolver):
             return self.resolve_filename(self.path, url.replace('local:', ''))
 
 
+
+class XSLTranslationError(Exception):
+    """Exception raised for various XSL Translation errors"""
+    pass
+
+
 class XSLTranslator(object):
     extensions = []
     path = ''
@@ -2258,9 +2264,19 @@ class XSLTranslator(object):
 
         try:
             return transform.apply(self.xml)
+
         except etree.XSLTApplyError as e:
-            print e.error_log.filter_from_level(etree.ErrorLevels.FATAL)
-            raise e
+            message = 'The following errors were raised during translation:'
+
+            for msg in e.error_log.filter_from_warnings():
+                if not '<string>' in msg.filename:
+                    message += "\n  File \"%s\", line %s" % (msg.filename, msg.line)
+
+                message += "\n    %s %s: %s" % (msg.domain_name,
+                                              msg.level_name,
+                                              msg.message)
+
+            raise XSLTranslationError(message)
 
 
     def to_xml(self, xml=None, xsl=None):
@@ -2299,8 +2315,8 @@ class XSLTranslator(object):
 
             try:
                 self.xsl = etree.parse(xsl, parser)
-            except etree.XMLSyntaxError:
-                raise Exception('Stylesheet is invalid')
+            except etree.XMLSyntaxError as e:
+                raise XSLTranslationError('Stylesheet is invalid, %s' % e.message)
 
 
     def _get_xsl_parser(self):
@@ -2314,18 +2330,19 @@ class XSLTranslator(object):
 
     def _get_output_encoding(self):
         if not has_attr(self, '_encoding'):
+            self._encoding = None
+
             encoding = self.output_node.get('encoding')
+
             if encoding:
                 self._encoding = encoding
-            else:
-                self._encoding = None
 
         return self._encoding
 
 
-
     def _get_media_type(self):
-        if self.output_node.get('media-type'):
+        if hasattr(self.output_node, 'get') and \
+               self.output_node.get('media-type'):
             return self.output_node.get('media-type')
 
         if self.root_node is 'html':

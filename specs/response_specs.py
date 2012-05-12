@@ -10,7 +10,8 @@ FWRD_PATH = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1]
 if FWRD_PATH not in sys.path:
     sys.path.insert(1, FWRD_PATH)
 
-from FWRD import ResponseFactory, ResponseTranslationError, ResponseParameterError
+from FWRD import ResponseFactory, ResponseTranslationError, \
+     ResponseParameterError, XSLTranslationError
 
 class PlainObject(object):
     pass
@@ -45,43 +46,43 @@ class ResponseTypeSpec(unittest.TestCase):
         self.assertEqual(
             ResponseFactory.new('txt', None, None).__class__.__name__,
             'TextResponse'
-            )        
+            )
 
         self.assertEqual(
             ResponseFactory.new('text', None, None).__class__.__name__,
             'TextResponse'
-            )        
+            )
 
 
     def it_should_create_an_xml_response_obj(self):
         self.assertEqual(
             ResponseFactory.new('xml', None, None).__class__.__name__,
             'XMLResponse'
-            )        
+            )
 
- 
+
     def it_should_create_a_json_response_obj(self):
         self.assertEqual(
             ResponseFactory.new('json', None, None).__class__.__name__,
             'JSONResponse'
-            )        
+            )
 
 
     def it_should_create_a_translated_response_obj(self):
         self.assertEqual(
             ResponseFactory.new(None, None, None).__class__.__name__,
             'TranslatedResponse'
-            )        
+            )
 
         self.assertEqual(
             ResponseFactory.new('', None, None).__class__.__name__,
             'TranslatedResponse'
-            )        
+            )
 
         self.assertEqual(
             ResponseFactory.new('htm', None, None).__class__.__name__,
             'TranslatedResponse'
-            )        
+            )
 
         self.assertEqual(
             ResponseFactory.new('html', None, None).__class__.__name__,
@@ -152,7 +153,7 @@ class JsonResponseSpec(ResponseBaseSpec):
                 self.spam = (u'eggs', 'milk', {'bread': 2})
                 self.today = datetime.date(2002, 3, 11)
                 self.nothing = None
-                
+
         tests = (
             (Foo(), '{"__name__":"Foo","bar":false,"nothing":null,"spam":["eggs","milk",{"bread":2}],"today":"2002-03-11"}'),
             )
@@ -176,7 +177,7 @@ class JsonResponseSpec(ResponseBaseSpec):
                 self.spam = (u'eggs', 'milk', {'bread': 2})
                 self.today = datetime.date(2002, 3, 11)
                 self.nothing = None
-                
+
         tests = (
             (Foo(), '{"__name__":"Foo","bar":true,"baz":false,"nothing":null,"spam":["eggs","milk",{"bread":2}],"today":"2002-03-11"}'),
             )
@@ -191,12 +192,12 @@ class JsonResponseSpec(ResponseBaseSpec):
 
         self._format_each_should_equal(tests, 'application/json')
 
-    """
-    def it_should_raise_when_unable_to_format_objects(self):
-        self.fail('Not Implemented')
-    """
 
-    
+    def it_should_raise_when_unable_to_format_objects(self):
+        self.skipTest('Not yet implemented')
+
+
+
 class XmlResponseSpec(ResponseBaseSpec):
     """XML response spec"""
 
@@ -327,7 +328,7 @@ paragraph
         foo = PlainObject()
         foo.bar = 'baz'
         foo.nested = nesteddict
-        
+
         tests = (
             ((1,2,3), '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/" request="/" method="get" nodetype="fixed-list">
@@ -401,10 +402,10 @@ paragraph
 
         self._format_each_should_equal(tests, 'application/xml')
 
-    """
+
     def it_should_raise_when_unable_to_format_objects(self):
-        self.fail('Not Implemented')
-    """
+        self.skipTest('Not yet implemented')
+
 
 
 class TranslatedResponseSpec(ResponseBaseSpec):
@@ -443,7 +444,35 @@ class TranslatedResponseSpec(ResponseBaseSpec):
 
         self.assertRaises(ResponseParameterError,
                           self.response.format)
-        
+
+
+    def it_should_raise_when_unable_to_format_objects(self):
+        self.skipTest('Not yet implemented')
+
+
+    def it_should_raise_when_stylesheet_is_broken(self):
+        self.response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet='broken-stylesheet.xsl'
+            )
+
+        self.assertRaises(XSLTranslationError,
+                          self.response.format)
+
+
+    def it_should_raise_for_stylesheet_errors(self):
+        self.response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet='failing-stylesheet.xsl'
+            )
+
+        self.assertRaises(XSLTranslationError,
+                          self.response.format)
+
 
     def it_should_format_simple_objects(self):
         tests = (
@@ -452,7 +481,7 @@ class TranslatedResponseSpec(ResponseBaseSpec):
             )
 
         self._format_each_should_equal(tests, 'text/html')
-        
+
 
     def it_should_format_complex_objects(self):
         tests = (
@@ -463,11 +492,8 @@ class TranslatedResponseSpec(ResponseBaseSpec):
             )
 
         self._format_each_should_equal(tests, 'text/html')
-        
-    """
-    def it_should_raise_when_unable_to_format_objects(self):
-        self.fail('Not Implemented')
-    """
+
+
 
 class TranslatedWithVarsResponseSpec(ResponseBaseSpec):
     """Translated (XSL, with vars) response spec"""
@@ -493,7 +519,7 @@ class TranslatedWithVarsResponseSpec(ResponseBaseSpec):
             )
 
         self._format_each_should_equal(tests, 'text/html')
-        
+
 
     def it_should_format_complex_objects(self):
         tests = (
@@ -504,7 +530,7 @@ class TranslatedWithVarsResponseSpec(ResponseBaseSpec):
             )
 
         self._format_each_should_equal(tests, 'text/html')
-        
+
 class TranslatedWithImportsResponseSpec(ResponseBaseSpec):
     """Translated (XSL with imported stylesheets) response spec"""
 
@@ -529,7 +555,7 @@ class TranslatedWithImportsResponseSpec(ResponseBaseSpec):
             )
 
         self._format_each_should_equal(tests, 'text/html')
-        
+
 
     def it_should_format_complex_objects(self):
         tests = (
@@ -540,5 +566,5 @@ class TranslatedWithImportsResponseSpec(ResponseBaseSpec):
             )
 
         self._format_each_should_equal(tests, 'text/html')
-        
+
 

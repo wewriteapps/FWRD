@@ -1,0 +1,4 @@
+- Fixed bug when trying to obtain the output media-type from an XSL doc which doesn't have an <xsl:output /> node.
+- Added XSLTranslationError object for better reporting of XSL import/translation errors.
+- Added better error messages when importing malformed stylesheets.
+- Added better error messages when XSL translation fails.
