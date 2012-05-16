@@ -524,6 +524,8 @@ class Application(threading.local):
 
 
     def _update_global_filters_from_import(self, filters):
+        if not filters:
+            self._router.filters = []
         self._router.filters = filters
 
 
@@ -1071,6 +1073,12 @@ class Router(object):
 
 
     def _set_filters(self, filters):
+        self._global_filters = []
+        self._global_filters_imported = []
+
+        if not filters:
+            return
+
         self._global_filters = [dict(filter_) for filter_ in filters]
 
         for filter_ in filters:

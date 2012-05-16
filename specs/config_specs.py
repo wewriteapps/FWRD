@@ -156,6 +156,23 @@ Routes:
                           config)
 
 
+    def it_should_skip_empty_global_filters(self):
+
+        config = '''
+Config:
+  app_path: %s
+Global Filters:
+Routes:
+  - route: /[index]
+'''
+
+        application.setup(StringIO(config % os.path.dirname(os.path.abspath(__file__))))
+        self.assertEqual(
+            application.router._global_filters,
+            []
+            )
+
+
     def it_should_add_global_filters(self):
 
         config = '''
