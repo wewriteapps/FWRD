@@ -8,7 +8,7 @@ execfile('FWRD/__version__.py')
 setup(name="FWRD",
       description=open(os.path.join(os.path.dirname(__file__), 'README.rst')).read(),
       version=__version__,
-      url="http://github.com/digitala/FWRD",
+      url="http://github.com/unpluggd/FWRD",
       packages=find_packages(exclude="specs"),
       install_requires=['lxml', 'simplejson', 'Beaker', 'PyYAML', 'resolver', 'ordereddict'],
       )
