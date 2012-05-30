@@ -804,12 +804,13 @@ class Route(object):
             try:
                 self.callable = callable
                 self._callable = resolve(self.callable)
-            except ImportError:
+            except ImportError as e:
                 raise RouteCompilationError(
-                    'unable to import callable "%s", searching %s with sys.path [%s]' % (
+                    "import of `%s` failed: %s\n config is `%s`, sys.path is:\n  %s" % (
                         self.callable,
+                        e.message,
                         config.app_path,
-                        ", ".join(sys.path)
+                        "\n  ".join(sys.path),
                         )
                     )
 
@@ -2434,6 +2435,15 @@ class XPathFunctions(object):
 
 
     def params(self, _, method=''):
+        """``fwrd:params([method])``
+
+        Return an XML fragment containing request parameters.
+
+        ::
+
+            <xsl:variable name="$params" select="fwrd:params('POST')" />
+
+        """
         if method.upper() not in ('PATH','GET','POST','SESSION'):
             params = self._params['request'].params
         else:
@@ -2447,10 +2457,28 @@ class XPathFunctions(object):
 
 
     def session(self, _):
+        """``fwrd:session()``
+
+        Return an XML fragment containing session variables.
+
+        ::
+
+            <xsl:variable name="$session" select="fwrd:session()" />
+
+        """
         return XMLEncoder(dict(self._params['request'].session), doc_el='session').to_xml()
 
 
     def environ(self, _):
+        """``fwrd:environ()``
+
+        Return an XML fragment containing WSGI environment information.
+
+        ::
+
+            <xsl:variable name="$environment" select="fwrd:environ()" />
+
+        """
         return XMLEncoder(self._params['request'].environ, doc_el='environ').to_xml()
 
 
@@ -2461,7 +2489,7 @@ class XPathFunctions(object):
 
         ::
 
-            <xsl:value-of select"fwrd:abs('-1')" />
+            <xsl:value-of select="fwrd:abs('-1')" />
             <!-- output: 1 -->
 
         """
@@ -2492,7 +2520,7 @@ class XPathFunctions(object):
 
         ::
 
-            <xsl:value-of select"fwrd:ceil('2.65')" />
+            <xsl:value-of select="fwrd:ceil('2.65')" />
             <!-- output: 3 -->
 
         """
@@ -2523,7 +2551,7 @@ class XPathFunctions(object):
 
         ::
 
-            <xsl:value-of select"fwrd:floor('2.65')" />
+            <xsl:value-of select="fwrd:floor('2.65')" />
             <!-- output: 2 -->
 
         """
