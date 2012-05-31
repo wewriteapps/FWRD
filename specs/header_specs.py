@@ -1,7 +1,11 @@
 import os
 import re
 import sys
-import unittest
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 FWRD_PATH = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 
@@ -22,7 +26,7 @@ class HeaderSpec(unittest.TestCase):
             str(obj),
             'Content-Type: text/xml\r\n\r\n'
             )
-        
+
         obj = HeaderContainer(
             content_type='text/plain',
             pragma='no-cache',
@@ -33,7 +37,7 @@ class HeaderSpec(unittest.TestCase):
             str(obj),
             'Expires: Thu, 01 Dec 1994 16:00:00 GMT\r\nContent-Type: text/plain\r\nPragma: no-cache\r\n\r\n'
             )
-        
+
     def it_should_accept_headers(self):
         self.headers.add_header('content-type', 'text/xml')
 
@@ -53,7 +57,7 @@ class HeaderSpec(unittest.TestCase):
             str(self.headers),
             'Expires: Thu, 01 Dec 1994 16:00:00 GMT\r\nContent-Type: text/plain\r\nPragma: no-cache\r\n\r\n'
             )
-        
+
         del self.headers['expires']
 
         self.assertEqual(
@@ -62,11 +66,11 @@ class HeaderSpec(unittest.TestCase):
             )
 
         self.headers.drop('pragma')
- 
+
         self.assertEqual(
             str(self.headers),
             'Content-Type: text/plain\r\n\r\n'
-            )       
+            )
 
     def it_should_clear_all_headers(self):
         self.headers.add_header('content-type', 'text/xml')

@@ -3021,7 +3021,8 @@ class XPathFunctions(object):
                 />
             <!-- output: eggs -->
         """
-        pass
+        return etree.XML(string)
+
 
     def call_method(self, _, name, qs=None):
         """``fwrd:call-method(name, querystring)``

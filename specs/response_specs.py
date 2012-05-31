@@ -3,7 +3,11 @@ import datetime
 import os
 import re
 import sys
-import unittest
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 FWRD_PATH = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 

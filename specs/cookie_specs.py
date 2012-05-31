@@ -2,7 +2,11 @@ import os
 import re
 import sys
 import time
-import unittest
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 from datetime import datetime, timedelta
 
@@ -153,8 +157,13 @@ class ResponseCookieSpec(WSGITestBase):
             response.set_cookie('b', 2, max_age=max_age)
         self.app.router.add('/response_cookie_max_age_delta', request_cookie_max_age)
 
+        try:
+            total_seconds = max_age.total_seconds()
+        except AttributeError:
+            total_seconds = max_age.seconds + (max_age.days * 24 * 3600)
+
         self.assertHeader('Set-Cookie',
-                          'b=2; Max-Age=%d' % max_age.total_seconds(),
+                          'b=2; Max-Age=%d' % total_seconds,
                           route='/response_cookie_max_age_delta')
 
     def it_should_fail_for_none_as_max_age(self):

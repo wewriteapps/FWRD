@@ -2,13 +2,18 @@ import os
 import re
 import sys
 import threading
-import unittest
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+
 import wsgiref
 import wsgiref.util
 import wsgiref.validate
 
 try:
-    from cStringIO import StringIO 
+    from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
 
@@ -68,7 +73,7 @@ class WSGITestBase(unittest.TestCase, threading.local):
         result['code'] = int(result['code'])
 
         #print path, result
-        
+
         return result
 
     def make_multipart_request(self, path, method='POST', qs='', env={}, body=''):
@@ -99,7 +104,7 @@ class WSGITestBase(unittest.TestCase, threading.local):
             return self.make_multipart_request
 
         return self.make_request
-        
+
     def assertStatus(self, code, route='/', multipart=False, **kwargs):
         self.assertEqual(code, self.get_callable(multipart)(route, **kwargs)['code'])
 

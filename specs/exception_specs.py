@@ -1,7 +1,11 @@
 import os
 import re
 import sys
-import unittest
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 from http_spec import WSGITestBase
 
