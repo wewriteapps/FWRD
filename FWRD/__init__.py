@@ -2719,8 +2719,8 @@ class XPathFunctions(object):
 
         ::
 
-            <xsl:value-of select="fwrd:coalesce('','','','some text')" />
-            <!-- output: some text -->
+            <xsl:value-of select="fwrd:join(', ', $nodeset)" />
+            <!-- output: "a, b, c" -->
         """
         resp = []
 
