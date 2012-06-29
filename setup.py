@@ -10,6 +10,14 @@ setup(name="FWRD",
       version=__version__,
       url="http://github.com/unpluggd/FWRD",
       packages=find_packages(exclude="specs"),
-      install_requires=['lxml', 'simplejson', 'Beaker', 'PyYAML', 'resolver', 'ordereddict'],
+      install_requires=[
+          'lxml',
+          'simplejson',
+          'Beaker',
+          'PyYAML',
+          'resolver',
+          'ordereddict',
+          'PySO8601',
+          ],
       )
 

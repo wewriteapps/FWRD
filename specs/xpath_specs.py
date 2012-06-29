@@ -103,7 +103,7 @@ class XpathSpec(ResponseBaseSpec):
             self.request,
             stylesheet='xpath/date.xsl'
             ).format()
-        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format a Date</title></head><body>Jan 01, 2010</body></html>')
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format a Date</title></head><body><ul><li>Jan 01, 2010</li><li>Aug 21, 2000</li></ul></body></html>')
 
     def it_should_format_a_time(self):
         response = ResponseFactory.new(
@@ -112,7 +112,7 @@ class XpathSpec(ResponseBaseSpec):
             self.request,
             stylesheet='xpath/time.xsl'
             ).format()
-        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format a Time</title></head><body>Jan 01, 2010</body></html>')
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format a Time</title></head><body><ul><li>Jan 01, 2010</li><li>16:47:00 Jan 01, 2010</li><li>16:47:00</li></ul></body></html>')
 
     def it_should_recognise_empty_values(self):
         response = ResponseFactory.new(

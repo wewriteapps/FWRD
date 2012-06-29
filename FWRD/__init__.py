@@ -30,6 +30,7 @@ from Cookie import SimpleCookie
 from datetime import date, datetime, timedelta
 from lxml import etree
 from optparse import OptionParser
+from PySO8601 import parse_date, Timezone
 from resolver import resolve as resolve_import
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
@@ -2749,7 +2750,7 @@ class XPathFunctions(object):
         return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
-    def dateformat(self, _, elements, format):
+    def dateformat(self, _, elements, format, to_tz=None, from_tz=None):
         """``fwrd:dateformat(string|node|nodeset, output-format)``
 
         Accepts an ISO 8601 date formatted element and returns a string
@@ -2764,12 +2765,14 @@ class XPathFunctions(object):
         """
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
-                return self._unescape(unicode(datetime.strptime(elements.strip()[:10], '%Y-%m-%d').strftime(format)))
+                date_ = parse_date(elements)
+                return self._unescape(unicode(date_.strftime(format)))
 
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
-                newitem.text = self._unescape(unicode(datetime.strptime(newitem.text.strip()[:10], '%Y-%m-%d').strftime(format)))
+                date_ = parse_date(newitem.text)
+                newitem.text = self._unescape(unicode(date_.strftime(format)))
                 returned.append(newitem)
             return returned
 
@@ -2778,28 +2781,24 @@ class XPathFunctions(object):
         return elements
 
 
-    def format_date(self, _, elements, format):
+    def format_date(self, _, elements, format, to_tz=None, from_tz=None):
         """``fwrd:format-date(string|node|nodeset, output-format)``
 
         Alias of the ``fwrd:dateformat()`` function.
         """
-        return self.dateformat(_, elements, format)
+        return self.dateformat(_, elements, format, to_tz, from_tz)
 
 
-    def timeformat(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
-        """``fwrd:timeformat(string|node|nodeset, output-format, input-format)``
+    def timeformat(self, _, elements, outformat, to_tz=None, from_tz=None):
+        """``fwrd:timeformat(string|node|nodeset, output-format)``
 
-        Accepts a string which is parsed according to pattern ``input-format`` and
-        returns a string formatted according to the pattern ``output-format``.
+        Accepts a valid ISO8601 string and returns a string formatted according
+        to the pattern ``output-format``.
 
-        By default the pattern `input-format` is `%Y-%m-%dT%H:%M:%S`.
-
-        Both `input-format` and `output-format` follow the same rules as the
-        _Python Datetime module::
+        `output-format` follows the same rules as the _Python Datetime module::
 
             <xsl:value-of select="fwrd:timeformat('2012-12-21T00:00:00Z',
-                                                  '%Y-%m-%dT%H:%M:%SZ',
-                                                  '%A %B %d %H:%M:%S %p %Y')" />
+                                                  '%Y-%m-%dT%H:%M:%SZ')" />
             <!-- output: Friday December 21 00:00:00 AM 2012 -->
 
         .. _Python Datetime module: http://docs.python.org/library/datetime.html#strftime-strptime-behavior
@@ -2807,13 +2806,13 @@ class XPathFunctions(object):
         """
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
-                value = datetime.strptime(elements, informat)
+                value = parse_date(elements)
                 return self._unescape(unicode(value.strftime(outformat)))
 
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
-                value = datetime.strptime(newitem.text, informat)
+                value = parse_date(newitem.text)
                 newitem.text = self._unescape(unicode(value.strftime(outformat)))
                 returned.append(newitem)
             return returned
@@ -2823,12 +2822,12 @@ class XPathFunctions(object):
         return elements
 
 
-    def format_time(self, _, elements, outformat, informat='%Y-%m-%dT%H:%M:%S'):
-        """``fwrd:format-time(string|node|nodeset, output-format, input-format)``
+    def format_time(self, _, elements, outformat, to_tz=None, from_tz=None):
+        """``fwrd:format-time(string|node|nodeset, output-format)``
 
         Alias of the `fwrd:timeformat()` function.
         """
-        return self.timeformat(_, elements, outformat, informat)
+        return self.timeformat(_, elements, outformat, to_tz, from_tz)
 
 
     def isempty(self, _, items):
