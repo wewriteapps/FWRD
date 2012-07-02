@@ -36,6 +36,7 @@
       <li><xsl:value-of select="fwrd:timeformat('2010-01-01', '%b %d, %Y')" /></li>
       <li><xsl:value-of select="fwrd:timeformat('2010-01-01T16:47Z', '%H:%M:%S %b %d, %Y')" /></li>
       <li><xsl:value-of select="fwrd:timeformat('16:47', '%H:%M:%S')" /></li>
+      <li><xsl:value-of select="fwrd:timeformat('2010-01-01T16:47Z', '%H:%M:%S %b %d, %Y', 'Europe/Rome')" /></li>
     </ul>
   </body>
 </html>

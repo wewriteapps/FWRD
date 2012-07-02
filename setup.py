@@ -18,6 +18,7 @@ setup(name="FWRD",
           'resolver',
           'ordereddict',
           'PySO8601',
+          'pytz',
           ],
       )
 
