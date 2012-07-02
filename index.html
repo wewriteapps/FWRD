@@ -2,13 +2,16 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>FWRD – FrameWork, Re-Done &mdash; FWRD v0.2.1 documentation</title>
+    <title>FWRD – FrameWork, Re-Done &mdash; FWRD 0.2.1 documentation</title>
+    
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
@@ -21,7 +24,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="FWRD v0.2.1 documentation" href="#" /> 
+    <link rel="top" title="FWRD 0.2.1 documentation" href="#" /> 
   </head>
   <body>
     <div class="related">
@@ -33,7 +36,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="#">FWRD v0.2.1 documentation</a> &raquo;</li> 
+        <li><a href="#">FWRD 0.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -42,20 +45,18 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="highlight-python"><pre> _______ ________ ______ _____
-|    ___|  |  |  |   __ \     \
-|    ___|  |  |  |      &lt;  --  |
-|___|   |________|___|__|_____/</pre>
-</div>
-<div class="section" id="fwrd-framework-re-done">
+  <div class="section" id="fwrd-framework-re-done">
 <h1>FWRD &#8211; FrameWork, Re-Done<a class="headerlink" href="#fwrd-framework-re-done" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
 <h2>DESCRIPTION<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>FWRD is a microframework for Python which has been designed to
 &#8220;get out of the way&#8221; and simply provide enough to make an app
 accessible from the web.</p>
-<p>FWRD is still alpha software. Until it hits version
-1.0 the api is subject to massive change/overhaul.</p>
+<p>While FWRD has been used for production systems is still alpha
+software. Until it hits version 1.0 the api is subject to massive
+change/overhaul. Because of this we recommend that you use a
+recent stable tag for production use, only using the <tt class="docutils literal"><span class="pre">HEAD</span></tt> for
+evaluation and testing.</p>
 </div>
 <div class="section" id="features">
 <h2>FEATURES<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
@@ -64,7 +65,8 @@ accessible from the web.</p>
 <li>Simple routing with URL parameters, with support for advanced routing using regular expressions</li>
 <li>HTTP Method support for the &#8220;useful&#8221; (REST) methods: GET/POST/PUT/DELETE/HEAD</li>
 <li>Redirect support</li>
-<li>Automatic Response formatting: XSL-Translated output, XML, JSON (more to follow)</li>
+<li>Automatic Response formatting: XSL-Translated output, XML, JSON, with more to follow.</li>
+<li>Pluggable architecture: add your own response formatters, global and route-specific filters, WSGI modules</li>
 </ul>
 </div>
 <div class="section" id="things-we-haven-t-implemented">
@@ -75,10 +77,10 @@ accessible from the web.</p>
 libraries such as Jinja, Cheetah, Mako, etc. The default output format
 is XML passed through an XSL stylesheet. Helpful formatters are available
 so you can change the output to be JSON, YAML, etc. without any extra
-&#8220;work&#8221;; just let your method return it&#8217;s results and it will be converted
-to something useful.</p>
+&#8220;work&#8221;; just let your method return a standard Python type (dict, list, etc)
+and it will be converted to something the browser can use.</p>
 <p class="last">However, if you really need to use an alternative formatter you can do
-so by creating a &#8220;plugin&#8221; for the <tt class="docutils literal"><span class="pre">Response</span></tt>.</p>
+so by creating a plugin for the <tt class="docutils literal"><span class="pre">Response</span></tt>.</p>
 </dd>
 <dt>ORM</dt>
 <dd>We don&#8217;t feel that we should dictate what database you use, so we don&#8217;t
@@ -92,8 +94,8 @@ you wish.</dd>
 <p>The quickest installation route is as follows:</p>
 <blockquote>
 <div>pip install <a class="reference external" href="http://github.com/unpluggd/FWRD/tarball/master">http://github.com/unpluggd/FWRD/tarball/master</a></div></blockquote>
-<p>However, we recommend that you use buildout for all your applications:</p>
-<p><tt class="docutils literal"><span class="pre">buildout.cfg</span></tt> file:</p>
+<p>However, we recommend that you use <a class="reference external" href="http://www.buildout.org/">buildout</a> for all your applications:</p>
+<p><tt class="docutils literal"><span class="pre">./buildout.cfg</span></tt> file:</p>
 <div class="highlight-python"><pre>[buildout]
 parts = server
 ...
@@ -102,14 +104,8 @@ parts = server
 recipe = zc.recipe.egg
 entry-points = server=server:main</pre>
 </div>
-<p><tt class="docutils literal"><span class="pre">server.py</span></tt> file:</p>
+<p><tt class="docutils literal"><span class="pre">./server.py</span></tt> file:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">FWRD</span> <span class="kn">import</span> <span class="o">*</span>
-
-<span class="c"># tell the xsl formatter where to find files</span>
-<span class="n">config</span><span class="o">.</span><span class="n">format</span><span class="p">[</span><span class="s">&#39;xsl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-<span class="s">&#39;stylesheet_path&#39;</span><span class="p">:</span> <span class="s">&#39;xsl&#39;</span><span class="p">,</span>
-<span class="s">&#39;default_stylesheet&#39;</span><span class="p">:</span> <span class="s">&#39;default.xsl&#39;</span>
-<span class="p">}</span>
 
 <span class="n">application</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="s">&#39;webapp.cfg&#39;</span><span class="p">)</span>
 
@@ -117,11 +113,23 @@ entry-points = server=server:main</pre>
     <span class="n">application</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </pre></div>
 </div>
-<p><tt class="docutils literal"><span class="pre">webapp.cfg</span></tt> file:</p>
-<div class="highlight-python"><pre>Routes:
+<p><tt class="docutils literal"><span class="pre">./webapp.cfg</span></tt> file:</p>
+<div class="highlight-python"><pre>Config:
+  port: 8080
+  formats:
+    default: 'xsl'
+    xsl:
+      enabled: true
+      stylesheet: 'xsl/default.xsl'
+    xml:
+      enabled: true
+    json:
+      enabled: true
+
+Routes:
   - route: /[index]</pre>
 </div>
-<p><tt class="docutils literal"><span class="pre">xsl/default.xsl</span></tt> file:</p>
+<p><tt class="docutils literal"><span class="pre">./xsl/default.xsl</span></tt> file:</p>
 <div class="highlight-python"><pre>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;xsl:stylesheet
    version="1.0"
@@ -135,6 +143,12 @@ entry-points = server=server:main</pre>
    &lt;/xsl:template&gt;
 
  &lt;/xsl:stylesheet&gt;</pre>
+</div>
+<p>then from the command line:</p>
+<div class="highlight-python"><pre>$ wget http://svn.zope.org/repos/main/zc.buildout/trunk/bootstrap/bootstrap.py
+$ python ./bootstrap.py
+$ ./bin/buildout
+$ ./bin/server</pre>
 </div>
 </div>
 <div class="section" id="planned-features-to-do">
@@ -155,9 +169,9 @@ things simple for the developer.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">copyright:</th><td class="field-body">2011 by Phillip B Oldham</td>
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body">2012 by Phillip B Oldham</td>
 </tr>
-<tr class="field"><th class="field-name">licence:</th><td class="field-body">MIT, please see the licence file</td>
+<tr class="field-even field"><th class="field-name">licence:</th><td class="field-body">MIT, please see the licence file</td>
 </tr>
 </tbody>
 </table>
@@ -179,7 +193,7 @@ things simple for the developer.</p>
 
 <dl class="method">
 <dt id="FWRD.Application.run">
-<tt class="descname">run</tt><big>(</big><em>server_func=None</em>, <em>host=None</em>, <em>port=None</em>, <em>debug=False</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Application.run" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">run</tt><big>(</big><em>server_func=None</em>, <em>host=None</em>, <em>port=None</em>, <em>debug=False</em>, <em>config=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Application.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Start the WSGI server</p>
 </dd></dl>
 
@@ -230,9 +244,15 @@ things simple for the developer.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="FWRD.Request.cookies">
+<tt class="descname">cookies</tt><a class="headerlink" href="#FWRD.Request.cookies" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dict of cookie values</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="FWRD.Request.has_params">
 <tt class="descname">has_params</tt><a class="headerlink" href="#FWRD.Request.has_params" title="Permalink to this definition">¶</a></dt>
-<dd><p><tt class="xref docutils literal"><span class="pre">True</span></tt> if the current request has parameters, <tt class="xref docutils literal"><span class="pre">False</span></tt> otherwise</p>
+<dd><p><tt class="docutils literal"><span class="pre">True</span></tt> if the current request has parameters, <tt class="docutils literal"><span class="pre">False</span></tt> otherwise</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -264,7 +284,23 @@ things simple for the developer.</p>
 <dl class="class">
 <dt id="FWRD.Response">
 <em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">Response</tt><big>(</big><em>start_response</em>, <em>request</em>, <em>config={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Response" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="method">
+<dd><p>The base response/formatter class.</p>
+<p>This class contains all information required to format and return the
+HTTP response to the client. Formatter classes should extend this
+class</p>
+<dl class="method">
+<dt id="FWRD.Response.format">
+<tt class="descname">format</tt><big>(</big><em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.Response.format" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract method; subclasses use this to format the response</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.Response.set_cookie">
+<tt class="descname">set_cookie</tt><big>(</big><em>name</em>, <em>value</em>, <em>**options</em><big>)</big><a class="headerlink" href="#FWRD.Response.set_cookie" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a cookie to be returned to the client</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="FWRD.Response.set_error">
 <tt class="descname">set_error</tt><big>(</big><em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#FWRD.Response.set_error" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set an error message to be applied to the formatted response.</p>
@@ -275,29 +311,25 @@ things simple for the developer.</p>
 <dl class="class">
 <dt id="FWRD.TranslatedResponse">
 <em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">TranslatedResponse</tt><big>(</big><em>start_response</em>, <em>request</em>, <em>config={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.TranslatedResponse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes the response data and formats it first
-into XML then passes it through an XSL translator</p>
+<dd><p>Takes the response data and formats it first into XML then passes it through an XSL translator</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="FWRD.XMLResponse">
 <em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">XMLResponse</tt><big>(</big><em>start_response</em>, <em>request</em>, <em>config={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.XMLResponse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes the response data and converts it into
-a &#8220;generic&#8221; XML representation</p>
+<dd><p>Takes the response data and converts it into a &#8220;generic&#8221; XML representation</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="FWRD.JSONResponse">
 <em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">JSONResponse</tt><big>(</big><em>start_response</em>, <em>request</em>, <em>config={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.JSONResponse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes the response data and converts it into
-a &#8220;generic&#8221; JSON representation</p>
+<dd><p>Takes the response data and converts it into a &#8220;generic&#8221; JSON representation</p>
 </dd></dl>
 
 <dl class="class">
 <dt id="FWRD.TextResponse">
 <em class="property">class </em><tt class="descclassname">FWRD.</tt><tt class="descname">TextResponse</tt><big>(</big><em>start_response</em>, <em>request</em>, <em>config={}</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#FWRD.TextResponse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes the response data and formats it into
-a text representation</p>
+<dd><p>Takes the response data and formats it into a text representation</p>
 </dd></dl>
 
 <dl class="class">
@@ -321,8 +353,9 @@ stylesheet:</p>
 <tt class="descname">abs</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.abs" title="Permalink to this definition">¶</a></dt>
 <dd><p><tt class="docutils literal"><span class="pre">fwrd:abs(string|node|nodeset)</span></tt></p>
 <p>Return the absolute value of elements provided.</p>
-<div class="highlight-xslt"><pre>&lt;xsl:value-of select"fwrd:abs('-1')" /&gt;
-&lt;!-- output: 1 --&gt;</pre>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:abs(&#39;-1&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: 1 --&gt;</span>
+</pre></div>
 </div>
 </dd></dl>
 
@@ -351,8 +384,9 @@ config file.</p>
 <tt class="descname">ceil</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.ceil" title="Permalink to this definition">¶</a></dt>
 <dd><p><tt class="docutils literal"><span class="pre">fwrd:ceil(string|node|nodeset)</span></tt></p>
 <p>Return the ceiling of elements provided.</p>
-<div class="highlight-xslt"><pre>&lt;xsl:value-of select"fwrd:ceil('2.65')" /&gt;
-&lt;!-- output: 3 --&gt;</pre>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:ceil(&#39;2.65&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: 3 --&gt;</span>
+</pre></div>
 </div>
 </dd></dl>
 
@@ -369,15 +403,9 @@ config file.</p>
 
 <dl class="method">
 <dt id="FWRD.XPathFunctions.dateformat">
-<tt class="descname">dateformat</tt><big>(</big><em>_</em>, <em>elements</em>, <em>format</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.dateformat" title="Permalink to this definition">¶</a></dt>
-<dd><p><tt class="docutils literal"><span class="pre">fwrd:dateformat(string|node|nodeset,</span> <span class="pre">output-format)</span></tt></p>
-<p>Accepts an ISO 8601 date formatted element and returns a string
-formatted according to the pattern <tt class="docutils literal"><span class="pre">output-format</span></tt>, following
-the same rules as the _Python Datetime module:</p>
-<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:dateformat(&#39;2012-12-21T00:00:00Z&#39;, &#39;%A %B %d, %Y&#39;)&quot;</span> <span class="nt">/&gt;</span>
-<span class="c">&lt;!-- output: Friday December 21, 2012 --&gt;</span>
-</pre></div>
-</div>
+<tt class="descname">dateformat</tt><big>(</big><em>_</em>, <em>elements</em>, <em>format</em>, <em>to_tz=None</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.dateformat" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:dateformat(string|node|nodeset,</span> <span class="pre">output-format,</span> <span class="pre">to-timezone)</span></tt></p>
+<p>Alias of the <tt class="docutils literal"><span class="pre">fwrd:format-date()</span></tt> function.</p>
 </dd></dl>
 
 <dl class="method">
@@ -388,27 +416,48 @@ the same rules as the _Python Datetime module:</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="FWRD.XPathFunctions.environ">
+<tt class="descname">environ</tt><big>(</big><em>_</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.environ" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:environ()</span></tt></p>
+<p>Return an XML fragment containing WSGI environment information.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:variable</span> <span class="na">name=</span><span class="s">&quot;$environment&quot;</span> <span class="na">select=</span><span class="s">&quot;fwrd:environ()&quot;</span> <span class="nt">/&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
 <dt id="FWRD.XPathFunctions.floor">
 <tt class="descname">floor</tt><big>(</big><em>_</em>, <em>items</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.floor" title="Permalink to this definition">¶</a></dt>
 <dd><p><tt class="docutils literal"><span class="pre">fwrd:floor(string|node|nodeset)</span></tt></p>
 <p>Return the floor of elements provided.</p>
-<div class="highlight-xslt"><pre>&lt;xsl:value-of select"fwrd:floor('2.65')" /&gt;
-&lt;!-- output: 2 --&gt;</pre>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:floor(&#39;2.65&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: 2 --&gt;</span>
+</pre></div>
 </div>
 </dd></dl>
 
 <dl class="method">
 <dt id="FWRD.XPathFunctions.format_date">
-<tt class="descname">format_date</tt><big>(</big><em>_</em>, <em>elements</em>, <em>format</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.format_date" title="Permalink to this definition">¶</a></dt>
-<dd><p><tt class="docutils literal"><span class="pre">fwrd:format-date(string|node|nodeset,</span> <span class="pre">output-format)</span></tt></p>
-<p>Alias of the <tt class="docutils literal"><span class="pre">fwrd:dateformat()</span></tt> function.</p>
+<tt class="descname">format_date</tt><big>(</big><em>_</em>, <em>elements</em>, <em>format</em>, <em>to_tz=None</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.format_date" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:format-date(string|node|nodeset,</span> <span class="pre">output-format,</span> <span class="pre">to-timezone)</span></tt></p>
+<p>Accepts an <a class="reference external" href="http://en.wikipedia.org/wiki/ISO_8601">ISO8601</a> formatted element and returns a string
+formatted according to the pattern <tt class="docutils literal"><span class="pre">output-format</span></tt>, following
+the same rules as the _Python Datetime module:</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:format-date(&#39;2012-12-21T00:00:00Z&#39;, &#39;%A %B %d, %Y&#39;)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: Friday December 21, 2012 --&gt;</span>
+</pre></div>
+</div>
+<p>The timezone will be detected from the string/node if available,
+or set to UTC if not available. The <tt class="docutils literal"><span class="pre">to_tz</span></tt> argument accepts
+any valid timezone string, and will convert the date from the
+parsed timezone to the requested one.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="FWRD.XPathFunctions.format_time">
-<tt class="descname">format_time</tt><big>(</big><em>_</em>, <em>elements</em>, <em>outformat</em>, <em>informat='%Y-%m-%dT%H:%M:%S'</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.format_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>fwrd:format-time(string|node|nodeset, output-format, input-format)</p>
-<p>Alias of the <cite>fwrd:timeformat()</cite> function.</p>
+<tt class="descname">format_time</tt><big>(</big><em>_</em>, <em>elements</em>, <em>format</em>, <em>to_tz=None</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.format_time" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:format-time(string|node|nodeset,</span> <span class="pre">output-format,</span> <span class="pre">to-timezone)</span></tt></p>
+<p>Alias of the <cite>fwrd:format-date()</cite> function.</p>
 </dd></dl>
 
 <dl class="method">
@@ -428,8 +477,8 @@ the same rules as the _Python Datetime module:</p>
 <dd><p><tt class="docutils literal"><span class="pre">fwrd:join(separator,</span> <span class="pre">seq&lt;string|node|noteset&gt;)</span></tt></p>
 <p>Return a string which is the concatenation of the elements in the sequence <tt class="docutils literal"><span class="pre">seq</span></tt>
 separated by the string <tt class="docutils literal"><span class="pre">separator</span></tt>.</p>
-<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:coalesce(&#39;&#39;,&#39;&#39;,&#39;&#39;,&#39;some text&#39;)&quot;</span> <span class="nt">/&gt;</span>
-<span class="c">&lt;!-- output: some text --&gt;</span>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:join(&#39;, &#39;, $nodeset)&quot;</span> <span class="nt">/&gt;</span>
+<span class="c">&lt;!-- output: &quot;a, b, c&quot; --&gt;</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -441,6 +490,16 @@ separated by the string <tt class="docutils literal"><span class="pre">separator
 <p>Return a copy of the element converted to lowercase.</p>
 <div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:lower(&#39;SOME TEXT&#39;)&quot;</span> <span class="nt">/&gt;</span>
 <span class="c">&lt;!-- output: some text --&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.params">
+<tt class="descname">params</tt><big>(</big><em>_</em>, <em>method=''</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.params" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:params([method])</span></tt></p>
+<p>Return an XML fragment containing request parameters.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:variable</span> <span class="na">name=</span><span class="s">&quot;$params&quot;</span> <span class="na">select=</span><span class="s">&quot;fwrd:params(&#39;POST&#39;)&quot;</span> <span class="nt">/&gt;</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -472,6 +531,16 @@ that a <cite>start</cite> argument is required:</p>
 <div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:range-as-nodes(1,10,2)&quot;</span> <span class="nt">/&gt;</span>
 <span class="c">&lt;!-- output --&gt;</span>
 <span class="nt">&lt;items&gt;&lt;item&gt;</span>0<span class="nt">&lt;/item&gt;&lt;item&gt;</span>1<span class="nt">&lt;/item&gt;&lt;item&gt;</span>3<span class="nt">&lt;/item&gt;&lt;item&gt;</span>5<span class="nt">&lt;/item&gt;&lt;item&gt;</span>9<span class="nt">&lt;/item&gt;&lt;/items&gt;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="FWRD.XPathFunctions.session">
+<tt class="descname">session</tt><big>(</big><em>_</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.session" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:session()</span></tt></p>
+<p>Return an XML fragment containing session variables.</p>
+<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:variable</span> <span class="na">name=</span><span class="s">&quot;$session&quot;</span> <span class="na">select=</span><span class="s">&quot;fwrd:session()&quot;</span> <span class="nt">/&gt;</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -516,19 +585,9 @@ XML.</p>
 
 <dl class="method">
 <dt id="FWRD.XPathFunctions.timeformat">
-<tt class="descname">timeformat</tt><big>(</big><em>_</em>, <em>elements</em>, <em>outformat</em>, <em>informat='%Y-%m-%dT%H:%M:%S'</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.timeformat" title="Permalink to this definition">¶</a></dt>
-<dd><p><tt class="docutils literal"><span class="pre">fwrd:timeformat(string|node|nodeset,</span> <span class="pre">output-format,</span> <span class="pre">input-format)</span></tt></p>
-<p>Accepts a string which is parsed according to pattern <tt class="docutils literal"><span class="pre">input-format</span></tt> and
-returns a string formatted according to the pattern <tt class="docutils literal"><span class="pre">output-format</span></tt>.</p>
-<p>By default the pattern <cite>input-format</cite> is <cite>%Y-%m-%dT%H:%M:%S</cite>.</p>
-<p>Both <cite>input-format</cite> and <cite>output-format</cite> follow the same rules as the
-_Python Datetime module:</p>
-<div class="highlight-xslt"><div class="highlight"><pre><span class="k">&lt;xsl:value-of</span> <span class="na">select=</span><span class="s">&quot;fwrd:timeformat(&#39;2012-12-21T00:00:00Z&#39;,</span>
-<span class="s">                                      &#39;%Y-%m-%dT%H:%M:%SZ&#39;,</span>
-<span class="s">                                      &#39;%A %B %d %H:%M:%S %p %Y&#39;)&quot;</span> <span class="nt">/&gt;</span>
-<span class="c">&lt;!-- output: Friday December 21 00:00:00 AM 2012 --&gt;</span>
-</pre></div>
-</div>
+<tt class="descname">timeformat</tt><big>(</big><em>_</em>, <em>elements</em>, <em>format</em>, <em>to_tz=None</em><big>)</big><a class="headerlink" href="#FWRD.XPathFunctions.timeformat" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="docutils literal"><span class="pre">fwrd:timeformat(string|node|nodeset,</span> <span class="pre">output-format,</span> <span class="pre">to-timezone)</span></tt></p>
+<p>Alias of the <tt class="docutils literal"><span class="pre">fwrd:dateformat()</span></tt> function.</p>
 </dd></dl>
 
 <dl class="method">
@@ -619,7 +678,7 @@ time format (<tt class="docutils literal"><span class="pre">YYYYMMDDThhmmssZ</sp
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -642,12 +701,12 @@ time format (<tt class="docutils literal"><span class="pre">YYYYMMDDThhmmssZ</sp
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="#">FWRD v0.2.1 documentation</a> &raquo;</li> 
+        <li><a href="#">FWRD 0.2.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2011, Phillip B Oldham &lt;phillip.oldham@gmail.com&gt;.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
   </body>
 </html>
