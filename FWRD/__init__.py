@@ -309,6 +309,15 @@ class ConfigError(Exception):
     pass
 
 class Config(threading.local):
+    """The main config object.
+
+    Options include:
+    `host`: the host to use when setting-up the WSGI app
+    `port`: the port to use when setting-up the WSGI app
+    `log_level`: the logging level (default is WARNING)
+    `app_path`: the path for the app (configured automatically by default)
+    `formats`: the allowed output formats (default is XSL, with XML and JSON enabled)
+    """
     __slots__ = (
         'host',
         'port',
@@ -355,7 +364,7 @@ class Config(threading.local):
                 setattr(self, key.lower(), value)
 
             elif hasattr(self, key) and not hasattr(getattr(self, key), '__call__'):
-                # Item is a "property"
+                # Item is a "property"§
                 setattr(self, key.lower(), value)
 
 
