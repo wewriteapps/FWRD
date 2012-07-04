@@ -364,7 +364,7 @@ class Config(threading.local):
                 setattr(self, key.lower(), value)
 
             elif hasattr(self, key) and not hasattr(getattr(self, key), '__call__'):
-                # Item is a "property"§
+                # Item is a "property"
                 setattr(self, key.lower(), value)
 
 
