@@ -217,3 +217,16 @@ Routes:
 
     def it_should_print_the_config_for_debugging_correctly(self):
         self.skipTest('Not yet implemented')
+
+    def it_should_set_the_log_level_correctly(self):
+        config = '''
+Config:
+  app_path: %s
+  log_level: DEBUG
+'''
+
+        application.setup(StringIO(config % os.path.dirname(os.path.abspath(__file__))))
+        self.assertEqual(
+            application.config.log_level,
+            'DEBUG'
+            )

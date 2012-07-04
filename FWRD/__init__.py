@@ -31,7 +31,6 @@ import pytz
 from Cookie import SimpleCookie
 from datetime import date, datetime, timedelta
 from lxml import etree
-from optparse import OptionParser
 from PySO8601 import parse_date, Timezone
 from resolver import resolve as resolve_import
 from uuid import UUID
@@ -78,23 +77,6 @@ cgitb.enable(format='text', context=10)
 # Configure logging
 logging.basicConfig(format="[%(asctime)s - %(levelname)s]: %(message)s")
 log = logging.getLogger(__name__)
-
-parser = OptionParser()
-parser.add_option('-l', '--loglevel', dest='loglevel')
-(options, args) = parser.parse_args()
-
-if options.loglevel:
-    try:
-        numeric_level = getattr(logging, options.loglevel.upper(), None)
-        if not isinstance(numeric_level, int):
-            raise ValueError('Invalid log level: %s' % options.loglevel)
-        log.setLevel(numeric_level)
-    except ValueError as e:
-        raise e
-    except:
-        raise
-
-log.info('Logging level currently set to %s' % logging.getLevelName(log.getEffectiveLevel()))
 
 
 
@@ -333,12 +315,11 @@ class Config(threading.local):
         'output',
         'formats',
         '_app_path',
-        '_debug'
         )
 
 
     def __init__(self, **kwargs):
-        self.debug = False
+        self.log_level = 'WARNING'
         self.host = ''
         self.port = 8000
         self.output = sys.stdout
@@ -373,6 +354,10 @@ class Config(threading.local):
             if key.lower() in self.__slots__:
                 setattr(self, key.lower(), value)
 
+            elif hasattr(self, key) and not hasattr(getattr(self, key), '__call__'):
+                # Item is a "property"
+                setattr(self, key.lower(), value)
+
 
     def _set_app_path(self, val):
         self._app_path = val
@@ -396,7 +381,26 @@ class Config(threading.local):
         return bool(self._debug)
 
 
+    def _set_log_level(self, level):
+        try:
+            numeric_level = getattr(logging, level.upper(), None)
+            if not isinstance(numeric_level, int):
+                raise ValueError('Invalid log level: %s' % level)
+            log.setLevel(numeric_level)
+            log.info('Logging level currently set to %s' %
+                     logging.getLevelName(log.getEffectiveLevel()))
+        except ValueError as e:
+            raise e
+        except:
+            raise
+
+
+    def _get_log_level(self):
+        return logging.getLevelName(log.getEffectiveLevel())
+
+
     app_path = property(_get_app_path, _set_app_path)
+    log_level = property(_get_log_level, _set_log_level)
 
 
 
