@@ -1794,7 +1794,9 @@ class TranslatedResponse(Response):
             self.params['stylesheet_path'],
             self.params['stylesheet']
             )):
-            raise ResponseParameterError('the stylesheet could not be found')
+            raise ResponseParameterError('the stylesheet "%s/%s" could not be found' %
+                                         (self.params['stylesheet_path'],
+                                          self.params['stylesheet']))
 
         xslfile = os.path.join(
             self.params['stylesheet_path'],
