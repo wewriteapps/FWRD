@@ -2881,12 +2881,21 @@ class XPathFunctions(object):
 
     def _range(self, start, stop, step=1):
         r = start
-        while r < stop:
-            yield r
-            r += step
+
+        if start > stop and step > 0:
+            raise TypeError('range call will invoke infinite loop')
+
+        if stop > start:
+            while r < stop:
+                yield r
+                r += step
+        else:
+            while r > stop:
+                yield r
+                r += step
 
 
-    def range(self, _, start, stop, step=1):
+    def range(self, _, start, stop, step=1, as_floats=False):
         """``fwrd:range(start, stop[, step])``
 
         Returns a string of comma-separate integers starting from the integer ``start``,
@@ -2908,12 +2917,24 @@ class XPathFunctions(object):
            not isinstance(step, (int, float)):
             return False
 
-        type_ = type(step)
-
         try:
-            return u','.join((unicode(type_(i)) for i in self._range(start, stop, step)))
+            result = list(self._range(start, stop, step))
         except:
-            return u','.join((unicode(type_(i)) for i in self._range(start, stop)))
+            result = list(self._range(start, stop))
+
+        start_is_integer = isinstance(start, int) or start.is_integer()
+        step_is_integer = isinstance(step, int) or step.is_integer()
+
+        if not as_floats and \
+            start_is_integer and \
+            step_is_integer and \
+            all(i.is_integer() for i in result):
+            result = [int(i) for i in result]
+
+        else:
+            result = [float(i) for i in result]
+
+        return u','.join((unicode(i) for i in result))
 
 
     def range_as_nodes(self, _, start, stop, step=1):
@@ -2938,23 +2959,12 @@ class XPathFunctions(object):
            not isinstance(step, (int, float)):
             return False
 
-        type_ = type(step)
-
-        try:
-            return etree.XML(
-                '<items>' +
-                ''.join('<item>%s</item>' %
-                        unicode(type_(i)) for i in
-                        self._range(start, stop, step)) +
-                '</items>')
-
-        except:
-            return etree.XML(
-                '<items>' +
-                ''.join('<item>%s</item>' %
-                        unicode(type_(i)) for i in
-                        self._range(start, stop)) +
-                '</items>')
+        return etree.XML(
+            '<range>' +
+            ''.join('<i>%s</i>' %
+                    unicode(i) for i in
+                    self.range(_, start, stop, step).split(',')) +
+            '</range>')
 
 
     def str_replace(self, _, elements, search_, replace_):

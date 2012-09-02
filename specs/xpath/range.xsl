@@ -32,7 +32,11 @@
     <title>Range</title>
   </head>
   <body>
-    <xsl:value-of select="fwrd:range(0,5)" />
+    <ul>
+      <li><xsl:value-of select="fwrd:range(0,5)" /></li>
+      <li><xsl:value-of select="fwrd:range(0,11,2)" /></li>
+      <li><xsl:value-of select="fwrd:range(10,0,-1)" /></li>
+    </ul>
   </body>
 </html>
 </xsl:template>
