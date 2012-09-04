@@ -2752,6 +2752,19 @@ class XPathFunctions(object):
         return sep.join(resp)
 
 
+    def reverse(self, _, elements):
+        """``fwrd:join(seq<string|node|noteset>)``
+
+        Return a reversed copy of the item passed.
+
+        ::
+
+            <xsl:value-of select="fwrd:reverse('abc')" />
+            <!-- output: 'cba' -->
+        """
+        return elements[::-1]
+
+
     def utcnow(self, _, *args, **kwargs):
         """``fwrd:utcnow()``
 

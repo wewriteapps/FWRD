@@ -96,6 +96,15 @@ class XpathSpec(ResponseBaseSpec):
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Replace</title></head><body><p>this-is-a-test</p><p>-</p></body></html>')
 
+    def it_should_reverse_elements(self):
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet='xpath/reverse.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Reverse Elements</title></head><body><ul><li>edcba</li><li><i>a</i><i>b</i><i>c</i><i>d</i><i>e</i></li><li><i>e</i><i>d</i><i>c</i><i>b</i><i>a</i></li></ul></body></html>')
+
     def it_should_format_a_date(self):
         response = ResponseFactory.new(
             None,
@@ -176,6 +185,15 @@ class XpathSpec(ResponseBaseSpec):
             stylesheet='xpath/xml_entities.xsl'
             ).format()
         self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>XML Entities</title></head><body><input value="&gt;&amp;&lt;"/></body></html>')
+
+    def it_should_create_a_fragment(self):
+        response = ResponseFactory.new(
+            None,
+            None,
+            self.request,
+            stylesheet='xpath/xml_fragment.xsl'
+            ).format()
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Create a Fragment</title></head><body><ul><li><items><i>a</i><i>b</i><i>c</i><i>d</i><i>e</i></items></li></ul></body></html>')
 
     def it_should_call_a_method_successfully(self):
         response = ResponseFactory.new(
