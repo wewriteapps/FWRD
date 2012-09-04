@@ -2841,6 +2841,56 @@ class XPathFunctions(object):
         return self.format_date(_, elements, format, to_tz)
 
 
+    def datetime_from_timestamp(self, _, elements, to_tz=None):
+        """``fwrd:datetime-from-timestamp(string|node|nodeset, to-timezone)``
+
+        Returns an ISO8601_ formatted string from a timestamp::
+
+            <xsl:value-of select="fwrd:datetime-from-timestamp('1346789137')" />
+            <!-- output: 2012-09-04 21:05:37 -->
+
+        .. _ISO8601: http://en.wikipedia.org/wiki/ISO_8601
+        """
+        def _dt_from_ts(ts, to_tz=None):
+            dt = datetime.fromtimestamp(int(ts))
+            if to_tz:
+                try:
+                    dt = dt.astimezone(to_tz)
+                except ValueError:
+                    dt = dt.replace(tzinfo=pytz.UTC)
+                    dt = dt.astimezone(to_tz)
+            return dt.strftime('%Y-%m-%d %H:%M:%S%z')
+
+        try:
+            if to_tz:
+                to_tz = pytz.timezone(to_tz)
+        except pytz.UnknownTimeZoneError:
+            to_tz = None
+
+        try:
+            if isinstance(elements, basestring) and elements.strip() != '':
+                return self._unescape(unicode(_dt_from_ts(elements, to_tz)))
+
+            returned = []
+            for item in elements:
+                newitem = copy.deepcopy(item)
+                newitem.text = self._unescape(unicode(_dt_from_ts(elements, to_tz)))
+                returned.append(newitem)
+            return returned
+
+        except:
+            raise
+        return elements
+
+
+    def dt_from_ts(self, _, elements, to_tz=None):
+        """``fwrd:dt-from-ts(string|node|nodeset, to-timezone)``
+
+        Alias of the ``fwrd:datetime-from-timezone()`` function.
+        """
+        return self.datetime_from_timestamp(_, elements, to_tz)
+
+
     def isempty(self, _, items):
         """``fwrd:isempty(string|node|nodeset)``
 
