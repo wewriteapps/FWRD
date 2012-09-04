@@ -32,7 +32,7 @@
     <title>Float Range</title>
   </head>
   <body>
-    <xsl:value-of select="fwrd:range(0,5,1.0)" />
+    <xsl:value-of select="fwrd:range(0.5,5,1)" />
   </body>
 </html>
 </xsl:template>

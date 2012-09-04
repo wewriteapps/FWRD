@@ -2795,7 +2795,11 @@ class XPathFunctions(object):
             if isinstance(elements, basestring) and elements.strip() != '':
                 value = parse_date(elements)
                 if to_tz:
-                    value = value.astimezone(to_tz)
+                    try:
+                        value = value.astimezone(to_tz)
+                    except ValueError:
+                        value = value.replace(tzinfo=pytz.UTC)
+                        value = value.astimezone(to_tz)
                 return self._unescape(unicode(value.strftime(format)))
 
             returned = []

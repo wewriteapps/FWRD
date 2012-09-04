@@ -32,7 +32,7 @@
     <title>Float Range of Nodes</title>
   </head>
   <body>
-    <xsl:copy-of select="fwrd:range-as-nodes(0,5,1.0)" />
+    <xsl:copy-of select="fwrd:range-as-nodes(0.5,5,1)" />
   </body>
 </html>
 </xsl:template>
