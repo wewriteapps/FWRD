@@ -2804,24 +2804,24 @@ class XPathFunctions(object):
         except pytz.UnknownTimeZoneError:
             to_tz = None
 
+        def _format(item, format, to_tz=None):
+            value = parse_date(elements)
+            if to_tz:
+                try:
+                    value = value.astimezone(to_tz)
+                except ValueError:
+                    value = value.replace(tzinfo=pytz.UTC)
+                    value = value.astimezone(to_tz)
+            return value.strftime(format)
+
         try:
             if isinstance(elements, basestring) and elements.strip() != '':
-                value = parse_date(elements)
-                if to_tz:
-                    try:
-                        value = value.astimezone(to_tz)
-                    except ValueError:
-                        value = value.replace(tzinfo=pytz.UTC)
-                        value = value.astimezone(to_tz)
-                return self._unescape(unicode(value.strftime(format)))
+                return self._unescape(unicode(_format(elements, format, to_tz)))
 
             returned = []
             for item in elements:
                 newitem = copy.deepcopy(item)
-                value = parse_date(newitem.text)
-                if to_tz:
-                    value = value.astimezone(to_tz)
-                newitem.text = self._unescape(unicode(value.strftime(format)))
+                newitem.text = self._unescape(unicode(_format(newitem.text, format, to_tz)))
                 returned.append(newitem)
             return returned
 
