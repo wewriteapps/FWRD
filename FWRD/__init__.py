@@ -2805,7 +2805,7 @@ class XPathFunctions(object):
             to_tz = None
 
         def _format(item, format, to_tz=None):
-            value = parse_date(elements)
+            value = parse_date(item)
             if to_tz:
                 try:
                     value = value.astimezone(to_tz)

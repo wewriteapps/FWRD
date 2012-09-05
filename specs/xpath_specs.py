@@ -121,7 +121,7 @@ class XpathSpec(ResponseBaseSpec):
             self.request,
             stylesheet='xpath/time.xsl'
             ).format()
-        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format a Time</title></head><body><ul><li>Jan 01, 2010</li><li>16:47:00 Jan 01, 2010</li><li>16:47:00</li><li>17:47:00 Jan 01, 2010</li><li>19:00:00 Dec 31, 2009</li><li>19:00:00 Dec 31, 2009</li></ul></body></html>')
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format a Time</title></head><body><ul><li>Jan 01, 2010</li><li>16:47:00 Jan 01, 2010</li><li>16:47:00</li><li>17:47:00 Jan 01, 2010</li><li>19:00:00 Dec 31, 2009</li><li>19:00:00 Dec 31, 2009</li><li>Friday January  1, 2010 at 12:00AM</li></ul></body></html>')
 
     def it_should_get_a_datetime_from_a_timestamp(self):
         response = ResponseFactory.new(
