@@ -2749,7 +2749,7 @@ class XPathFunctions(object):
             else:
                 resp.append(unicode(item))
 
-        return sep.join(resp)
+        return sep.join(i for i in resp if i is not None)
 
 
     def reverse(self, _, elements):

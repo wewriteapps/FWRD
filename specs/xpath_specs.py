@@ -85,7 +85,7 @@ class XpathSpec(ResponseBaseSpec):
             self.request,
             stylesheet='xpath/join.xsl'
             ).format()
-        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Join</title></head><body>this-is-a-test</body></html>')
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Join</title></head><body><ul><li>this-is-a-test</li><li>1, 2</li></ul></body></html>')
 
     def it_should_replace_elements_in_a_string(self):
         response = ResponseFactory.new(

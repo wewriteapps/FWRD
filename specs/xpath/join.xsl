@@ -25,7 +25,8 @@
    doctype-public=""
    />
 
-<xsl:variable name="item" select="str:split('this is a test', ' ')" />
+<xsl:variable name="text" select="str:split('this is a test', ' ')" />
+<xsl:variable name="items" select="fwrd:string-to-fragment('&lt;items&gt;&lt;i&gt;1&lt;/i&gt;&lt;i&gt;2&lt;/i&gt;&lt;i/&gt;&lt;/items&gt;')/*" />
 
 <xsl:template match="/">
 <html lang="en">
@@ -34,7 +35,10 @@
     <title>Join</title>
   </head>
   <body>
-    <xsl:value-of select="fwrd:join('-', $item)" />
+    <ul>
+      <li><xsl:value-of select="fwrd:join('-', $text)" /></li>
+      <li><xsl:value-of select="fwrd:join(', ', $items)" /></li>
+    </ul>
   </body>
 </html>
 </xsl:template>
