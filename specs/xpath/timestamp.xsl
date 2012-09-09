@@ -33,8 +33,8 @@
   </head>
   <body>
     <ul>
-      <li><xsl:value-of select="fwrd:datetime-from-timestamp('1346789137')" /></li>
-      <li><xsl:value-of select="fwrd:dt-from-ts('1346789137')" /></li>
+      <li><xsl:value-of select="fwrd:datetime-from-timestamp('1346789137', 'Europe/London')" /></li>
+      <li><xsl:value-of select="fwrd:dt-from-ts('1346789137', 'Europe/London')" /></li>
       <li><xsl:value-of select="fwrd:datetime-from-timestamp('1346789137', 'America/New_York')" /></li>
     </ul>
   </body>

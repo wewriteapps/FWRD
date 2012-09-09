@@ -130,7 +130,7 @@ class XpathSpec(ResponseBaseSpec):
             self.request,
             stylesheet='xpath/timestamp.xsl'
             ).format()
-        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Datetime From Timestamp</title></head><body><ul><li>2012-09-04 21:05:37</li><li>2012-09-04 21:05:37</li><li>2012-09-04 17:05:37-0400</li></ul></body></html>')
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Datetime From Timestamp</title></head><body><ul><li>2012-09-04 22:05:37+0100</li><li>2012-09-04 22:05:37+0100</li><li>2012-09-04 17:05:37-0400</li></ul></body></html>')
 
     def it_should_recognise_empty_values(self):
         response = ResponseFactory.new(
