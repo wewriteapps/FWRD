@@ -239,7 +239,7 @@ class ResponseCookieSpec(WSGITestBase):
     def it_should_fail_for_invalid_values(self):
         class Foo(object):
             pass
-        
+
         def response_cookie_invalid_value():
             response.set_cookie('x', Foo())
 

@@ -12,6 +12,11 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+
 from http_spec import WSGITestBase
 
 FWRD_PATH = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
@@ -135,15 +140,34 @@ class GetRequestSpec(WSGITestBase):
                 'b': False
                 }
 
-        routes = (
-            # route, extension, func, body
-            ('/', '.xml', index, '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+        routes = []
+
+        # route, extension, func, xpath:value
+        routes.append(('/', '.xml', index, OrderedDict({
+            '/response/@route': '/',
+            '/response/@request': '/',
+            '/response/@method': 'get',
+            '/response/content': 'index',
+            })))
+        # expects a body in the following format
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/" request="/" method="get">
   <content>index</content>
   <errors/>
 </response>
-'''),
-            ('/foo', '.xml', foo, '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+'''
+        # route, extension, func, xpath:value
+        routes.append(('/foo', '.xml', foo, OrderedDict({
+            '/response/@route': '/foo',
+            '/response/@request': '/foo',
+            '/response/@method': 'get',
+            '/response/content/a/@nodetype': 'boolean',
+            '/response/content/b/@nodetype': 'boolean',
+            '/response/content/a': 'true',
+            '/response/content/b': 'false',
+            })))
+        # expects a body in the following format
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/foo" request="/foo" method="get">
   <content>
     <a nodetype="boolean">true</a>
@@ -151,14 +175,13 @@ class GetRequestSpec(WSGITestBase):
   </content>
   <errors/>
 </response>
-'''),
-            )
+'''
 
-        for route, ext, func, body in routes:
+        for route, ext, func, xpath in routes:
             self.app.router.add(route, func)
 
-        for route, ext, func, body in routes:
-            self.assertBody(body, route+ext)
+        for route, ext, func, xpath in routes:
+            self.assertXPath(xpath, route=route+ext)
 
     def it_should_format_whitespace_correctly(self):
 
@@ -171,9 +194,23 @@ With lots of whitespace
 
 """
 
-        routes = (
-            # route, extension, func, body
-            ('/bar', '.xml', bar, '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+        routes =[]
+
+        # route, extension, func, body
+        routes.append(('/bar', '.xml', bar, OrderedDict({
+            '/response/@route': '/bar',
+            '/response/@request': '/bar',
+            '/response/@method': 'get',
+            '/response/content': '''This is a long string
+
+With lots of whitespace
+
+    To show correct formatting
+
+'''
+            })))
+        # expects a body in the following format
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/bar" request="/bar" method="get">
   <content>This is a long string
 
@@ -184,14 +221,13 @@ With lots of whitespace
 </content>
   <errors/>
 </response>
-'''),
-            )
+'''
 
-        for route, ext, func, body in routes:
+        for route, ext, func, xpath in routes:
             self.app.router.add(route, func)
 
-        for route, ext, func, body in routes:
-            self.assertBody(body, route+ext)
+        for route, ext, func, xpath in routes:
+            self.assertXPath(xpath, route=route+ext)
 
 
     def it_should_ignore_additional_qs_args(self):
@@ -199,12 +235,20 @@ With lots of whitespace
         def foo(foo): pass
         self.app.router.add('/unexpected_params', foo)
         self.assertStatus(200, '/unexpected_params.xml', qs='foo=1&bar=2')
-        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+        # expects a body in the following format
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/unexpected_params" request="/unexpected_params" method="get">
   <content/>
   <errors/>
 </response>
-''', '/unexpected_params.xml', qs='foo=1&bar=2')
+'''
+        self.assertXPath({
+            '/response/@route': '/unexpected_params',
+            '/response/@request': '/unexpected_params',
+            '/response/@method': 'get',
+            '/response/content': None,
+            '/response/errors': None,
+            }, route='/unexpected_params.xml', qs='foo=1&bar=2')
 
 
 
@@ -222,7 +266,8 @@ Routes:
 
         self.assertTrue(self.app.setup(config) != False)
         self.assertStatus(200, '/index.xml')
-        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+        # expects a body in the following format
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/[index]" request="/index" method="get">
   <content nodetype="fixed-list">
     <i>hello world</i>
@@ -230,7 +275,16 @@ Routes:
   </content>
   <errors/>
 </response>
-''', '/index.xml')
+'''
+        self.assertXPath({
+            '/response/@route': '/[index]',
+            '/response/@request': '/index',
+            '/response/@method': 'get',
+            '/response/content/@nodetype': 'fixed-list',
+            '/response/content/i[1]': 'hello world',
+            '/response/content/i[2]': None,
+            '/response/errors': None,
+            }, route='/index.xml')
 
 
     def it_should_process_multiple_filters_successfully(self):
@@ -246,7 +300,8 @@ Routes:
 
         self.assertTrue(self.app.setup(config) != False)
         self.assertStatus(200, '/index.xml')
-        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+        # expects a body in the following format
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/[index]" request="/index" method="get">
   <content nodetype="fixed-list">
     <i>hello</i>
@@ -257,7 +312,19 @@ Routes:
   </content>
   <errors/>
 </response>
-''', '/index.xml')
+'''
+
+        self.assertXPath({
+            '/response/@route': '/[index]',
+            '/response/@request': '/index',
+            '/response/@method': 'get',
+            '/response/content/@nodetype': 'fixed-list',
+            '/response/content/i[1]': 'hello',
+            '/response/content/i[2]/@nodetype': 'fixed-list',
+            '/response/content/i[2]/i[1]': 'world',
+            '/response/content/i[2]/i[2]': None,
+            '/response/errors': None,
+            }, route='/index.xml')
 
 
     def it_should_process_global_filters_correctly(self):
@@ -274,7 +341,8 @@ Routes:
 
         self.assertTrue(self.app.setup(config) != False)
         self.assertStatus(200, '/index.xml')
-        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+        # expects a body in the following format
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/[index]" request="/index" method="get">
   <content nodetype="fixed-list">
     <i>hello</i>
@@ -285,7 +353,19 @@ Routes:
   </content>
   <errors/>
 </response>
-''', '/index.xml')
+'''
+
+        self.assertXPath({
+            '/response/@route': '/[index]',
+            '/response/@request': '/index',
+            '/response/@method': 'get',
+            '/response/content/@nodetype': 'fixed-list',
+            '/response/content/i[1]': 'hello',
+            '/response/content/i[2]/@nodetype': 'fixed-list',
+            '/response/content/i[2]/i[1]': 'world',
+            '/response/content/i[2]/i[2]': None,
+            '/response/errors': None,
+            }, route='/index.xml')
 
 
 

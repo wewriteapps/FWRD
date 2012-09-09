@@ -3,11 +3,19 @@ import datetime
 import os
 import re
 import sys
+import types
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
+
+from lxml import etree
 
 FWRD_PATH = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 
@@ -16,6 +24,8 @@ if FWRD_PATH not in sys.path:
 
 from FWRD import ResponseFactory, ResponseTranslationError, \
      ResponseParameterError, XSLTranslationError
+
+from util import assert_xpath
 
 class PlainObject(object):
     pass
@@ -42,6 +52,19 @@ class ResponseBaseSpec(unittest.TestCase):
 
             if contenttype:
                 self.assertEqual(self.response.headers['Content-Type'], contenttype)
+
+    def _format_each_xpath(self, items, ns=None, contenttype=None):
+        for test, expected, xpath in items:
+            received = self.response.format(test)
+            tree = etree.parse(StringIO(received))
+
+            for x, v in xpath.iteritems():
+                self._assert_xpath(tree, x, v, ns=ns)
+
+
+# Monkey-patch the assert_xpath function on to the base class
+#ResponseBaseSpec._assert_xpath = types.MethodType(assert_xpath, ResponseBaseSpec)
+ResponseBaseSpec._assert_xpath = assert_xpath
 
 
 class ResponseTypeSpec(unittest.TestCase):
@@ -214,18 +237,47 @@ class XmlResponseSpec(ResponseBaseSpec):
 
     def it_should_format_simple_objects(self):
         tests = (
-            (None, '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get"/>'),
-            ('test', '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get">test</response>'),
+            (None, '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/" request="/" method="get"/>''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 }),
+            ('test', '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/" request="/" method="get">test</response>''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response': 'test',
+                 }),
             )
 
-        self._format_each_should_equal(tests, 'application/xml')
+        #self._format_each_should_equal(tests, 'application/xml')
+        self._format_each_xpath(tests, contenttype='application/xml')
 
     def it_should_format_nested_unicode_dicts(self):
         tests = (
             ({u'foo': u'bar'},
-             '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get">\n  <foo>bar</foo>\n</response>\n'),
-            ({u'foo': {u'bar': u'baz'}}, '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get">\n  <foo>\n    <bar>baz</bar>\n  </foo>\n</response>\n'),
-            ({u'packages': [],
+             '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/" request="/" method="get">\n  <foo>bar</foo>\n</response>\n''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response/foo': 'bar',
+                 }),
+            ({u'foo': {u'bar': u'baz'}},
+             '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/" request="/" method="get">
+  <foo>
+    <bar>baz</bar>
+  </foo>
+</response>''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response/foo/bar': 'baz',
+                 }),
+            ({u'details': [],
               u'terms': None,
               u'description': {
                   u'short': u'sldf',
@@ -233,14 +285,14 @@ class XmlResponseSpec(ResponseBaseSpec):
                   },
               u'title': u'meh',
               u'expires': datetime.datetime(2010, 2, 1, 0, 0),
-              u'venues': [],
-              u'activity': None,
+              u'items': [],
+              u'name': None,
               u'_id': '4d2596f7fa5bd80e18000001',
               u'type': None
               },
              """<?xml version='1.0' encoding='UTF-8'?>
 <response route="/" request="/" method="get">
-  <activity/>
+  <name/>
   <expires nodetype="timestamp">2010-02-01T00:00:00</expires>
   <terms/>
   <description>
@@ -248,22 +300,49 @@ class XmlResponseSpec(ResponseBaseSpec):
     <long>skdjhfskjfdgn</long>
   </description>
   <title>meh</title>
-  <packages nodetype="list"/>
+  <details nodetype="list"/>
   <type/>
-  <venues nodetype="list"/>
+  <items nodetype="list"/>
   <node name="_id">4d2596f7fa5bd80e18000001</node>
 </response>
-"""),
+""", {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response/name': None,
+                 '/response/terms': None,
+                 '/response/type': None,
+                 '/response/expires': '2010-02-01T00:00:00',
+                 '/response/expires/@nodetype': 'timestamp',
+                 '/response/description/short': 'sldf',
+                 '/response/description/long': 'skdjhfskjfdgn',
+                 '/response/title': 'meh',
+                 '/response/node[@name="_id"]': '4d2596f7fa5bd80e18000001',
+                 '/response/details/@nodetype': 'list',
+                 '/response/details': None,
+                 '/response/items/@nodetype': 'list',
+                 '/response/items': None,
+                 }),
             )
 
-        self._format_each_should_equal(tests, 'application/xml')
+        #self._format_each_should_equal(tests, 'application/xml')
+        self._format_each_xpath(tests, contenttype='application/xml')
+
 
     def it_should_format_special_characters(self):
         tests = (
-            ('< & >', '<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/" request="/" method="get">&lt; &amp; &gt;</response>'),
+            ('< & >', '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+<response route="/" request="/" method="get">&lt; &amp; &gt;</response>''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response': '< & >',
+                 }),
             )
 
-        self._format_each_should_equal(tests, 'application/xml')
+        #self._format_each_should_equal(tests, 'application/xml')
+        self._format_each_xpath(tests, contenttype='application/xml')
+
 
     def it_should_format_newlines(self):
         tests = (
@@ -287,7 +366,22 @@ long
 
 paragraph
 
-</response>'''),
+</response>''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response': '''This
+
+is
+
+a
+
+long
+
+paragraph
+
+''',
+                 }),
             (('''This
 
 is
@@ -312,10 +406,28 @@ paragraph
 
 </i>
 </response>
-'''),
+''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response/i[1]': '''This
+
+is
+
+a''',
+                 '/response/i[2]': '''
+
+long
+
+paragraph
+
+''',
+                 }),
             )
 
-        self._format_each_should_equal(tests, 'application/xml')
+        #self._format_each_should_equal(tests, 'application/xml')
+        self._format_each_xpath(tests, contenttype='application/xml')
+
 
     def it_should_format_complex_objects(self):
 
@@ -340,7 +452,15 @@ paragraph
   <i>2</i>
   <i>3</i>
 </response>
-'''),
+''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response/@nodetype': 'fixed-list',
+                 '/response/i[1]': '1',
+                 '/response/i[2]': '2',
+                 '/response/i[3]': '3',
+                 }),
             (['foo','bar',True],
              '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/" request="/" method="get" nodetype="list">
@@ -348,7 +468,16 @@ paragraph
   <i>bar</i>
   <i nodetype="boolean">true</i>
 </response>
-'''),
+''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response/@nodetype': 'list',
+                 '/response/i[1]': 'foo',
+                 '/response/i[2]': 'bar',
+                 '/response/i[3]': 'true',
+                 '/response/i[3]/@nodetype': 'boolean',
+                 }),
             ((i for i in [1,2,3]),
              '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/" request="/" method="get" nodetype="generated-list">
@@ -356,7 +485,15 @@ paragraph
   <i>2</i>
   <i>3</i>
 </response>
-'''),
+''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response/@nodetype': 'generated-list',
+                 '/response/i[1]': '1',
+                 '/response/i[2]': '2',
+                 '/response/i[3]': '3',
+                 }),
             (nesteddict,
              '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/" request="/" method="get">
@@ -376,7 +513,16 @@ paragraph
   </foo>
   <bar nodetype="boolean">false</bar>
 </response>
-'''),
+''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response/baz/a/i[1]': '1',
+                 '/response/baz/c/@nodetype': 'uuid',
+                 '/response/baz/c': '{36980915-cd66-4547-9081-760ad0d77625}',
+                 '/response/foo/@nodetype': 'unique-list',
+                 '/response/foo/i[1]': '1',
+                 }),
             (foo,
              '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/" request="/" method="get">
@@ -401,10 +547,19 @@ paragraph
     </nested>
   </PlainObject>
 </response>
-'''),
+''', {
+                 '/response/@route': '/',
+                 '/response/@request': '/',
+                 '/response/@method': 'get',
+                 '/response/PlainObject/@nodetype': 'container',
+                 '/response/PlainObject/bar': 'baz',
+                 '/response/PlainObject/nested/baz/c': '{36980915-cd66-4547-9081-760ad0d77625}',
+                 '/response/PlainObject/nested/baz/b': '2002-03-11',
+                 }),
             )
 
-        self._format_each_should_equal(tests, 'application/xml')
+        #self._format_each_should_equal(tests, 'application/xml')
+        self._format_each_xpath(tests, contenttype='application/xml')
 
 
     def it_should_raise_when_unable_to_format_objects(self):

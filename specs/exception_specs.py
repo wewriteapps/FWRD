@@ -25,27 +25,45 @@ class NotFoundRequestSpec(WSGITestBase):
 
     def it_should_format_routing_errors_correctly(self):
         self.assertStatus(404, '/unknown_path.xml')
-        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="__not_found__" request="/unknown_path" method="get">
   <node name="__message__">routing failed for "/unknown_path" using method GET</node>
   <node name="__error__">404</node>
   <node name="__request_path__">/unknown_path.xml</node>
   <node name="__http_method__">GET</node>
 </response>
-''', '/unknown_path.xml')
+'''
+        self.assertXPath({
+            '/response/@route': '__not_found__',
+            '/response/@request': '/unknown_path',
+            '/response/node[@name="__message__"]': 'routing failed for "/unknown_path" using method GET',
+            '/response/node[@name="__error__"]': '404',
+            '/response/node[@name="__request_path__"]': '/unknown_path.xml',
+            '/response/node[@name="__http_method__"]': 'GET',
+            }, route='/unknown_path.xml')
+
 
     def it_should_format_raised_errors_correctly(self):
         def raises(): raise NotFound()
         self.app.router.add('/raises', raises)
         self.assertStatus(404, '/raises.xml')
-        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/raises" request="/raises" method="get">
   <node name="__message__">routing failed for "/raises" using method GET</node>
   <node name="__error__">404</node>
   <node name="__request_path__">/raises.xml</node>
   <node name="__http_method__">GET</node>
 </response>
-''', '/raises.xml')
+'''
+
+        self.assertXPath({
+            '/response/@route': '/raises',
+            '/response/@request': '/raises',
+            '/response/node[@name="__message__"]': 'routing failed for "/raises" using method GET',
+            '/response/node[@name="__error__"]': '404',
+            '/response/node[@name="__request_path__"]': '/raises.xml',
+            '/response/node[@name="__http_method__"]': 'GET',
+            }, route='/raises.xml')
 
 
 
@@ -62,21 +80,36 @@ class RedirectSpec(WSGITestBase):
         def bounce(): raise Redirect('/')
         self.app.router.add('/bounce', bounce)
         self.assertStatus(307, '/bounce.xml')
-        self.assertBody('<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/bounce" request="/bounce" method="get"/>', '/bounce.xml')
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/bounce" request="/bounce" method="get"/>'''
+
+        self.assertXPath({
+            '/response/@route': '/bounce',
+            '/response/@request': '/bounce',
+            }, route='/bounce.xml')
+
 
     def it_should_set_correct_SeeOther_headers(self):
         def bounce(): raise SeeOther('/')
         self.app.router.add('/seeother', bounce)
         self.assertStatus(303, '/seeother.xml')
-        self.assertBody('<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/seeother" request="/seeother" method="get"/>', '/seeother.xml')
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/seeother" request="/seeother" method="get"/>'''
+
+        self.assertXPath({
+            '/response/@route': '/seeother',
+            '/response/@request': '/seeother',
+            }, route='/seeother.xml')
+
 
     def it_should_set_correct_Moved_headers(self):
         def bounce(): raise Moved('/')
         self.app.router.add('/moved', bounce)
         self.assertStatus(301, '/moved.xml')
-        self.assertBody('<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/moved" request="/moved" method="get"/>', '/moved.xml')
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>\n<response route="/moved" request="/moved" method="get"/>'''
 
-
+        self.assertXPath({
+            '/response/@route': '/moved',
+            '/response/@request': '/moved',
+            }, route='/moved.xml')
 
 
 
@@ -97,21 +130,8 @@ class MethodArgsErrorSpec(WSGITestBase):
                           foo
                           )
 
-        """
-        self.app.config.debug = True
-        self.assertStatus(403, '/foo/bar/baz.xml', qs='foo=1')
-        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
-<response route="/index" request="/index" method="get">
-  <node name="__message__">method "foo" takes no arguments</node>
-  <node name="__error__">403</node>
-  <node name="__request_path__">/index.xml</node>
-  <node name="__http_method__">GET</node>
-</response>
-''', '/index.xml', qs='foo=bar')
 
-        """
 
-  
     def it_should_report_missing_args(self):
 
         def missing(missing, param): pass
@@ -121,26 +141,22 @@ class MethodArgsErrorSpec(WSGITestBase):
                           missing
                           )
 
-        """
-        self.assertStatus(403, '/missing.xml', qs='param=1')
-        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
-<response route="/missing_params" request="/missing_params" method="get">
-  <node name="__message__">method "missing" requires (foo, bar), missing (bar)</node>
-  <node name="__error__">403</node>
-  <node name="__request_path__">/missing_params.xml</node>
-  <node name="__http_method__">GET</node>
-</response>
-''', '/missing_params.xml', qs='foo=1')
-        """
 
     def it_should_allow_kwargs(self):
         def bar(foo, **kwargs): pass
         self.app.router.add('/additional_params', bar)
         self.assertStatus(200, '/additional_params.xml', qs='foo=1&bar=2')
-        self.assertBody('''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
+        '''<?xml version=\'1.0\' encoding=\'UTF-8\'?>
 <response route="/additional_params" request="/additional_params" method="get">
   <content/>
   <errors/>
 </response>
-''', '/additional_params.xml', qs='foo=1&bar=2')
+'''
+        self.assertXPath({
+            '/response/@route': '/additional_params',
+            '/response/@request': '/additional_params',
+            '/response/@method': 'get',
+            '/response/content': None,
+            '/response/errors': None,
+            }, route='/additional_params.xml', qs='foo=1&bar=2')
 

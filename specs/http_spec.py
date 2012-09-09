@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import threading
+import types
 
 try:
     import unittest2 as unittest
@@ -17,6 +18,8 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+from lxml import etree
+
 FWRD_PATH = '/'.join(os.path.dirname(os.path.abspath(__file__)).split('/')[0:-1])
 
 if FWRD_PATH not in sys.path:
@@ -24,11 +27,14 @@ if FWRD_PATH not in sys.path:
 
 from FWRD import *
 
+from util import assert_xpath
+
 class WSGITestBase(unittest.TestCase, threading.local):
 
     _status = re.compile(r'(\d+) (\w+)')
 
     def setUp(self):
+        self._assert_xpath = types.MethodType(assert_xpath, self)
         self.config = config
         self.app = application
         self.app.reset()
@@ -120,4 +126,17 @@ class WSGITestBase(unittest.TestCase, threading.local):
     def assertInHeader(self, name, value, route='/', multipart=False, **kwargs):
         headers = self.get_callable(multipart)(route, **kwargs)['headers']
         self.assert_(value in headers.get(name))
+
+    def assertXPath(self, xpath, value=None, ns=None, route='/', multipart=False, **kwargs):
+        tree = etree.parse(StringIO(self.get_callable(multipart)(route, **kwargs)['body']))
+
+        if not value and isinstance(xpath, dict):
+            for x, v in xpath.iteritems():
+                self._assert_xpath(tree, x, v, ns=ns)
+
+        elif value:
+            self._assert_xpath(tree, xpath, value, ns=ns)
+
+        else:
+            self.fail('XPath/Value not usable')
 

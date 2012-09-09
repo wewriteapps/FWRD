@@ -264,14 +264,12 @@ class XPathResponseSpec(WSGITestBase):
         self.assertEqual(result['body'], '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Format GET Params</title></head><body><params><foo>bar</foo></params></body></html>')
 
 
-    """
     def it_should_get_parameters(self):
-        pass
+        self.skipTest('Not yet implemented')
 
     def it_should_get_session(self):
-        pass
+        self.skipTest('Not yet implemented')
 
     def it_should_get_environ(self):
-        pass
-    """
-    
+        self.skipTest('Not yet implemented')
+

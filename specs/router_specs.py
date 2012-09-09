@@ -141,7 +141,7 @@ class RouterSpec(unittest.TestCase):
 
             self.assertEqual(item.route, match)
             self.assertEqual(item._callable, func)
-        
+
     def it_should_find_a_simple_route_with_optional_params(self):
 
         def a():pass
@@ -160,13 +160,13 @@ class RouterSpec(unittest.TestCase):
 
         self.assertEqual(item.route, '/[index]')
         self.assertEqual(item._callable, a)
-        
+
     def it_should_find_simple_parameters(self):
 
         def a(foo): pass
         def b(bar): pass
         def c(foo, bar): pass
-        
+
         routes = (
             ('/:foo', '/meh', {'foo': 'meh'}, 'GET', a),
             ('/foo/:bar', '/foo/meh', {'bar': 'meh'}, 'GET', b),
@@ -192,7 +192,7 @@ class RouterSpec(unittest.TestCase):
                           self.router.find,
                           'GET',
                           '/')
-        
+
 
     def _test_routes(self, routes):
         for route, test, params, method, func in routes:
@@ -205,13 +205,13 @@ class RouterSpec(unittest.TestCase):
             self.assertEqual(item.route, route)
             self.assertEqual(item._callable, func)
             self.assertEqual(params_, params)
-            
+
     def _patterns_should_equal(self, patterns):
         for route, result in patterns:
             pattern, regex = Route._compile_regex(route)
             self.assertEqual(type(pattern), re._pattern_type)
             self.assertEqual(regex, result)
-            
+
     def _patterns_should_raise(self, patterns, exception=Exception):
         for route in patterns:
             self.assertRaises(exception,
