@@ -30,6 +30,7 @@ import pytz
 
 from Cookie import SimpleCookie
 from datetime import date, datetime, timedelta
+from functools import wraps
 from exemelopy import XMLEncoder
 from lxml import etree
 from PySO8601 import parse_date, Timezone
@@ -284,9 +285,11 @@ class DirectResponseException(HTTPError):
     """Jump-out of the usual flow and return the response from the callable as-is"""
     code = 200
     response = None
+    contenttype = None
 
-    def __init__(self, response=None):
+    def __init__(self, response=None, contenttype=None):
         self.response = response
+        self.contenttype = contenttype
 
 
 
@@ -600,7 +603,7 @@ class Application(threading.local):
         except DirectResponseException as e:
             headers = self._response.headers
             self._response = ResponseFactory.new(
-                'passthru',
+                'direct',
                 self._start_response,
                 self._request,
                 )
@@ -1613,6 +1616,11 @@ class Response(threading.local):
         return "%d %s" % (self._code, HTTP_STATUS_CODES[self._code])
 
 
+    def format(self, *args, **kwargs):
+        """Abstract method; subclasses use this to format the response"""
+        raise NotImplementedError()
+
+
     def set_error(self, name, value):
         """Set an error message to be applied to the formatted response."""
         self.errors[name] = value
@@ -1682,9 +1690,13 @@ class Response(threading.local):
             })
         self.set_cookie(name, '', **options)
 
-    def format(self, *args, **kwargs):
-        """Abstract method; subclasses use this to format the response"""
-        raise NotImplementedError()
+
+    @staticmethod
+    def direct(func):
+        def wrapper(*args, **kwargs):
+            response = func(*args, **kwargs)
+            raise DirectResponseException(response)
+        return wrapper
 
 
     code = property(_get_code, _set_code)
@@ -1711,7 +1723,7 @@ class ResponseFactory(threading.local):
 class DirectResponse(Response):
     """Returns the response data exactly as-is"""
 
-    extensions = ('passthru',)
+    extensions = ('direct',)
     contenttype = 'application/octet-stream'
 
     def format(self, data=None):
