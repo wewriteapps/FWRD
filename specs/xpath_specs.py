@@ -156,12 +156,7 @@ class XpathSpec(ResponseBaseSpec):
         ts.append(dt.strftime('%Y-%m-%d %H:%M:%S%z'))
         ts.append(dt.strftime('%Y-%m-%d %H:%M:%S%z'))
 
-        dt = dt - timedelta(hours=4)
-        ts.append(dt.strftime('%Y-%m-%d %H:%M:%S%z'))
-
-        print ts
-
-        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Datetime From Timestamp</title></head><body><ul><li>%s</li><li>%s</li><li>%s</li></ul></body></html>' % tuple(ts))
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Datetime From Timestamp</title></head><body><ul><li>%s</li><li>%s</li></ul></body></html>' % tuple(ts))
 
     def it_should_recognise_empty_values(self):
         response = ResponseFactory.new(
