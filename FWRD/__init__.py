@@ -1693,6 +1693,9 @@ class Response(threading.local):
 
     @staticmethod
     def direct(func):
+        """Decorator for sending direct responses
+
+        Issue a response to the client bypassing all formatting"""
         def wrapper(*args, **kwargs):
             response = func(*args, **kwargs)
             raise DirectResponseException(response)

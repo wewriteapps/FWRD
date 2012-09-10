@@ -727,3 +727,13 @@ class TranslatedWithImportsResponseSpec(ResponseBaseSpec):
         self._format_each_should_equal(tests, 'text/html')
 
 
+class DirectResponseSpec(ResponseBaseSpec):
+    def setUp(self):
+        self.response = ResponseFactory.new('direct', None, None)
+
+    def it_should_format_simple_responses(self):
+        tests = (
+            ('This is a response', 'This is a response'),
+            )
+
+        self._format_each_should_equal(tests)
