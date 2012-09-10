@@ -11,6 +11,7 @@ setup(name="FWRD",
       url="http://github.com/unpluggd/FWRD",
       packages=find_packages(exclude="specs"),
       install_requires=[
+          'exemelopy',
           'lxml',
           'simplejson',
           'Beaker',
