@@ -2,6 +2,8 @@ import os
 import re
 import sys
 
+from datetime import datetime, timedelta, tzinfo
+
 try:
     import unittest2 as unittest
 except ImportError:
@@ -15,6 +17,20 @@ if FWRD_PATH not in sys.path:
 from FWRD import ResponseFactory, XPathFunctions
 from response_specs import ResponseBaseSpec, PlainObject, ComplexObject
 from http_spec import WSGITestBase
+
+ZERO = timedelta(0)
+
+class UTC(tzinfo):
+    """UTC"""
+
+    def utcoffset(self, dt):
+        return ZERO
+
+    def tzname(self, dt):
+        return "UTC"
+
+    def dst(self, dt):
+        return ZERO
 
 class XpathSpec(ResponseBaseSpec):
     """XPath Spec"""
@@ -130,7 +146,17 @@ class XpathSpec(ResponseBaseSpec):
             self.request,
             stylesheet='xpath/timestamp.xsl'
             ).format()
-        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Datetime From Timestamp</title></head><body><ul><li>2012-09-04 22:05:37+0100</li><li>2012-09-04 22:05:37+0100</li><li>2012-09-04 17:05:37-0400</li></ul></body></html>')
+
+
+
+        dt = datetime.utcnow()
+        dt = dt.fromtimestamp(1346789137)
+        dt = dt.replace(tzinfo=UTC())
+        ts = []
+        ts.append(dt.strftime('%Y-%m-%d %H:%M:%S%z'))
+        ts.append(dt.strftime('%Y-%m-%d %H:%M:%S%z'))
+
+        self.assertEqual(response, '<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"/><title>Datetime From Timestamp</title></head><body><ul><li>%s</li><li>%s</li></ul></body></html>' % tuple(ts))
 
     def it_should_recognise_empty_values(self):
         response = ResponseFactory.new(
