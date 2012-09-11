@@ -37,6 +37,7 @@ from PySO8601 import parse_date, Timezone
 from resolver import resolve as resolve_import
 from uuid import UUID
 from wsgiref.headers import Headers as WSGIHeaderObject
+from wsgiref.util import FileWrapper as WSGIFileWrapper
 from xml.sax.saxutils import unescape as xml_unescape
 
 from yaml import load as yaml_load, dump as yaml_dump, YAMLError
@@ -102,6 +103,9 @@ __all__ = (
     # Config exceptions
     'ConfigError',
     'RouteCompilationError',
+
+    # Helper objects
+    'FileWrapper',
     )
 
 # Global variables
@@ -280,9 +284,20 @@ class SeeOther(HTTPRedirection):
     code = 303
 
 
-
+# Custom HTTP Exceptions
 class DirectResponseException(HTTPError):
     """Jump-out of the usual flow and return the response from the callable as-is"""
+    code = 200
+    response = None
+    contenttype = None
+
+    def __init__(self, response=None, contenttype=None):
+        self.response = response
+        self.contenttype = contenttype
+
+
+class FileResponseException(HTTPError):
+    """Jump-out of the usual flow and stream the response as a file"""
     code = 200
     response = None
     contenttype = None
@@ -304,6 +319,17 @@ class InternalRedirect(Exception):
             raise Exception('`callable` is not a callable')
         self.args = args
 
+
+
+# Helper objects
+
+class FileWrapper(WSGIFileWrapper):
+    contenttype = 'application/octet-stream'
+    def __init__(self, filelike, blksize=8192, contenttype=None):
+        if contenttype:
+            self.contenttype = contenttype
+
+        super(FileWrapper, self).__init__(filelike, blksize)
 
 
 
@@ -604,6 +630,15 @@ class Application(threading.local):
             headers = self._response.headers
             self._response = ResponseFactory.new(
                 'direct',
+                self._start_response,
+                self._request,
+                )
+            return self._response(e.response, code=code, additional_headers=headers)
+
+        except FileResponseException as e:
+            headers = self._response.headers
+            self._response = ResponseFactory.new(
+                'file',
                 self._start_response,
                 self._request,
                 )
@@ -1702,6 +1737,17 @@ class Response(threading.local):
         return wrapper
 
 
+    @staticmethod
+    def stream(func):
+        """Decorator for streaming files
+
+        Stream a file to the client directly, bypassing all formatting"""
+
+        def wrapper(*args, **kwargs):
+            response = func(*args, **kwargs)
+            raise FileResponseException(response)
+
+
     code = property(_get_code, _set_code)
 
 
@@ -1737,6 +1783,24 @@ class DirectResponse(Response):
             return self.responsebody
 
         return data
+
+
+
+class FileResponse(Response):
+    """Returns a file chunk by chunk"""
+
+    extensions = ('file',)
+    contenttype = 'application/octet-stream'
+
+    def format(self, data=None, contenttype=None, chunk_size=8192):
+        try:
+            f = open(data, 'rb')
+            while 1:
+                chunk = f.read(chunk_size)
+                if not chunk: break
+                yield chunk
+        except Exception as e:
+            raise ResponseTranslationError(e)
 
 
 
