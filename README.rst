@@ -1,6 +1,8 @@
 FWRD -- FrameWork, Re-Done
 ==========================
 
+|travis_status|_
+
 DESCRIPTION
 -----------
 
@@ -125,3 +127,5 @@ Please see the TODO_ document.
 
 .. _TODO: //github.com/unpluggd/FWRD/blob/master/TODO.rst
 .. _buildout: http://www.buildout.org/
+.. |travis_status| image:: https://secure.travis-ci.org/unpluggd/FWRD.png
+.. _travis_status: https://secure.travis-ci.org/unpluggd/FWRD
