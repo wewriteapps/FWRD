@@ -74,10 +74,10 @@ class ParameterContainerSpec(unittest.TestCase):
 
     def it_should_parse_sequenced_params_correctly(self):
         tests = {
-            #'a[]=1': {'a': {'_': 1}},
-            #'a[]=1&a[]=2': {'a': {'_': [1,2]}},
+            'a[]=1': {'a': [1]},
+            'a[]=1&a[]=2': {'a': [1,2]},
             'a[]=1&a=2&a=3': {'a': [1,2,3]},
-            #'a=1&a=2&a=3': {'a': {'_': [1,2,3]}},
+            'a=1&a=2&a=3': {'a': [1,2,3]},
             }
 
         self._test_items(tests)

@@ -3112,12 +3112,15 @@ class ParameterContainer(collections.Mapping):
 
 
     def parse_qs(self, qs):
+        print qs
         if isinstance(qs, basestring):
             qs = self._parse_string(qs)
+
         elif isinstance(qs, cgi.FieldStorage):
             qs = self._parse_fieldstorage(qs)
 
         for key, value in qs:
+            print key, value
             self._nest_params(self._clean_key(key),
                               value,
                               self._params)
@@ -3128,6 +3131,7 @@ class ParameterContainer(collections.Mapping):
 
 
     def _parse_string(self, qs):
+        return parse_qsl(qs, True)
         return parse_qsl(self._clean_qs(qs), True)
 
 
@@ -3193,12 +3197,6 @@ class ParameterContainer(collections.Mapping):
             if isinstance(value, dict):
                 params[key] = self._clean_values(value)
 
-            elif isinstance(value, list):
-                if len(value) > 1:
-                    params[key] = self._update_type(value)
-                elif len(value) == 1:
-                    params[key] = self._update_type(value[0])
-
             else:
                 params[key] = self._update_type(value)
 
@@ -3246,4 +3244,3 @@ def filebuffer(file_, chunk_size=10000):
         if not chunk:
             break
         yield chunk
-
