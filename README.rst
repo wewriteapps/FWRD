@@ -56,7 +56,7 @@ INSTALLATION & USAGE
 
 The quickest installation route is as follows:
 
-    pip install http://github.com/unpluggd/FWRD/tarball/master
+    pip install http://github.com/wewriteapps/FWRD/tarball/master
 
 However, we recommend that you use buildout_ for all your applications:
 
@@ -125,7 +125,7 @@ PLANNED FEATURES / TO DO
 
 Please see the TODO_ document.
 
-.. _TODO: //github.com/unpluggd/FWRD/blob/master/TODO.rst
+.. _TODO: //github.com/wewriteapps/FWRD/blob/master/TODO.rst
 .. _buildout: http://www.buildout.org/
-.. |travis_status| image:: https://secure.travis-ci.org/unpluggd/FWRD.png
-.. _travis_status: https://secure.travis-ci.org/unpluggd/FWRD
+.. |travis_status| image:: https://secure.travis-ci.org/wewriteapps/FWRD.png
+.. _travis_status: https://secure.travis-ci.org/wewriteapps/FWRD

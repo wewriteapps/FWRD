@@ -3,8 +3,6 @@ To Do
 
 - Modularise
 
-  - Move the XMLEncoder method into it's own project (`exemelopy`_)
-
   - Move the XPath functions into a new python module
 
 - v0.2.*:
@@ -142,4 +140,3 @@ Keep a log of the last request's (or last few requests'?) information (request, 
 .. _XSRF: http://en.wikipedia.org/wiki/Cross-site_request_forgery
 .. _Modernizr: http://modernizr.com
 .. _generator: http://codedstructure.blogspot.com/2010/12/http-streaming-from-python-generators.html
-.. _exemelopy: http://github.com/unpluggd/exemelopy
