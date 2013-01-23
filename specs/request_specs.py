@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import urllib
 
 try:
     import unittest2 as unittest
@@ -411,12 +412,24 @@ class PostRequestSpec(WSGITestBase):
 
         self.assertEqual(self.app.request['POST'], params)
 
+
     def it_should_unquote_params_correctly(self):
         self.app.router.add('/', None, methods='POST')
         self.make_request('/', method='POST', qs="a=%26+%26+%26")
 
         params = {
             'a': '& & &'
+            }
+
+        self.assertEqual(self.app.request['POST'], params)
+
+
+    def it_should_parse_non_ascii_characters(self):
+        self.app.router.add('/', None, methods='POST')
+        self.make_request('/', method='POST', qs='a='+urllib.quote_plus("\u017D"))
+
+        params = {
+            'a': "\u017D" # Latin Z with caron
             }
 
         self.assertEqual(self.app.request['POST'], params)
