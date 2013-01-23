@@ -3082,7 +3082,6 @@ class ParameterContainer(collections.Mapping):
     def __init__(self, params=None):
         self._params = params or {}
 
-
     def __contains__(self, k):
         return k in self._params
 
@@ -3236,6 +3235,12 @@ class ParameterContainer(collections.Mapping):
         if param.lower() == 'false':
             return False
 
+        if isinstance(param, str):
+            return unicode(param, 'utf-8', 'ignore')
+
+        if isinstance(param, unicode):
+            return unicode(param)
+
         return param
 
 
@@ -3246,4 +3251,3 @@ def filebuffer(file_, chunk_size=10000):
         if not chunk:
             break
         yield chunk
-
