@@ -3131,6 +3131,9 @@ class ParameterContainer(collections.Mapping):
 
 
     def _parse_fieldstorage(self, params):
+        #if not params or 'list' not in params or not params.list:
+        #    return ''
+
         return self._parse_string(
             "&".join('%s=%s' % (item.name,
                                 urllib.quote_plus(item.value))
